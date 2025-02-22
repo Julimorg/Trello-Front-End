@@ -33,6 +33,13 @@ export default [
         'warn',
         { allowConstantExport: true },
       ],
+      //? MUI Config
+      'no-restricted-imports': [
+        "error",
+        {
+          "patterns": ["@mui/*/*/*"]
+        }
+      ],
     },
   },
 ]
