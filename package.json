@@ -15,9 +15,12 @@
     "@mui/icons-material": "^6.4.5",
     "@mui/material": "^6.4.5",
     "@mui/styled-engine-sc": "^6.4.3",
+    "dayjs": "^1.11.23",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "styled-components": "^6.1.15"
+    "react-router-dom": "^7.18.4",
+    "styled-components": "^6.1.15",
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
