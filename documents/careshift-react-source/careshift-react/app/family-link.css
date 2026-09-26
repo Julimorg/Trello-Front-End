@@ -1,0 +1,159 @@
+.modal-intro {
+  margin: -10px 0 20px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.permission-box {
+  margin: 18px 0 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+}
+
+.permission-box legend {
+  padding: 0 6px;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.permission-box label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 9px 0;
+}
+
+.permission-box input {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  accent-color: var(--teal);
+}
+
+.permission-box b,
+.permission-box small {
+  display: block;
+}
+
+.permission-box b {
+  font-size: 0.76rem;
+}
+
+.permission-box small {
+  color: var(--muted);
+  font-size: 0.67rem;
+}
+
+.family-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.family-card {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+}
+
+.family-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.family-avatar {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--teal-soft);
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.family-card h3 {
+  margin: 2px 0 2px;
+  font-size: 0.93rem;
+}
+
+.family-card-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.family-card-head .status {
+  margin-left: auto;
+}
+
+.family-permissions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 17px 0;
+}
+
+.family-permissions span {
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #f0f6f6;
+  color: #526c72;
+  font-size: 0.67rem;
+}
+
+.family-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid #edf2f2;
+}
+
+.family-card-actions small {
+  color: var(--muted);
+  font-size: 0.67rem;
+}
+
+.family-safety-note {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  margin-top: 18px;
+  padding: 15px;
+  border: 1px solid #cce9e4;
+  border-radius: 13px;
+  background: #eaf7f4;
+  color: #315c5c;
+  font-size: 0.74rem;
+}
+
+.family-safety-note svg {
+  flex: 0 0 auto;
+  color: var(--teal);
+}
+
+.quick-item[data-page-jump] {
+  cursor: pointer;
+}
+
+@media (max-width: 780px) {
+  .family-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .family-card-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .family-card-actions .btn {
+    width: 100%;
+  }
+}
