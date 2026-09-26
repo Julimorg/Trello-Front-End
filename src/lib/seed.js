@@ -172,7 +172,15 @@ export function seedState() {
       district: 'Bình Thạnh',
       address: '12 Điện Biên Phủ, Bình Thạnh',
       familyContacts: [
-        { id: id('fc'), name: 'Nguyễn Thị Bích (con gái)', phone: '091-234-9999', relation: 'Con gái' },
+        {
+          id: id('fc'),
+          name: 'Nguyễn Thị Bích',
+          phone: '091-234-9999',
+          relation: 'Con gái',
+          status: 'Đã liên kết',
+          primary: true,
+          permissions: ['Nhận cảnh báo SOS', 'Xem lịch chăm sóc', 'Xem trạng thái yêu cầu'],
+        },
       ],
     },
     {
@@ -182,7 +190,15 @@ export function seedState() {
       district: 'Quận 5',
       address: '45 Trần Hưng Đạo, Quận 5',
       familyContacts: [
-        { id: id('fc'), name: 'Trần Văn Long (con trai)', phone: '092-345-1111', relation: 'Con trai' },
+        {
+          id: id('fc'),
+          name: 'Trần Văn Long',
+          phone: '092-345-1111',
+          relation: 'Con trai',
+          status: 'Đã liên kết',
+          primary: true,
+          permissions: ['Nhận cảnh báo SOS', 'Xem lịch chăm sóc'],
+        },
       ],
     },
   ]
@@ -205,7 +221,9 @@ export function seedState() {
       attachments: [],
       status: CARE_REQUEST_STATUS.COMPLETED,
       createdBy: 'patient',
-      matchedNurseIds: [nurse1],
+      matchedNurseIds: [nurse1, nurse2],
+      selectedNurseId: nurse1,
+      declinedNurseIds: [],
       bookingId: sampleBookingId,
       createdAt: '2026-08-05T09:00:00.000Z',
     },

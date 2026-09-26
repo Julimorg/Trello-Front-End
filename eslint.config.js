@@ -5,7 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'documents'] },
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
@@ -34,13 +34,6 @@ export default [
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
-      ],
-      //? MUI Config
-      'no-restricted-imports': [
-        "error",
-        {
-          "patterns": ["@mui/*/*/*"]
-        }
       ],
     },
   },

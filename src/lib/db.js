@@ -6,6 +6,7 @@ import {
   NURSE_AUTH_STATUS,
   SESSION_STATUS,
   BOOKING_STATUS,
+  RECURRING_SESSION_COUNT,
 } from './constants'
 
 const genId = (prefix) => `${prefix}-${uuid().slice(0, 8)}`
@@ -16,6 +17,11 @@ const now = () => new Date().toISOString()
 export const getHospital = (state, id) => state.hospitals.find((h) => h.id === id)
 export const getNurse = (state, id) => state.nurses.find((n) => n.id === id)
 export const getPatient = (state, id) => state.patients.find((p) => p.id === id)
+
+export const getPrimaryFamilyContact = (state, patientId) => {
+  const contacts = getPatient(state, patientId)?.familyContacts || []
+  return contacts.find((c) => c.primary && c.status === 'Đã liên kết') || contacts.find((c) => c.status === 'Đã liên kết') || null
+}
 export const getCareRequest = (state, id) => state.careRequests.find((c) => c.id === id)
 export const getBooking = (state, id) => state.bookings.find((b) => b.id === id)
 
@@ -32,6 +38,11 @@ export const listBookingsByPatient = (state, patientId) =>
 
 export const listBookingsByNurse = (state, nurseId) =>
   state.bookings.filter((b) => b.sessions.some((s) => s.nurseId === nurseId))
+
+export const listPendingRequestsForNurse = (state, nurseId) =>
+  state.careRequests.filter(
+    (c) => c.status === CARE_REQUEST_STATUS.NURSE_PENDING && c.selectedNurseId === nurseId,
+  )
 
 export function computeBookingStatus(booking) {
   const today = dayjs().format('YYYY-MM-DD')
@@ -129,6 +140,8 @@ export function createCareRequest(payload) {
       status: CARE_REQUEST_STATUS.MATCHING,
       createdBy: payload.createdBy,
       matchedNurseIds: [],
+      selectedNurseId: null,
+      declinedNurseIds: [],
       bookingId: null,
       lastMatchedAt: null,
       createdAt: now(),
@@ -187,59 +200,137 @@ export function cancelCareRequest(careRequestId) {
   }))
 }
 
-// ---------- Booking & Scheduling ----------
+// ---------- Nurse response & Booking & Scheduling ----------
+//
+// A patient picks one nurse from the matched list; that sends the request to the
+// nurse for a yes/no response (mirrors the CareShift design reference) rather than
+// auto-confirming. Only once the nurse accepts does a real Booking (with concrete
+// sessions) get created. A decline cascades to the next matched nurse.
 
-function buildSessionDates({ startDate, endDate, frequency, weekdays }) {
+function buildSessionDates({ startDate, frequency, weekdays, count }) {
+  if (frequency === 'once') return [dayjs(startDate).format('YYYY-MM-DD')]
   const dates = []
-  const start = dayjs(startDate)
-  const end = dayjs(endDate || startDate)
-  if (frequency === 'once') {
-    dates.push(start.format('YYYY-MM-DD'))
-    return dates
-  }
-  let cursor = start
-  while (cursor.isSame(end) || cursor.isBefore(end)) {
+  let cursor = dayjs(startDate)
+  let guard = 0
+  while (dates.length < count && guard < count * 14) {
     if (frequency === 'daily' || (weekdays || []).includes(cursor.day())) {
       dates.push(cursor.format('YYYY-MM-DD'))
     }
     cursor = cursor.add(1, 'day')
+    guard += 1
   }
   return dates
 }
 
-export function createBooking({ careRequestId, nurseId, startDate, endDate, frequency, weekdays, timeSlot }) {
-  const bookingId = genId('bk')
+export function selectNurseForCareRequest(careRequestId, nurseId) {
   setState((state) => {
     const careRequest = getCareRequest(state, careRequestId)
-    if (!careRequest) return state
-    const dates = buildSessionDates({ startDate, endDate, frequency, weekdays })
-    const booking = {
-      id: bookingId,
-      careRequestId,
-      patientId: careRequest.patientId,
-      nurseId,
-      status: BOOKING_STATUS.CONFIRMED,
-      createdAt: now(),
-      sessions: dates.map((date) => ({
-        id: genId('sess'),
-        date,
-        start: timeSlot.start,
-        end: timeSlot.end,
-        status: SESSION_STATUS.CONFIRMED,
-        nurseId,
-      })),
-    }
-    notify(state, { role: 'nurse', targetId: nurseId, message: 'Bạn có một lịch chăm sóc mới đã được xác nhận.' })
+    const nurse = getNurse(state, nurseId)
+    if (!careRequest || !nurse) return state
+    notify(state, {
+      role: 'nurse',
+      targetId: nurseId,
+      message: 'Bạn có một yêu cầu chăm sóc mới cần phản hồi trong 15 phút.',
+    })
     notify(state, {
       role: 'patient',
       targetId: careRequest.patientId,
-      message: 'Lịch chăm sóc của bạn đã được xác nhận.',
+      message: `Đã gửi yêu cầu đến ${nurse.name}. Điều dưỡng có 15 phút để chấp nhận hoặc từ chối.`,
     })
     return {
       ...state,
-      bookings: [...state.bookings, booking],
       careRequests: state.careRequests.map((c) =>
-        c.id === careRequestId ? { ...c, status: CARE_REQUEST_STATUS.COMPLETED, bookingId } : c,
+        c.id === careRequestId
+          ? { ...c, selectedNurseId: nurseId, status: CARE_REQUEST_STATUS.NURSE_PENDING }
+          : c,
+      ),
+    }
+  })
+}
+
+export function respondToCareRequest(careRequestId, decision) {
+  let bookingId = null
+  setState((state) => {
+    const careRequest = getCareRequest(state, careRequestId)
+    if (!careRequest || !careRequest.selectedNurseId) return state
+    const nurseId = careRequest.selectedNurseId
+    const nurse = getNurse(state, nurseId)
+
+    if (decision === 'accept') {
+      bookingId = genId('bk')
+      const dates = buildSessionDates({
+        startDate: careRequest.desiredStartDate,
+        frequency: careRequest.frequency,
+        weekdays: careRequest.weekdays,
+        count: RECURRING_SESSION_COUNT,
+      })
+      const booking = {
+        id: bookingId,
+        careRequestId,
+        patientId: careRequest.patientId,
+        nurseId,
+        status: BOOKING_STATUS.CONFIRMED,
+        createdAt: now(),
+        sessions: dates.map((date) => ({
+          id: genId('sess'),
+          date,
+          start: careRequest.timeSlot.start,
+          end: careRequest.timeSlot.end,
+          status: SESSION_STATUS.CONFIRMED,
+          nurseId,
+        })),
+      }
+      notify(state, {
+        role: 'patient',
+        targetId: careRequest.patientId,
+        message: `${nurse?.name || 'Điều dưỡng'} đã xác nhận nhận ca. Lịch chăm sóc đã được tạo.`,
+      })
+      if (nurse) {
+        notify(state, {
+          role: 'hospital',
+          targetId: nurse.hospitalId,
+          message: `${nurse.name} đã nhận 1 ca chăm sóc mới qua CareShift.`,
+        })
+      }
+      return {
+        ...state,
+        bookings: [...state.bookings, booking],
+        careRequests: state.careRequests.map((c) =>
+          c.id === careRequestId
+            ? { ...c, status: CARE_REQUEST_STATUS.COMPLETED, bookingId, selectedNurseId: nurseId }
+            : c,
+        ),
+      }
+    }
+
+    // decline: cascade to the next matched nurse who hasn't declined yet
+    const declinedNurseIds = [...careRequest.declinedNurseIds, nurseId]
+    const nextNurseId = careRequest.matchedNurseIds.find((id) => !declinedNurseIds.includes(id))
+    notify(state, {
+      role: 'patient',
+      targetId: careRequest.patientId,
+      message: nextNurseId
+        ? `${nurse?.name || 'Điều dưỡng'} đã từ chối yêu cầu. Đang gửi tới điều dưỡng phù hợp tiếp theo.`
+        : `${nurse?.name || 'Điều dưỡng'} đã từ chối yêu cầu. Không còn điều dưỡng phù hợp nào khác, vui lòng liên hệ bệnh viện để được hỗ trợ.`,
+    })
+    if (nextNurseId) {
+      notify(state, {
+        role: 'nurse',
+        targetId: nextNurseId,
+        message: 'Bạn có một yêu cầu chăm sóc mới cần phản hồi trong 15 phút.',
+      })
+    }
+    return {
+      ...state,
+      careRequests: state.careRequests.map((c) =>
+        c.id === careRequestId
+          ? {
+              ...c,
+              declinedNurseIds,
+              selectedNurseId: nextNurseId || null,
+              status: nextNurseId ? CARE_REQUEST_STATUS.NURSE_PENDING : CARE_REQUEST_STATUS.NO_MATCH,
+            }
+          : c,
       ),
     }
   })
@@ -525,12 +616,42 @@ export function addPatient(data) {
   return id
 }
 
+export function updatePatient(patientId, patch) {
+  setState((state) => ({
+    ...state,
+    patients: state.patients.map((p) => (p.id === patientId ? { ...p, ...patch } : p)),
+  }))
+}
+
 export function addFamilyContact(patientId, contact) {
   setState((state) => ({
     ...state,
     patients: state.patients.map((p) =>
       p.id === patientId
-        ? { ...p, familyContacts: [...p.familyContacts, { id: genId('fc'), ...contact }] }
+        ? {
+            ...p,
+            familyContacts: [
+              ...p.familyContacts,
+              {
+                id: genId('fc'),
+                status: 'Chờ xác nhận',
+                primary: false,
+                permissions: [],
+                ...contact,
+              },
+            ],
+          }
+        : p,
+    ),
+  }))
+}
+
+export function setPrimaryFamilyContact(patientId, contactId) {
+  setState((state) => ({
+    ...state,
+    patients: state.patients.map((p) =>
+      p.id === patientId
+        ? { ...p, familyContacts: p.familyContacts.map((c) => ({ ...c, primary: c.id === contactId })) }
         : p,
     ),
   }))

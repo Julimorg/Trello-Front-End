@@ -1,16 +1,25 @@
-import AssignmentIcon from '@mui/icons-material/Assignment'
-import EventAvailableIcon from '@mui/icons-material/EventAvailable'
-import FamilyRestroomIcon from '@mui/icons-material/FamilyRestroom'
-import AppShell from '../components/AppShell'
+import Shell from '../components/Shell'
 import { useAuth } from '../auth/AuthContext'
 import { useDb } from '../lib/store'
 import { getPatient } from '../lib/db'
 
 const navItems = [
-  { to: '/patient/requests', label: 'Yêu cầu chăm sóc', icon: <AssignmentIcon /> },
-  { to: '/patient/bookings', label: 'Lịch chăm sóc', icon: <EventAvailableIcon /> },
-  { to: '/patient/family', label: 'Người thân & SOS', icon: <FamilyRestroomIcon /> },
+  { to: '/patient/overview', label: 'Tổng quan', icon: 'home' },
+  { to: '/patient/request', label: 'Yêu cầu chăm sóc', icon: 'plus' },
+  { to: '/patient/bookings', label: 'Lịch chăm sóc', icon: 'calendar' },
+  { to: '/patient/nurses', label: 'Điều dưỡng đã chọn', icon: 'user' },
+  { to: '/patient/family', label: 'Người thân liên kết', icon: 'users' },
+  { to: '/patient/profile', label: 'Hồ sơ cá nhân', icon: 'settings' },
 ]
+
+function initials(name) {
+  return (name || '')
+    .split(' ')
+    .slice(-2)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase()
+}
 
 export default function PatientLayout() {
   const { session } = useAuth()
@@ -18,10 +27,17 @@ export default function PatientLayout() {
   const patient = getPatient(state, session.id)
 
   return (
-    <AppShell
-      appLabel="CareShift · Bệnh nhân"
-      identityLabel={patient ? `${patient.name}` : ''}
+    <Shell
+      appLabel="Ứng dụng bệnh nhân"
+      roleDot="patient"
+      roleAvatar="BN"
+      roleLabel="Bệnh nhân"
+      orgLabel={patient?.name || ''}
       navItems={navItems}
+      profileName={patient?.name || ''}
+      profileMeta="Bệnh nhân"
+      profileInitials={initials(patient?.name)}
+      profileTo="/patient/profile"
       notificationRole="patient"
       notificationTargetId={session.id}
     />

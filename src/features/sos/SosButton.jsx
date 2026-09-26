@@ -1,20 +1,9 @@
 import { useState } from 'react'
-import Alert from '@mui/material/Alert'
-import Button from '@mui/material/Button'
-import Dialog from '@mui/material/Dialog'
-import DialogActions from '@mui/material/DialogActions'
-import DialogContent from '@mui/material/DialogContent'
-import DialogContentText from '@mui/material/DialogContentText'
-import DialogTitle from '@mui/material/DialogTitle'
-import Fab from '@mui/material/Fab'
-import Snackbar from '@mui/material/Snackbar'
-import Stack from '@mui/material/Stack'
-import EmergencyIcon from '@mui/icons-material/Emergency'
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital'
-import MedicalServicesIcon from '@mui/icons-material/MedicalServices'
-import FamilyRestroomIcon from '@mui/icons-material/FamilyRestroom'
+import Modal, { ModalCloseButton } from '../../components/Modal'
+import { useToast } from '../../components/ToastProvider'
 import { triggerSOS } from '../../lib/db'
 import { SOS_TYPES } from '../../lib/constants'
+import { Icon } from '../../lib/icons'
 
 function getLocation() {
   return new Promise((resolve) => {
@@ -34,103 +23,65 @@ function getLocation() {
   })
 }
 
-export default function SosButton({ bookingId, sessionId, role, hospitalPhone }) {
+export default function SosButton({ bookingId, sessionId, role, familyLabel, onNeedFamilyLink }) {
+  const toast = useToast()
   const [open, setOpen] = useState(false)
-  const [doneMessage, setDoneMessage] = useState('')
 
-  const handleTrigger = async (type) => {
+  const handle = async (type, label) => {
+    if (type === SOS_TYPES.NOTIFY_FAMILY && !familyLabel && onNeedFamilyLink) {
+      setOpen(false)
+      onNeedFamilyLink()
+      return
+    }
     const location = await getLocation()
     triggerSOS({ bookingId, sessionId, triggeredBy: role, type, location })
     setOpen(false)
-    setDoneMessage(
-      type === SOS_TYPES.CALL_115
-        ? 'Đã ghi nhận cảnh báo và gọi 115. Nếu mất mạng, hãy gọi trực tiếp 115.'
-        : 'Đã ghi nhận và gửi cảnh báo khẩn cấp.',
+    toast(
+      type === SOS_TYPES.CALL_115 ? 'Đã gọi 115' : `Đã ${label.toLowerCase()}`,
+      'Mô phỏng cảnh báo khẩn cấp — nếu mất mạng, hãy gọi trực tiếp 115.',
     )
   }
 
   return (
     <>
-      <Fab
-        color="error"
-        onClick={() => setOpen(true)}
-        sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1300 }}
-        aria-label="SOS"
-      >
-        <EmergencyIcon />
-      </Fab>
+      <button className="floating-sos" onClick={() => setOpen(true)}>
+        <span>SOS</span> Khẩn cấp
+      </button>
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle color="error.main" fontWeight={700}>
-          Báo động khẩn cấp (SOS)
-        </DialogTitle>
-        <DialogContent>
-          {role === 'nurse' ? (
-            <Stack spacing={1.5} sx={{ mt: 1 }}>
-              <DialogContentText>Chọn hành động cần thực hiện ngay:</DialogContentText>
-              <Button
-                variant="contained"
-                color="error"
-                size="large"
-                startIcon={<LocalHospitalIcon />}
-                href="tel:115"
-                onClick={() => handleTrigger(SOS_TYPES.CALL_115)}
-              >
-                Gọi 115
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                size="large"
-                startIcon={<MedicalServicesIcon />}
-                href={hospitalPhone ? `tel:${hospitalPhone}` : undefined}
-                onClick={() => handleTrigger(SOS_TYPES.CALL_DOCTOR)}
-              >
-                Gọi bác sĩ phụ trách
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                size="large"
-                startIcon={<FamilyRestroomIcon />}
-                onClick={() => handleTrigger(SOS_TYPES.NOTIFY_FAMILY)}
-              >
-                Thông báo người thân
-              </Button>
-            </Stack>
-          ) : (
-            <Stack spacing={1.5} sx={{ mt: 1 }}>
-              <DialogContentText>
-                Hệ thống sẽ gọi 115 và gửi vị trí hiện tại kèm cảnh báo tới bệnh viện quản lý ca chăm sóc này.
-              </DialogContentText>
-              <Button
-                variant="contained"
-                color="error"
-                size="large"
-                startIcon={<EmergencyIcon />}
-                href="tel:115"
-                onClick={() => handleTrigger(SOS_TYPES.CALL_115)}
-              >
-                Xác nhận gửi cảnh báo &amp; gọi 115
-              </Button>
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpen(false)}>Đóng</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
-        open={!!doneMessage}
-        autoHideDuration={5000}
-        onClose={() => setDoneMessage('')}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="error" onClose={() => setDoneMessage('')} sx={{ width: '100%' }}>
-          {doneMessage}
-        </Alert>
-      </Snackbar>
+      <Modal open={open} onClose={() => setOpen(false)} className="sos-modal" backdropClassName="sos-backdrop" labelledBy="sosTitle">
+        <ModalCloseButton onClose={() => setOpen(false)} floating />
+        <div className="sos-icon">SOS</div>
+        <span className="eyebrow danger">Hỗ trợ khẩn cấp</span>
+        <h2 id="sosTitle">Bạn cần liên hệ với ai?</h2>
+        <p>Chọn phương án phù hợp. CareShift sẽ ghi nhận sự cố và chia sẻ thông tin ca đang diễn ra.</p>
+        <div className="sos-actions">
+          <button type="button" onClick={() => handle(SOS_TYPES.CALL_115, 'Gọi 115')}>
+            <span className="sos-action-icon">✚</span>
+            <span>
+              <b>Gọi 115</b>
+              <small>Tình huống cấp cứu y tế</small>
+            </span>
+            <Icon.chevron />
+          </button>
+          <button type="button" onClick={() => handle(SOS_TYPES.NOTIFY_HOSPITAL, 'báo bệnh viện')}>
+            <span className="sos-action-icon hospital">H</span>
+            <span>
+              <b>Báo bệnh viện</b>
+              <small>Liên hệ điều phối viên trực</small>
+            </span>
+            <Icon.chevron />
+          </button>
+          <button type="button" onClick={() => handle(SOS_TYPES.NOTIFY_FAMILY, 'báo người thân')}>
+            <span className="sos-action-icon family">⌂</span>
+            <span>
+              <b>Báo người thân</b>
+              <small>{familyLabel || 'Chưa có người thân được liên kết'}</small>
+            </span>
+            <Icon.chevron />
+          </button>
+        </div>
+        <small className="sos-note">CareShift không thay thế dịch vụ cấp cứu. Nếu có nguy cơ đe dọa tính mạng, hãy gọi 115 ngay.</small>
+      </Modal>
     </>
   )
 }

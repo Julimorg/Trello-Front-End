@@ -1,163 +1,116 @@
 import { useState } from 'react'
-import Alert from '@mui/material/Alert'
-import Avatar from '@mui/material/Avatar'
-import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
-import Divider from '@mui/material/Divider'
-import IconButton from '@mui/material/IconButton'
-import List from '@mui/material/List'
-import ListItem from '@mui/material/ListItem'
-import ListItemAvatar from '@mui/material/ListItemAvatar'
-import ListItemText from '@mui/material/ListItemText'
-import MenuItem from '@mui/material/MenuItem'
-import Paper from '@mui/material/Paper'
-import Stack from '@mui/material/Stack'
-import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import AddIcon from '@mui/icons-material/Add'
-import DeleteIcon from '@mui/icons-material/Delete'
-import PersonIcon from '@mui/icons-material/Person'
-import PageHeader from '../../components/PageHeader'
-import ConfirmDialog from '../../components/ConfirmDialog'
+import PageHead from '../../components/PageHead'
+import StatusBadge from '../../components/StatusBadge'
+import FamilyLinkModal from './FamilyLinkModal'
+import SosButton from './SosButton'
 import { useAuth } from '../../auth/AuthContext'
+import { useToast } from '../../components/ToastProvider'
 import { useDb } from '../../lib/store'
-import { addFamilyContact, getPatient, listBookingsByPatient, removeFamilyContact } from '../../lib/db'
-import { formatDateTime } from '../../lib/format'
-import { SOS_TYPE_LABEL } from '../../lib/constants'
+import { getPatient, getPrimaryFamilyContact, setPrimaryFamilyContact } from '../../lib/db'
+import { Icon } from '../../lib/icons'
 
-const RELATIONS = ['Con trai', 'Con gái', 'Vợ/Chồng', 'Anh/Chị/Em', 'Người giám hộ', 'Khác']
+function initials(name) {
+  return (name || '')
+    .split(/\s+/)
+    .slice(-2)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase()
+}
+
+function statusTone(status) {
+  return status === 'Đã liên kết' ? 'success' : 'pending'
+}
 
 export default function FamilyContacts() {
   const { session } = useAuth()
+  const toast = useToast()
   const state = useDb()
   const patient = getPatient(state, session.id)
-  const [addOpen, setAddOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', phone: '', relation: RELATIONS[0] })
-  const [removeTarget, setRemoveTarget] = useState(null)
-
-  const bookingIds = new Set(listBookingsByPatient(state, session.id).map((b) => b.id))
-  const sosHistory = state.sosEvents.filter((e) => bookingIds.has(e.bookingId))
+  const primary = getPrimaryFamilyContact(state, session.id)
+  const [linkOpen, setLinkOpen] = useState(false)
 
   if (!patient) return null
 
   return (
     <>
-      <PageHeader
-        title="Người thân & Cảnh báo khẩn cấp"
-        subtitle="Người thân được thêm sẽ nhận thông báo ngay khi có cảnh báo SOS trong ca chăm sóc"
+      <PageHead
+        eyebrow="Family & emergency contacts"
+        title="Người thân liên kết"
+        description="Cho phép người thân nhận cảnh báo SOS và theo dõi những thông tin bạn chủ động chia sẻ."
         action={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddOpen(true)}>
-            Thêm người thân
-          </Button>
+          <button type="button" className="btn primary" onClick={() => setLinkOpen(true)}>
+            <Icon.plus /> Liên kết người thân
+          </button>
         }
       />
 
-      <Paper variant="outlined" sx={{ mb: 3 }}>
-        {patient.familyContacts.length === 0 ? (
-          <Alert severity="warning" sx={{ m: 2 }}>
-            Bạn chưa thêm người thân nào để nhận cảnh báo khẩn cấp. Hãy thêm ít nhất một người liên hệ.
-          </Alert>
-        ) : (
-          <List disablePadding>
-            {patient.familyContacts.map((c, idx) => (
-              <ListItem
-                key={c.id}
-                divider={idx < patient.familyContacts.length - 1}
-                secondaryAction={
-                  <IconButton edge="end" onClick={() => setRemoveTarget(c)}>
-                    <DeleteIcon />
-                  </IconButton>
-                }
-              >
-                <ListItemAvatar>
-                  <Avatar>
-                    <PersonIcon />
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText primary={c.name} secondary={`${c.relation} · ${c.phone}`} />
-              </ListItem>
-            ))}
-          </List>
-        )}
-      </Paper>
-
-      <Divider sx={{ mb: 2 }} />
-      <Typography variant="subtitle2" gutterBottom>
-        Lịch sử cảnh báo SOS
-      </Typography>
-      {sosHistory.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
-          Chưa có cảnh báo nào được ghi nhận.
-        </Typography>
+      {patient.familyContacts.length === 0 ? (
+        <section className="panel">
+          <div className="empty-state">
+            <div className="empty-icon">
+              <Icon.users />
+            </div>
+            <h3>Chưa liên kết người thân nào</h3>
+            <p>Hãy thêm ít nhất một người liên hệ để nhận cảnh báo khẩn cấp SOS.</p>
+          </div>
+        </section>
       ) : (
-        <Stack spacing={1}>
-          {sosHistory.map((e) => (
-            <Paper key={e.id} variant="outlined" sx={{ p: 2 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2">
-                  {SOS_TYPE_LABEL[e.type]} {e.note && `— ${e.note}`}
-                </Typography>
-                <Chip label={e.triggeredBy === 'nurse' ? 'Điều dưỡng kích hoạt' : 'Gia đình kích hoạt'} size="small" />
-              </Stack>
-              <Typography variant="caption" color="text.secondary">
-                {formatDateTime(e.createdAt)}
-              </Typography>
-            </Paper>
+        <div className="family-grid">
+          {patient.familyContacts.map((c) => (
+            <article className="family-card" key={c.id}>
+              <div className="family-card-head">
+                <span className="family-avatar">{initials(c.name)}</span>
+                <div>
+                  <h3>{c.name}</h3>
+                  <p>
+                    {c.relation} · {c.phone}
+                  </p>
+                </div>
+                <StatusBadge label={c.status} tone={statusTone(c.status)} />
+              </div>
+              <div className="family-permissions">
+                {(c.permissions || []).map((p) => (
+                  <span key={p}>{p}</span>
+                ))}
+                {(c.permissions || []).length === 0 && <span>Chưa cấp quyền nào</span>}
+              </div>
+              <div className="family-card-actions">
+                <small>{c.primary ? 'Người liên hệ khẩn cấp ưu tiên' : 'Có thể nhận cảnh báo theo quyền đã cấp'}</small>
+                {c.status === 'Đã liên kết' && !c.primary ? (
+                  <button
+                    type="button"
+                    className="btn ghost small"
+                    onClick={() => {
+                      setPrimaryFamilyContact(session.id, c.id)
+                      toast('Đã đổi người liên hệ ưu tiên', 'Cảnh báo SOS sẽ được gửi tới người này trước.')
+                    }}
+                  >
+                    Đặt làm ưu tiên
+                  </button>
+                ) : c.primary ? (
+                  <span className="status success">Ưu tiên SOS</span>
+                ) : (
+                  <button type="button" className="btn ghost small" onClick={() => toast('Đã gửi lại lời mời', `Đang chờ ${c.name} xác nhận.`)}>
+                    Gửi lại lời mời
+                  </button>
+                )}
+              </div>
+            </article>
           ))}
-        </Stack>
+        </div>
       )}
 
-      <ConfirmDialog
-        open={addOpen}
-        title="Thêm người thân"
-        confirmLabel="Lưu"
-        onClose={() => setAddOpen(false)}
-        confirmDisabled={!form.name.trim() || !form.phone.trim()}
-        onConfirm={() => {
-          addFamilyContact(session.id, form)
-          setForm({ name: '', phone: '', relation: RELATIONS[0] })
-          setAddOpen(false)
-        }}
-      >
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          <TextField
-            label="Họ tên"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            autoFocus
-          />
-          <TextField
-            label="Số điện thoại"
-            value={form.phone}
-            onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-          />
-          <TextField
-            select
-            label="Quan hệ"
-            value={form.relation}
-            onChange={(e) => setForm((f) => ({ ...f, relation: e.target.value }))}
-          >
-            {RELATIONS.map((r) => (
-              <MenuItem key={r} value={r}>
-                {r}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Stack>
-      </ConfirmDialog>
+      <div className="family-safety-note">
+        <Icon.shield />
+        <span>
+          <b>Quyền riêng tư do bạn kiểm soát.</b> Người thân chỉ xem được các nội dung đã được cấp quyền. Vị trí chính xác chỉ được chia sẻ khi SOS được kích hoạt.
+        </span>
+      </div>
 
-      <ConfirmDialog
-        open={!!removeTarget}
-        title="Xóa người thân?"
-        description={removeTarget ? `Xóa ${removeTarget.name} khỏi danh sách nhận cảnh báo SOS?` : ''}
-        confirmLabel="Xóa"
-        confirmColor="error"
-        onClose={() => setRemoveTarget(null)}
-        onConfirm={() => {
-          removeFamilyContact(session.id, removeTarget.id)
-          setRemoveTarget(null)
-        }}
-      />
+      <SosButton role="patient" familyLabel={primary ? `${primary.name} · ${primary.relation}` : ''} onNeedFamilyLink={() => setLinkOpen(true)} />
+
+      <FamilyLinkModal open={linkOpen} onClose={() => setLinkOpen(false)} patientId={session.id} />
     </>
   )
 }

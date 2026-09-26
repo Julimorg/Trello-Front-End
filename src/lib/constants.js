@@ -1,5 +1,5 @@
 export const CARE_TYPES = [
-  { id: 'wound-dressing', label: 'Thay băng vết thương' },
+  { id: 'wound-dressing', label: 'Thay băng & chăm sóc vết thương' },
   { id: 'vitals-monitoring', label: 'Theo dõi sinh hiệu' },
   { id: 'mobility-support', label: 'Hỗ trợ vận động' },
   { id: 'medication', label: 'Hỗ trợ dùng thuốc' },
@@ -26,7 +26,7 @@ export const NURSE_RANKS = [
 ]
 
 export const FREQUENCIES = [
-  { id: 'once', label: 'Một lần duy nhất' },
+  { id: 'once', label: 'Một lần' },
   { id: 'daily', label: 'Hàng ngày' },
   { id: 'weekly', label: 'Hàng tuần (chọn thứ)' },
 ]
@@ -41,22 +41,29 @@ export const WEEKDAYS = [
   { id: 0, label: 'Chủ nhật' },
 ]
 
+// How many concrete sessions a recurring (daily/weekly) care request generates once a
+// nurse accepts it. There is no explicit end-date field in the request wizard, so this
+// acts as the default course length (kept short/simple for the Phase 1 prototype).
+export const RECURRING_SESSION_COUNT = 4
+
 export const CARE_REQUEST_STATUS = {
   CREATED: 'created',
   MATCHING: 'matching',
   MATCHED: 'matched',
+  NURSE_PENDING: 'nurse_pending',
   NO_MATCH: 'no_match',
   CANCELLED: 'cancelled',
   COMPLETED: 'completed',
 }
 
 export const CARE_REQUEST_STATUS_LABEL = {
-  [CARE_REQUEST_STATUS.CREATED]: { label: 'Đã tạo', color: 'default' },
-  [CARE_REQUEST_STATUS.MATCHING]: { label: 'Đang tìm điều dưỡng', color: 'info' },
-  [CARE_REQUEST_STATUS.MATCHED]: { label: 'Đã có điều dưỡng phù hợp', color: 'success' },
-  [CARE_REQUEST_STATUS.NO_MATCH]: { label: 'Không tìm được điều dưỡng', color: 'warning' },
-  [CARE_REQUEST_STATUS.CANCELLED]: { label: 'Đã hủy', color: 'default' },
-  [CARE_REQUEST_STATUS.COMPLETED]: { label: 'Hoàn tất', color: 'primary' },
+  [CARE_REQUEST_STATUS.CREATED]: { label: 'Đã tạo', tone: 'neutral' },
+  [CARE_REQUEST_STATUS.MATCHING]: { label: 'Đang tìm điều dưỡng', tone: 'info' },
+  [CARE_REQUEST_STATUS.MATCHED]: { label: 'Đã có điều dưỡng phù hợp', tone: 'success' },
+  [CARE_REQUEST_STATUS.NURSE_PENDING]: { label: 'Đang chờ phản hồi', tone: 'pending' },
+  [CARE_REQUEST_STATUS.NO_MATCH]: { label: 'Không tìm được điều dưỡng', tone: 'danger' },
+  [CARE_REQUEST_STATUS.CANCELLED]: { label: 'Đã hủy', tone: 'neutral' },
+  [CARE_REQUEST_STATUS.COMPLETED]: { label: 'Đã chấp nhận', tone: 'success' },
 }
 
 export const NURSE_AUTH_STATUS = {
@@ -67,10 +74,10 @@ export const NURSE_AUTH_STATUS = {
 }
 
 export const NURSE_AUTH_STATUS_LABEL = {
-  [NURSE_AUTH_STATUS.DRAFT]: { label: 'Chưa cấp phép', color: 'default' },
-  [NURSE_AUTH_STATUS.AUTHORIZED]: { label: 'Đã cấp phép (Authorized)', color: 'success' },
-  [NURSE_AUTH_STATUS.SUSPENDED]: { label: 'Tạm ngưng', color: 'warning' },
-  [NURSE_AUTH_STATUS.REVOKED]: { label: 'Đã thu hồi', color: 'error' },
+  [NURSE_AUTH_STATUS.DRAFT]: { label: 'Chờ xác minh', tone: 'pending' },
+  [NURSE_AUTH_STATUS.AUTHORIZED]: { label: 'Đã cấp phép', tone: 'success' },
+  [NURSE_AUTH_STATUS.SUSPENDED]: { label: 'Tạm ngưng', tone: 'pending' },
+  [NURSE_AUTH_STATUS.REVOKED]: { label: 'Đã thu hồi', tone: 'danger' },
 }
 
 export const SESSION_STATUS = {
@@ -81,10 +88,10 @@ export const SESSION_STATUS = {
 }
 
 export const SESSION_STATUS_LABEL = {
-  [SESSION_STATUS.CONFIRMED]: { label: 'Đã xác nhận', color: 'success' },
-  [SESSION_STATUS.CANNOT_PERFORM]: { label: 'Báo không thể thực hiện', color: 'error' },
-  [SESSION_STATUS.REASSIGNED]: { label: 'Đã đổi điều dưỡng', color: 'info' },
-  [SESSION_STATUS.COMPLETED]: { label: 'Hoàn tất', color: 'primary' },
+  [SESSION_STATUS.CONFIRMED]: { label: 'Đã xác nhận', tone: 'success' },
+  [SESSION_STATUS.CANNOT_PERFORM]: { label: 'Báo không thể thực hiện', tone: 'danger' },
+  [SESSION_STATUS.REASSIGNED]: { label: 'Đã đổi điều dưỡng', tone: 'info' },
+  [SESSION_STATUS.COMPLETED]: { label: 'Hoàn tất', tone: 'neutral' },
 }
 
 export const BOOKING_STATUS = {
@@ -94,21 +101,21 @@ export const BOOKING_STATUS = {
 }
 
 export const BOOKING_STATUS_LABEL = {
-  [BOOKING_STATUS.CONFIRMED]: { label: 'Đã xác nhận', color: 'success' },
-  [BOOKING_STATUS.IN_PROGRESS]: { label: 'Đang thực hiện', color: 'info' },
-  [BOOKING_STATUS.COMPLETED]: { label: 'Hoàn tất', color: 'primary' },
+  [BOOKING_STATUS.CONFIRMED]: { label: 'Đã xác nhận', tone: 'success' },
+  [BOOKING_STATUS.IN_PROGRESS]: { label: 'Đang thực hiện', tone: 'info' },
+  [BOOKING_STATUS.COMPLETED]: { label: 'Hoàn tất', tone: 'neutral' },
 }
 
 export const SOS_TYPES = {
   CALL_115: 'call_115',
-  CALL_DOCTOR: 'call_doctor',
+  NOTIFY_HOSPITAL: 'notify_hospital',
   NOTIFY_FAMILY: 'notify_family',
 }
 
 export const SOS_TYPE_LABEL = {
   [SOS_TYPES.CALL_115]: 'Gọi 115',
-  [SOS_TYPES.CALL_DOCTOR]: 'Gọi bác sĩ phụ trách',
-  [SOS_TYPES.NOTIFY_FAMILY]: 'Thông báo người thân',
+  [SOS_TYPES.NOTIFY_HOSPITAL]: 'Báo bệnh viện',
+  [SOS_TYPES.NOTIFY_FAMILY]: 'Báo người thân',
 }
 
 export const HOSPITAL_STATUS = {
@@ -117,8 +124,13 @@ export const HOSPITAL_STATUS = {
 }
 
 export const HOSPITAL_STATUS_LABEL = {
-  [HOSPITAL_STATUS.ACTIVE]: { label: 'Đang hoạt động', color: 'success' },
-  [HOSPITAL_STATUS.SUSPENDED]: { label: 'Tạm ngưng', color: 'warning' },
+  [HOSPITAL_STATUS.ACTIVE]: { label: 'Hoạt động', tone: 'success' },
+  [HOSPITAL_STATUS.SUSPENDED]: { label: 'Cần rà soát', tone: 'pending' },
+}
+
+export const ACCOUNT_STATUS_LABEL = {
+  active: { label: 'Hoạt động', tone: 'success' },
+  suspended: { label: 'Tạm khóa', tone: 'pending' },
 }
 
 export const MATCH_RETRY_WINDOW_MS = 60 * 60 * 1000 // 1 hour

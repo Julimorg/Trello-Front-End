@@ -1,40 +1,58 @@
-import DashboardIcon from '@mui/icons-material/Dashboard'
-import GroupIcon from '@mui/icons-material/Group'
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import PriceChangeIcon from '@mui/icons-material/PriceChange'
-import EventIcon from '@mui/icons-material/Event'
-import BadgeIcon from '@mui/icons-material/Badge'
-import AppShell from '../components/AppShell'
+import Shell from '../components/Shell'
 import { useAuth } from '../auth/AuthContext'
 import { useDb } from '../lib/store'
-import { getHospital, getNurse } from '../lib/db'
+import { getHospital, getNurse, listPendingRequestsForNurse } from '../lib/db'
 
 const adminNavItems = [
-  { to: '/hospital/admin/dashboard', label: 'Tổng quan', icon: <DashboardIcon /> },
-  { to: '/hospital/admin/nurses', label: 'Nhân sự điều dưỡng', icon: <GroupIcon /> },
-  { to: '/hospital/admin/cannot-perform', label: 'Ca cần hỗ trợ đổi người', icon: <SwapHorizIcon /> },
-  { to: '/hospital/admin/sos-log', label: 'Cảnh báo SOS', icon: <WarningAmberIcon /> },
-  { to: '/hospital/admin/pricing', label: 'Giá dịch vụ', icon: <PriceChangeIcon /> },
+  { to: '/hospital/admin/overview', label: 'Tổng quan', icon: 'home' },
+  { to: '/hospital/admin/roster', label: 'Danh sách điều dưỡng', icon: 'users' },
+  { to: '/hospital/admin/verification', label: 'Xác minh hồ sơ', icon: 'shield' },
+  { to: '/hospital/admin/schedule', label: 'Điều phối lịch', icon: 'calendar' },
+  { to: '/hospital/admin/requests', label: 'Yêu cầu chăm sóc', icon: 'file' },
+  { to: '/hospital/admin/sos-log', label: 'Cảnh báo SOS', icon: 'bell' },
+  { to: '/hospital/admin/pricing', label: 'Giá dịch vụ', icon: 'chart' },
 ]
 
-const nurseNavItems = [
-  { to: '/hospital/nurse/schedule', label: 'Lịch làm việc', icon: <EventIcon /> },
-  { to: '/hospital/nurse/profile', label: 'Hồ sơ cá nhân', icon: <BadgeIcon /> },
+const nurseNavItemsBase = [
+  { to: '/hospital/nurse/overview', label: 'Tổng quan', icon: 'home' },
+  { to: '/hospital/nurse/requests', label: 'Ca mới', icon: 'bell' },
+  { to: '/hospital/nurse/schedule', label: 'Lịch làm việc', icon: 'calendar' },
+  { to: '/hospital/nurse/profile', label: 'Hồ sơ nghề nghiệp', icon: 'shield' },
 ]
+
+function initials(name) {
+  return (name || '')
+    .split(' ')
+    .slice(-2)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase()
+}
 
 export default function HospitalLayout() {
   const { session } = useAuth()
   const state = useDb()
   const isNurse = session.role === 'nurse'
-  const hospital = getHospital(state, isNurse ? getNurse(state, session.id)?.hospitalId : session.id)
   const nurse = isNurse ? getNurse(state, session.id) : null
+  const hospital = getHospital(state, isNurse ? nurse?.hospitalId : session.id)
+
+  const pendingCount = isNurse ? listPendingRequestsForNurse(state, session.id).length : 0
+  const nurseNavItems = nurseNavItemsBase.map((item) =>
+    item.to === '/hospital/nurse/requests' && pendingCount ? { ...item, badge: pendingCount } : item,
+  )
 
   return (
-    <AppShell
-      appLabel="CareShift · Bệnh viện"
-      identityLabel={isNurse ? `${nurse?.name || ''} · ${hospital?.name || ''}` : `${hospital?.name || ''} (Admin)`}
+    <Shell
+      appLabel={isNurse ? 'Ứng dụng điều dưỡng' : 'Cổng bệnh viện'}
+      roleDot={isNurse ? 'nurse' : 'hospital'}
+      roleAvatar={isNurse ? 'ĐD' : 'BV'}
+      roleLabel={isNurse ? 'Điều dưỡng' : 'Admin bệnh viện'}
+      orgLabel={hospital?.name || ''}
       navItems={isNurse ? nurseNavItems : adminNavItems}
+      profileName={isNurse ? nurse?.name || '' : 'Điều phối viên'}
+      profileMeta={isNurse ? 'Đã được xác minh' : hospital?.name || ''}
+      profileInitials={isNurse ? initials(nurse?.name) : 'BV'}
+      profileTo={isNurse ? '/hospital/nurse/profile' : undefined}
       notificationRole={isNurse ? 'nurse' : 'hospital'}
       notificationTargetId={isNurse ? session.id : hospital?.id}
     />

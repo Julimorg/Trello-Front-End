@@ -1,105 +1,112 @@
 import { useMemo, useState } from 'react'
-import { Link as RouterLink } from 'react-router-dom'
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
-import MenuItem from '@mui/material/MenuItem'
-import Paper from '@mui/material/Paper'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableContainer from '@mui/material/TableContainer'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
-import TextField from '@mui/material/TextField'
-import AddIcon from '@mui/icons-material/Add'
-import PageHeader from '../../components/PageHeader'
-import StatusChip from '../../components/StatusChip'
+import { Link } from 'react-router-dom'
+import PageHead from '../../components/PageHead'
+import StatusBadge from '../../components/StatusBadge'
+import NurseAddModal from './NurseAddModal'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
 import { listNursesByHospital } from '../../lib/db'
 import { careTypeLabel } from '../../lib/format'
 import { NURSE_AUTH_STATUS_LABEL } from '../../lib/constants'
+import { Icon } from '../../lib/icons'
+
+function initials(name) {
+  return (name || '')
+    .split(' ')
+    .slice(-2)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase()
+}
 
 export default function NurseTable() {
   const { session } = useAuth()
   const state = useDb()
   const nurses = listNursesByHospital(state, session.id)
+  const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [addOpen, setAddOpen] = useState(false)
 
   const filtered = useMemo(
-    () => nurses.filter((n) => statusFilter === 'all' || n.authStatus === statusFilter),
-    [nurses, statusFilter],
+    () =>
+      nurses.filter(
+        (n) =>
+          (statusFilter === 'all' || n.authStatus === statusFilter) &&
+          (search.trim() === '' || n.name.toLowerCase().includes(search.trim().toLowerCase()) || n.id.toLowerCase().includes(search.trim().toLowerCase())),
+      ),
+    [nurses, statusFilter, search],
   )
 
   return (
     <>
-      <PageHeader
-        title="Nhân sự điều dưỡng"
-        subtitle="Danh sách điều dưỡng do bệnh viện quản lý"
+      <PageHead
+        eyebrow="Hospital roster"
+        title="Danh sách điều dưỡng"
+        description="Quản lý hồ sơ, phạm vi hành nghề và trạng thái cấp phép."
         action={
-          <Button component={RouterLink} to="/hospital/admin/nurses/new" variant="contained" startIcon={<AddIcon />}>
-            Thêm điều dưỡng
-          </Button>
+          <button type="button" className="btn primary" onClick={() => setAddOpen(true)}>
+            <Icon.plus /> Thêm điều dưỡng
+          </button>
         }
       />
 
-      <TextField
-        select
-        size="small"
-        label="Trạng thái"
-        value={statusFilter}
-        onChange={(e) => setStatusFilter(e.target.value)}
-        sx={{ mb: 2, minWidth: 220 }}
-      >
-        <MenuItem value="all">Tất cả</MenuItem>
-        {Object.entries(NURSE_AUTH_STATUS_LABEL).map(([value, { label }]) => (
-          <MenuItem key={value} value={value}>
-            {label}
-          </MenuItem>
-        ))}
-      </TextField>
+      <div className="filter-row">
+        <div className="search-box">
+          <Icon.search />
+          <input placeholder="Tìm theo tên hoặc mã nhân sự" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="all">Tất cả trạng thái</option>
+          {Object.entries(NURSE_AUTH_STATUS_LABEL).map(([value, { label }]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <TableContainer component={Paper} variant="outlined">
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Tên</TableCell>
-              <TableCell>Cấp bậc</TableCell>
-              <TableCell>Kinh nghiệm</TableCell>
-              <TableCell>Chuyên môn</TableCell>
-              <TableCell>Khu vực</TableCell>
-              <TableCell>Trạng thái</TableCell>
-              <TableCell align="right">Thao tác</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filtered.map((n) => (
-              <TableRow key={n.id} hover>
-                <TableCell>{n.name}</TableCell>
-                <TableCell>{n.rank}</TableCell>
-                <TableCell>{n.experienceYears} năm</TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 220 }}>
-                    {n.specialties.map((s) => (
-                      <Chip key={s} label={careTypeLabel(s)} size="small" />
-                    ))}
-                  </Box>
-                </TableCell>
-                <TableCell>{n.serviceAreas.join(', ')}</TableCell>
-                <TableCell>
-                  <StatusChip status={n.authStatus} labelMap={NURSE_AUTH_STATUS_LABEL} />
-                </TableCell>
-                <TableCell align="right">
-                  <Button size="small" component={RouterLink} to={`/hospital/admin/nurses/${n.id}`}>
-                    Xem / Chỉnh sửa
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <section className="panel">
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Điều dưỡng</th>
+                <th>Chuyên môn</th>
+                <th>Khu vực</th>
+                <th>Trạng thái</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((n) => (
+                <tr key={n.id}>
+                  <td>
+                    <div className="person-cell">
+                      <span className="person-avatar">{initials(n.name)}</span>
+                      <span>
+                        <b>{n.name}</b>
+                        <small>{n.rank}</small>
+                      </span>
+                    </div>
+                  </td>
+                  <td>{n.specialties.map(careTypeLabel).join(', ')}</td>
+                  <td>{n.serviceAreas.join(', ')}</td>
+                  <td>
+                    <StatusBadge status={n.authStatus} labelMap={NURSE_AUTH_STATUS_LABEL} />
+                  </td>
+                  <td>
+                    <Link to={`/hospital/admin/roster/${n.id}`} className="icon-mini">
+                      <Icon.more />
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <NurseAddModal open={addOpen} onClose={() => setAddOpen(false)} hospitalId={session.id} />
     </>
   )
 }

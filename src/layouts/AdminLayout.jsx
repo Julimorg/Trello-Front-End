@@ -1,18 +1,25 @@
-import InsightsIcon from '@mui/icons-material/Insights'
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital'
-import GroupIcon from '@mui/icons-material/Group'
-import PeopleIcon from '@mui/icons-material/People'
-import AppShell from '../components/AppShell'
+import Shell from '../components/Shell'
 
 const navItems = [
-  { to: '/admin/dashboard', label: 'Tổng quan', icon: <InsightsIcon /> },
-  { to: '/admin/hospitals', label: 'Bệnh viện', icon: <LocalHospitalIcon /> },
-  { to: '/admin/nurses', label: 'Điều dưỡng', icon: <GroupIcon /> },
-  { to: '/admin/patients', label: 'Bệnh nhân', icon: <PeopleIcon /> },
+  { to: '/admin/overview', label: 'Tổng quan hệ thống', icon: 'chart' },
+  { to: '/admin/hospitals', label: 'Bệnh viện đối tác', icon: 'building' },
+  { to: '/admin/accounts', label: 'Tài khoản người dùng', icon: 'users' },
+  { to: '/admin/compliance', label: 'Tuân thủ & chính sách', icon: 'shield' },
+  { to: '/admin/settings', label: 'Cấu hình hệ thống', icon: 'settings' },
 ]
 
 export default function AdminLayout() {
   return (
-    <AppShell appLabel="CareShift · Quản trị hệ thống" identityLabel="Platform Admin" navItems={navItems} />
+    <Shell
+      appLabel="CareShift Admin"
+      roleDot="platform"
+      roleAvatar="CS"
+      roleLabel="Admin CareShift"
+      orgLabel="CareShift Operations"
+      navItems={navItems}
+      profileName="Linh Phạm"
+      profileMeta="Platform Administrator"
+      profileInitials="LP"
+    />
   )
 }

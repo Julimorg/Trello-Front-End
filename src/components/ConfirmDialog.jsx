@@ -1,34 +1,34 @@
-import Button from '@mui/material/Button'
-import Dialog from '@mui/material/Dialog'
-import DialogActions from '@mui/material/DialogActions'
-import DialogContent from '@mui/material/DialogContent'
-import DialogContentText from '@mui/material/DialogContentText'
-import DialogTitle from '@mui/material/DialogTitle'
+import Modal, { ModalCloseButton } from './Modal'
 
 export default function ConfirmDialog({
   open,
   title,
   description,
   confirmLabel = 'Xác nhận',
-  confirmColor = 'primary',
+  confirmTone = 'primary',
   onConfirm,
   onClose,
   children,
   confirmDisabled = false,
 }) {
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>{title}</DialogTitle>
-      <DialogContent>
-        {description && <DialogContentText sx={{ mb: children ? 2 : 0 }}>{description}</DialogContentText>}
-        {children}
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Hủy</Button>
-        <Button variant="contained" color={confirmColor} onClick={onConfirm} disabled={confirmDisabled}>
+    <Modal open={open} onClose={onClose} className="compact" labelledBy="confirmDialogTitle">
+      <div className="modal-head">
+        <div>
+          <h2 id="confirmDialogTitle">{title}</h2>
+          {description && <p className="modal-intro">{description}</p>}
+        </div>
+        <ModalCloseButton onClose={onClose} />
+      </div>
+      {children}
+      <div className="modal-actions">
+        <button type="button" className="btn ghost" onClick={onClose}>
+          Hủy
+        </button>
+        <button type="button" className={`btn ${confirmTone}`} onClick={onConfirm} disabled={confirmDisabled}>
           {confirmLabel}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        </button>
+      </div>
+    </Modal>
   )
 }

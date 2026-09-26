@@ -3,21 +3,24 @@ import RoleGate from './auth/RoleGate'
 import LoginPage from './features/home/LoginPage'
 
 import PatientLayout from './layouts/PatientLayout'
-import CareRequestList from './features/careRequest/CareRequestList'
-import CareRequestForm from './features/careRequest/CareRequestForm'
+import PatientOverview from './features/home/PatientOverview'
+import CareRequestHome from './features/careRequest/CareRequestHome'
 import CareRequestDetail from './features/careRequest/CareRequestDetail'
-import MatchList from './features/nurseMatching/MatchList'
-import BookingForm from './features/booking/BookingForm'
+import PatientNurses from './features/nurseMatching/PatientNurses'
 import BookingList from './features/booking/BookingList'
 import BookingDetail from './features/booking/BookingDetail'
 import FamilyContacts from './features/sos/FamilyContacts'
+import PatientProfile from './features/home/PatientProfile'
 
 import HospitalLayout from './layouts/HospitalLayout'
-import RosterDashboard from './features/hospitalRoster/RosterDashboard'
+import HospitalOverview from './features/hospitalRoster/HospitalOverview'
 import NurseTable from './features/hospitalRoster/NurseTable'
-import NurseForm from './features/hospitalRoster/NurseForm'
 import NurseDetail from './features/hospitalRoster/NurseDetail'
-import CannotPerformInbox from './features/hospitalRoster/CannotPerformInbox'
+import HospitalVerification from './features/hospitalRoster/HospitalVerification'
+import HospitalSchedule from './features/hospitalRoster/HospitalSchedule'
+import HospitalRequests from './features/hospitalRoster/HospitalRequests'
+import NurseOverview from './features/hospitalRoster/NurseOverview'
+import NurseRequests from './features/hospitalRoster/NurseRequests'
 import NurseSchedule from './features/hospitalRoster/NurseSchedule'
 import NurseProfileSelf from './features/hospitalRoster/NurseProfileSelf'
 import SosLog from './features/sos/SosLog'
@@ -28,8 +31,9 @@ import PlatformDashboard from './features/platformAdmin/PlatformDashboard'
 import HospitalsTable from './features/platformAdmin/HospitalsTable'
 import HospitalForm from './features/platformAdmin/HospitalForm'
 import HospitalAccountDetail from './features/platformAdmin/HospitalAccountDetail'
-import NursesOversight from './features/platformAdmin/NursesOversight'
-import PatientsOversight from './features/platformAdmin/PatientsOversight'
+import AccountsTable from './features/platformAdmin/AccountsTable'
+import Compliance from './features/platformAdmin/Compliance'
+import Settings from './features/platformAdmin/Settings'
 
 function App() {
   return (
@@ -44,15 +48,15 @@ function App() {
           </RoleGate>
         }
       >
-        <Route index element={<Navigate to="requests" replace />} />
-        <Route path="requests" element={<CareRequestList />} />
-        <Route path="requests/new" element={<CareRequestForm />} />
-        <Route path="requests/:id" element={<CareRequestDetail />} />
-        <Route path="requests/:id/matches" element={<MatchList />} />
-        <Route path="requests/:id/book/:nurseId" element={<BookingForm />} />
+        <Route index element={<Navigate to="overview" replace />} />
+        <Route path="overview" element={<PatientOverview />} />
+        <Route path="request" element={<CareRequestHome />} />
+        <Route path="request/:id" element={<CareRequestDetail />} />
         <Route path="bookings" element={<BookingList />} />
         <Route path="bookings/:id" element={<BookingDetail />} />
+        <Route path="nurses" element={<PatientNurses />} />
         <Route path="family" element={<FamilyContacts />} />
+        <Route path="profile" element={<PatientProfile />} />
       </Route>
 
       <Route
@@ -63,20 +67,17 @@ function App() {
           </RoleGate>
         }
       >
+        <Route index element={<Navigate to="admin/overview" replace />} />
         <Route
-          index
-          element={<Navigate to="admin/dashboard" replace />}
-        />
-        <Route
-          path="admin/dashboard"
+          path="admin/overview"
           element={
             <RoleGate roles={['hospitalAdmin']}>
-              <RosterDashboard />
+              <HospitalOverview />
             </RoleGate>
           }
         />
         <Route
-          path="admin/nurses"
+          path="admin/roster"
           element={
             <RoleGate roles={['hospitalAdmin']}>
               <NurseTable />
@@ -84,15 +85,7 @@ function App() {
           }
         />
         <Route
-          path="admin/nurses/new"
-          element={
-            <RoleGate roles={['hospitalAdmin']}>
-              <NurseForm />
-            </RoleGate>
-          }
-        />
-        <Route
-          path="admin/nurses/:id"
+          path="admin/roster/:id"
           element={
             <RoleGate roles={['hospitalAdmin']}>
               <NurseDetail />
@@ -100,10 +93,26 @@ function App() {
           }
         />
         <Route
-          path="admin/cannot-perform"
+          path="admin/verification"
           element={
             <RoleGate roles={['hospitalAdmin']}>
-              <CannotPerformInbox />
+              <HospitalVerification />
+            </RoleGate>
+          }
+        />
+        <Route
+          path="admin/schedule"
+          element={
+            <RoleGate roles={['hospitalAdmin']}>
+              <HospitalSchedule />
+            </RoleGate>
+          }
+        />
+        <Route
+          path="admin/requests"
+          element={
+            <RoleGate roles={['hospitalAdmin']}>
+              <HospitalRequests />
             </RoleGate>
           }
         />
@@ -120,6 +129,22 @@ function App() {
           element={
             <RoleGate roles={['hospitalAdmin']}>
               <PricingConfig />
+            </RoleGate>
+          }
+        />
+        <Route
+          path="nurse/overview"
+          element={
+            <RoleGate roles={['nurse']}>
+              <NurseOverview />
+            </RoleGate>
+          }
+        />
+        <Route
+          path="nurse/requests"
+          element={
+            <RoleGate roles={['nurse']}>
+              <NurseRequests />
             </RoleGate>
           }
         />
@@ -149,13 +174,14 @@ function App() {
           </RoleGate>
         }
       >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<PlatformDashboard />} />
+        <Route index element={<Navigate to="overview" replace />} />
+        <Route path="overview" element={<PlatformDashboard />} />
         <Route path="hospitals" element={<HospitalsTable />} />
         <Route path="hospitals/new" element={<HospitalForm />} />
         <Route path="hospitals/:id" element={<HospitalAccountDetail />} />
-        <Route path="nurses" element={<NursesOversight />} />
-        <Route path="patients" element={<PatientsOversight />} />
+        <Route path="accounts" element={<AccountsTable />} />
+        <Route path="compliance" element={<Compliance />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

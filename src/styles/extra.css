@@ -1,0 +1,236 @@
+/* Additive styles on top of the ported CareShift design system (base.css / mobile-nav.css / family-link.css).
+   Kept separate so the ported files stay a faithful copy of the uploaded design reference. */
+
+/* Sidebar nav items are React Router <NavLink> (renders <a>), the ported CSS only styles <button> */
+#sideNav a {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #a8c4c3;
+  border-radius: 11px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 0.86rem;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+}
+#sideNav a:hover,
+#sideNav a.active {
+  background: rgba(87, 209, 193, 0.14);
+  color: #fff;
+}
+#sideNav a.active {
+  box-shadow: inset 3px 0 #43cfbe;
+}
+
+a.text-button,
+a.icon-mini,
+a.profile-chip {
+  text-decoration: none;
+}
+
+button.link-reset {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Auth / persona picker screen */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 32px 16px;
+}
+.auth-card {
+  width: min(480px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 34px 30px;
+}
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+.auth-brand .brand-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--teal);
+  color: #fff;
+  font-size: 30px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+.auth-brand strong {
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+.auth-tagline {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 0 0 26px;
+}
+.role-tab-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.role-tab {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--muted);
+  text-align: center;
+}
+.role-tab.active {
+  border-color: var(--teal);
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+.persona-list {
+  max-height: 300px;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.persona-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 11px 13px;
+  cursor: pointer;
+  background: #fff;
+  text-align: left;
+  width: 100%;
+}
+.persona-item:hover {
+  border-color: #a9d8d2;
+}
+.persona-item.selected {
+  border-color: var(--teal);
+  background: #f8fffd;
+  box-shadow: 0 0 0 2px rgba(11, 107, 104, 0.1);
+}
+.persona-item .person-avatar {
+  flex: 0 0 auto;
+}
+.persona-item .persona-meta {
+  min-width: 0;
+  flex: 1;
+}
+.persona-item .persona-meta b,
+.persona-item .persona-meta small {
+  display: block;
+}
+.persona-item .persona-meta small {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+.auth-note {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin: 16px 0 0;
+}
+
+/* Misc small additions used across restyled pages */
+.attention-icon.blue {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.attention-icon.green {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.badge-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 0.69rem;
+  font-weight: 750;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: #fff;
+}
+.field-full {
+  grid-column: 1 / -1;
+}
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip-select {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  font-weight: 650;
+  cursor: pointer;
+  color: var(--ink);
+}
+.chip-select.selected {
+  border-color: var(--teal);
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+.section-gap {
+  margin-top: 22px;
+}
+.muted-link {
+  color: var(--teal);
+  font-weight: 700;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  font-size: inherit;
+  padding: 0;
+}
+.form-hint {
+  color: var(--muted);
+  font-size: 0.7rem;
+  margin: -6px 0 0;
+}
+.panel-body {
+  padding: 20px;
+}
+.stack-gap-8 > * + * {
+  margin-top: 8px;
+}
+.stack-gap-12 > * + * {
+  margin-top: 12px;
+}
+.list-plain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
