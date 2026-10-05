@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import Modal, { ModalCloseButton } from '../../components/Modal'
+import { Link } from 'react-router-dom'
+import Button from '@mui/material/Button'
+import Dialog from '@mui/material/Dialog'
+import IconButton from '@mui/material/IconButton'
 import { useDb } from '../../lib/store'
 import { getHospital, getPricing } from '../../lib/db'
 import { careTypeLabel, formatCurrency } from '../../lib/format'
@@ -14,7 +17,7 @@ function initials(name) {
     .toUpperCase()
 }
 
-export default function NurseProfileCard({ nurse, matchScore, careType, onSelect, selectLabel = 'Chọn' }) {
+export default function NurseProfileCard({ nurse, matchScore, careType, onSelect, selectLabel = 'Chọn', profileHref }) {
   const state = useDb()
   const [open, setOpen] = useState(false)
   const hospital = getHospital(state, nurse.hospitalId)
@@ -40,103 +43,106 @@ export default function NurseProfileCard({ nurse, matchScore, careType, onSelect
             <Icon.clock /> {nurse.experienceYears} năm KN
           </span>
           <span>
-            <Icon.check /> {nurse.rank}
+            <Icon.check /> {nurse.completedCases ?? 0} ca hoàn thành
           </span>
           <span>★ {nurse.rating ?? '—'}</span>
         </div>
-        <div className="nurse-card-actions">
-          <button type="button" className="btn ghost" onClick={() => setOpen(true)}>
-            Xem hồ sơ
-          </button>
+        <div className="nurse-card-actions" style={onSelect ? undefined : { gridTemplateColumns: '1fr' }}>
+          {profileHref ? (
+            <Button variant="outlined" component={Link} to={profileHref}>
+              Xem hồ sơ
+            </Button>
+          ) : (
+            <Button variant="outlined" onClick={() => setOpen(true)}>
+              Xem hồ sơ
+            </Button>
+          )}
           {onSelect && (
-            <button type="button" className="btn primary" onClick={() => onSelect(nurse)}>
+            <Button variant="contained" onClick={() => onSelect(nurse)}>
               {selectLabel}
-            </button>
+            </Button>
           )}
         </div>
       </article>
 
-      <Modal open={open} onClose={() => setOpen(false)} className="nurse-detail" labelledBy="nurseDetailTitle">
-        <ModalCloseButton onClose={() => setOpen(false)} floating />
-        <div className="detail-hero">
-          <div className="nurse-avatar">{initials(nurse.name)}</div>
-          <div>
-            <span className="eyebrow">Verified nurse profile</span>
-            <h2 id="nurseDetailTitle">{nurse.name}</h2>
-            <span className="specialty">
-              {nurse.specialties.map(careTypeLabel).join(', ')} · {hospital?.name}
-            </span>
-            <span className="verified">
-              <Icon.shield /> Đã xác minh và cấp phép
-            </span>
-          </div>
-        </div>
-        <div className="detail-stats">
-          <div className="detail-stat">
-            <b>{nurse.experienceYears} năm</b>
-            <small>Kinh nghiệm</small>
-          </div>
-          <div className="detail-stat">
-            <b>{nurse.rank}</b>
-            <small>Cấp bậc</small>
-          </div>
-          <div className="detail-stat">
-            <b>★ {nurse.rating ?? '—'}</b>
-            <small>Đánh giá</small>
-          </div>
-        </div>
-        <div className="detail-section">
-          <h3>Chuyên môn được cấp phép</h3>
-          <p style={{ fontSize: '.76rem', color: 'var(--muted)', margin: 0 }}>
-            {nurse.authorizedCareTypes.map(careTypeLabel).join(', ') || 'Chưa có phạm vi được cấp phép'}
-          </p>
-        </div>
-        <div className="detail-section">
-          <h3>Khu vực phục vụ</h3>
-          <p style={{ fontSize: '.76rem', color: 'var(--muted)', margin: 0 }}>{nurse.serviceAreas.join(', ')}</p>
-        </div>
-        <div className="detail-section">
-          <h3>Chứng chỉ hành nghề</h3>
-          {nurse.certificates.length > 0 ? (
-            <div className="credential">
-              <Icon.shield />
-              <span>
-                <b>{nurse.certificates[0].name}</b>
-                <small>
-                  Số {nurse.certificates[0].number} · Cấp bởi {nurse.certificates[0].issuedBy}
-                </small>
+      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm" aria-labelledby={`nurse-${nurse.id}-title`}>
+        <div className="nurse-detail-body">
+          <IconButton aria-label="Đóng" onClick={() => setOpen(false)} sx={{ position: 'absolute', right: 18, top: 18, border: '1px solid var(--line)', borderRadius: '10px' }}>
+            <Icon.close />
+          </IconButton>
+          <div className="detail-hero">
+            <div className="nurse-avatar">{initials(nurse.name)}</div>
+            <div>
+              <span className="eyebrow">Verified nurse profile</span>
+              <h2 id={`nurse-${nurse.id}-title`}>{nurse.name}</h2>
+              <span className="specialty">
+                {nurse.rank} · {hospital?.name}
+              </span>
+              <span className="verified">
+                <Icon.shield /> Đã xác minh và cấp phép
               </span>
             </div>
-          ) : (
-            <p style={{ fontSize: '.76rem', color: 'var(--muted)', margin: 0 }}>Chưa cập nhật</p>
-          )}
-        </div>
-        {price && (
-          <div className="info-callout">
-            <Icon.info />
-            <span>
-              Giá tham khảo: {formatCurrency(price.price)} / {price.unit} (thanh toán ngoài hệ thống)
-            </span>
           </div>
-        )}
-        <div className="detail-actions">
-          <button type="button" className="btn ghost" onClick={() => setOpen(false)}>
-            Để sau
-          </button>
-          {onSelect && (
-            <button
-              type="button"
-              className="btn primary"
-              onClick={() => {
-                setOpen(false)
-                onSelect(nurse)
-              }}
-            >
-              {selectLabel} {nurse.name.split(' ').pop()}
-            </button>
+          <div className="detail-stats">
+            <div className="detail-stat">
+              <b>{nurse.experienceYears} năm</b>
+              <small>Kinh nghiệm</small>
+            </div>
+            <div className="detail-stat">
+              <b>{nurse.completedCases ?? 0}</b>
+              <small>Ca hoàn thành</small>
+            </div>
+            <div className="detail-stat">
+              <b>★ {nurse.rating ?? '—'}</b>
+              <small>Đánh giá</small>
+            </div>
+          </div>
+          <div className="detail-section">
+            <h3>Chuyên môn được cấp phép</h3>
+            <p className="detail-text">{nurse.authorizedCareTypes.map(careTypeLabel).join(', ') || 'Chưa có phạm vi được cấp phép'}</p>
+          </div>
+          <div className="detail-section">
+            <h3>Chứng chỉ hành nghề</h3>
+            {nurse.certificates.length > 0 ? (
+              <div className="credential">
+                <Icon.shield />
+                <span>
+                  <b>{nurse.certificates[0].name}</b>
+                  <small>
+                    Số {nurse.certificates[0].number} · Cấp bởi {nurse.certificates[0].issuedBy}
+                  </small>
+                </span>
+              </div>
+            ) : (
+              <p className="detail-text">Chưa cập nhật</p>
+            )}
+          </div>
+          {price && (
+            <div className="info-callout">
+              <Icon.info />
+              <span>
+                Giá tham khảo: {formatCurrency(price.price)} / {price.unit} (thanh toán ngoài hệ thống)
+              </span>
+            </div>
           )}
+          <div className="detail-actions">
+            <Button variant="outlined" component={Link} to={`/patient/nurses/${nurse.id}`}>
+              Trang hồ sơ đầy đủ
+            </Button>
+            {onSelect && (
+              <Button
+                variant="contained"
+                onClick={() => {
+                  setOpen(false)
+                  onSelect(nurse)
+                }}
+              >
+                {selectLabel} {nurse.name.split(' ').pop()}
+              </Button>
+            )}
+          </div>
         </div>
-      </Modal>
+      </Dialog>
     </>
   )
 }

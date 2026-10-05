@@ -26,6 +26,524 @@
   box-shadow: inset 3px 0 #43cfbe;
 }
 
+/* MUI (patient app) inside the ported design system: base.css styles bare input/svg
+   elements globally, which would add a second border/focus ring to MUI inputs and an
+   outline stroke to MUI's filled icons. */
+.MuiInputBase-input,
+.MuiInputBase-input:focus {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.MuiSvgIcon-root {
+  stroke: none;
+}
+
+/* Patient app: draggable floating SOS button (positioned by animejs createDraggable) */
+.patient-sos {
+  position: fixed;
+  right: 27px;
+  bottom: 25px;
+  z-index: 1200;
+  border: 0;
+  background: #d63d45;
+  color: #fff;
+  border-radius: 999px;
+  height: 58px;
+  min-width: 58px;
+  padding: 0 18px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  box-shadow: 0 11px 30px rgba(205, 48, 59, 0.35);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.patient-sos:active {
+  cursor: grabbing;
+}
+.patient-sos-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid rgba(214, 61, 69, 0.55);
+  pointer-events: none;
+}
+.patient-sos-label {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+.patient-sos-dialog .patient-sos-body {
+  padding: 31px;
+  text-align: center;
+}
+.patient-sos-body h2 {
+  margin: 5px 0;
+  font-size: 1.4rem;
+}
+.patient-sos-body > p {
+  margin: 0 auto 19px;
+  font-size: 0.77rem;
+  color: var(--muted);
+  max-width: 400px;
+}
+.patient-sos-body.family {
+  text-align: left;
+}
+.patient-sos-list {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 4px !important;
+}
+.patient-sos-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+@media (max-width: 780px) {
+  .patient-sos {
+    right: 17px;
+    bottom: 17px;
+  }
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 1120px) {
+  .profile-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 780px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.patient-dialog-body {
+  padding: 26px;
+}
+.patient-dialog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.patient-dialog-head h2 {
+  font-size: 1.4rem;
+  letter-spacing: -0.03em;
+  margin: 5px 0 6px;
+}
+.nurse-detail-body {
+  position: relative;
+  padding: 28px;
+}
+.detail-heading {
+  font-size: 0.86rem;
+  margin: 20px 0 10px;
+}
+.panel-body > .detail-heading:first-child {
+  margin-top: 0;
+}
+.detail-text {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Patient dashboard */
+a.metric-link {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s, transform 0.15s;
+}
+a.metric-link:hover {
+  border-color: #a9d8d2;
+}
+.panel-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.recent-list {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+.recent-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.recent-card-top b {
+  font-size: 0.88rem;
+}
+.recent-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 0.72rem;
+  color: #526c72;
+}
+.recent-card-meta span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.recent-card-meta svg {
+  width: 14px;
+  color: var(--teal);
+}
+.recent-card-id {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+/* Patient bookings calendar */
+.calendar-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1.4fr);
+  gap: 20px;
+  align-items: start;
+}
+.calendar-panel {
+  padding: 8px 6px 16px;
+}
+.calendar-panel .MuiDateCalendar-root {
+  width: 100%;
+  max-width: 340px;
+}
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 0 18px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.calendar-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.calendar-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.calendar-actions {
+  padding: 12px 18px 0;
+}
+.day-session-list {
+  padding: 10px 18px 16px;
+}
+.day-session {
+  display: grid;
+  grid-template-columns: 62px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #edf2f2;
+}
+.day-session:last-child {
+  border-bottom: 0;
+}
+.day-session-time {
+  background: var(--teal-soft);
+  color: var(--teal);
+  border-radius: 12px;
+  text-align: center;
+  padding: 8px 4px;
+}
+.day-session-time b,
+.day-session-time small {
+  display: block;
+}
+.day-session-time b {
+  font-size: 0.9rem;
+}
+.day-session-time small {
+  font-size: 0.66rem;
+}
+.day-session h3 {
+  margin: 0 0 3px;
+  font-size: 0.88rem;
+}
+.day-session p {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+.day-session a,
+.active-care-meta a,
+.active-care-top a {
+  color: var(--teal);
+  font-weight: 700;
+  text-decoration: none;
+}
+.day-session.is-today .day-session-time {
+  background: var(--teal);
+  color: #fff;
+}
+.day-session-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 1120px) {
+  .calendar-layout {
+    grid-template-columns: 1fr;
+  }
+  .calendar-panel .MuiDateCalendar-root {
+    max-width: none;
+  }
+}
+@media (max-width: 780px) {
+  .day-session {
+    grid-template-columns: 56px 1fr;
+  }
+  .day-session-side {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+  }
+}
+
+/* Patient lists: filter toolbars, history rows, pagination */
+.history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 28px 0 14px;
+}
+.history-head small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+.history-filter {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.history-filter .MuiFormControl-root {
+  width: 205px;
+}
+a.notification-card {
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+a.notification-card:hover {
+  border-color: #a9d8d2;
+  box-shadow: 0 8px 24px rgba(15, 64, 68, 0.06);
+}
+.pagination-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+.toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.toolbar .toolbar-search {
+  flex: 1 1 240px;
+  max-width: 380px;
+}
+.toolbar .MuiFormControl-root:not(.toolbar-search) {
+  min-width: 170px;
+}
+.result-count {
+  color: var(--muted);
+  font-size: 0.76rem;
+  margin: -6px 0 14px;
+}
+@media (max-width: 780px) {
+  .history-filter .MuiFormControl-root,
+  .toolbar .MuiFormControl-root {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* Patient create-request wizard (MUI dialog) */
+.wizard-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.wizard-consent {
+  margin: 0 !important;
+  align-items: flex-start !important;
+}
+.wizard-consent .MuiFormControlLabel-label {
+  font-size: 0.76rem;
+  color: var(--muted);
+  padding-top: 9px;
+}
+.wizard-actions {
+  align-items: center;
+}
+.wizard-hint {
+  margin-right: auto;
+  color: var(--amber);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+@media (max-width: 780px) {
+  .wizard-fields {
+    grid-template-columns: 1fr;
+  }
+  .wizard-actions {
+    flex-wrap: wrap;
+  }
+  .wizard-hint {
+    flex-basis: 100%;
+  }
+}
+
+/* Header: notification menu + profile chip (moved out of the sidebar) */
+.notif-wrapper {
+  position: relative;
+}
+.notif-menu {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  width: min(340px, calc(100vw - 32px));
+  max-height: 420px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  z-index: 60;
+  padding: 6px;
+}
+.notif-menu-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 12px 8px;
+}
+.notif-menu-head b {
+  font-size: 0.85rem;
+}
+.notif-menu-head small,
+.notif-empty {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.notif-empty {
+  padding: 14px 12px;
+  margin: 0;
+}
+.notif-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  border-radius: 11px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 3px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+}
+.notif-item:hover {
+  background: #f4f8f8;
+}
+.notif-item.fresh {
+  background: var(--teal-soft);
+  border-left-color: var(--teal);
+}
+.notif-item span {
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+.notif-item small {
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+.header-profile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 40px;
+  padding: 0 12px 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  text-decoration: none;
+}
+a.header-profile:hover {
+  border-color: #a9d8d2;
+}
+.header-profile-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--teal-soft);
+  color: var(--teal);
+  display: grid;
+  place-items: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+.header-profile-text b,
+.header-profile-text small {
+  display: block;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.header-profile-text b {
+  font-size: 0.76rem;
+}
+.header-profile-text small {
+  font-size: 0.64rem;
+  color: var(--muted);
+}
+@media (max-width: 780px) {
+  .support-button {
+    display: flex;
+    padding: 0 10px;
+  }
+  .header-profile {
+    padding: 0 5px;
+  }
+  .header-profile-text {
+    display: none;
+  }
+}
+
 a.text-button,
 a.icon-mini,
 a.profile-chip {
@@ -233,4 +751,8 @@ button.link-reset {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.route-loading {
+  min-height: 40vh;
 }

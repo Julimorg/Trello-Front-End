@@ -1,14 +1,19 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import Button from '@mui/material/Button'
+import Card from '@mui/material/Card'
+import CardActionArea from '@mui/material/CardActionArea'
 import PageHead from '../../components/PageHead'
 import EmptyState from '../../components/EmptyState'
-import CareRequestWizardModal from '../careRequest/CareRequestWizardModal'
-import CareRequestBody from '../careRequest/CareRequestBody'
-import SosButton from '../sos/SosButton'
+import StatusBadge from '../../components/StatusBadge'
+import CountUp from '../../patient/CountUp'
+import { useStaggerIn } from '../../patient/anime'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { getPrimaryFamilyContact, listBookingsByPatient, listCareRequestsByPatient } from '../../lib/db'
-import { CARE_REQUEST_STATUS, SESSION_STATUS } from '../../lib/constants'
+import { getNurse, getPrimaryFamilyContact, listBookingsByPatient, listCareRequestsByPatient } from '../../lib/db'
+import { careTypeLabel, formatDate } from '../../lib/format'
+import { CARE_REQUEST_STATUS, CARE_REQUEST_STATUS_LABEL, SESSION_STATUS } from '../../lib/constants'
+import { DASHBOARD_HERO, DASHBOARD_METRICS, DASHBOARD_QUICK_LINKS, DASHBOARD_RECENT_LIMIT } from '../../Data/patient/dashboard-data'
 import { Icon } from '../../lib/icons'
 
 const IN_FLIGHT = [CARE_REQUEST_STATUS.MATCHING, CARE_REQUEST_STATUS.MATCHED, CARE_REQUEST_STATUS.NURSE_PENDING]
@@ -16,84 +21,62 @@ const IN_FLIGHT = [CARE_REQUEST_STATUS.MATCHING, CARE_REQUEST_STATUS.MATCHED, CA
 export default function PatientOverview() {
   const { session } = useAuth()
   const state = useDb()
-  const [wizardOpen, setWizardOpen] = useState(false)
+  const navigate = useNavigate()
+  const metricsRef = useRef(null)
+  const recentRef = useRef(null)
 
   const requests = listCareRequestsByPatient(state, session.id)
   const bookings = listBookingsByPatient(state, session.id)
-  const active = requests.find((r) => IN_FLIGHT.includes(r.status))
   const primary = getPrimaryFamilyContact(state, session.id)
+  const recent = requests.slice(0, DASHBOARD_RECENT_LIMIT)
 
   const stats = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10)
-    const allSessions = bookings.flatMap((b) => b.sessions)
-    const upcoming = allSessions.filter((s) => s.date >= today && s.status !== SESSION_STATUS.CANNOT_PERFORM)
-    const completedSessions = allSessions.filter((s) => s.status === SESSION_STATUS.COMPLETED)
-    const trustedNurses = new Set(requests.flatMap((r) => r.matchedNurseIds))
+    const sessions = bookings.flatMap((b) => b.sessions)
+    const upcoming = sessions.filter((s) => s.date >= today && s.status !== SESSION_STATUS.CANNOT_PERFORM).sort((a, b) => a.date.localeCompare(b.date))
     return {
-      activeRequests: requests.filter((r) => IN_FLIGHT.includes(r.status)).length,
-      upcoming: upcoming.length,
-      trustedNurses: trustedNurses.size,
-      completedSessions: completedSessions.length,
-      nextSession: upcoming.sort((a, b) => a.date.localeCompare(b.date))[0],
+      values: {
+        activeRequests: requests.filter((r) => IN_FLIGHT.includes(r.status)).length,
+        upcomingSessions: upcoming.length,
+        trustedNurses: new Set(requests.flatMap((r) => r.matchedNurseIds)).size,
+        completedSessions: sessions.filter((s) => s.status === SESSION_STATUS.COMPLETED).length,
+      },
+      nextSession: upcoming[0],
     }
   }, [requests, bookings])
 
-  const todaySession = bookings.flatMap((b) => b.sessions.map((s) => ({ ...s, bookingId: b.id }))).find((s) => s.date === new Date().toISOString().slice(0, 10) && s.status !== SESSION_STATUS.CANNOT_PERFORM)
+  const hints = {
+    activeRequests: stats.values.activeRequests ? 'Đang chờ xử lý' : 'Chưa có yêu cầu mới',
+    upcomingSessions: stats.nextSession ? `Gần nhất: ${formatDate(stats.nextSession.date)} lúc ${stats.nextSession.start}` : 'Chưa có lịch được xác nhận',
+    trustedNurses: 'Đã được bệnh viện xác minh',
+    completedSessions: 'Tổng số buổi chăm sóc',
+  }
+
+  useStaggerIn(metricsRef, '.metric', [])
+  useStaggerIn(recentRef, '.recent-card', [recent.map((r) => r.id).join()])
 
   return (
     <>
-      <PageHead
-        eyebrow="Xin chào"
-        title="Chăm sóc đúng người, đúng lúc."
-        description="Theo dõi yêu cầu hiện tại hoặc tìm điều dưỡng đã được bệnh viện xác minh."
-        action={
-          <button type="button" className="btn primary" onClick={() => setWizardOpen(true)}>
-            <Icon.plus /> Tạo yêu cầu chăm sóc
-          </button>
-        }
-      />
+      <PageHead eyebrow={DASHBOARD_HERO.eyebrow} title={DASHBOARD_HERO.title} description={DASHBOARD_HERO.description} />
 
-      <div className="metric-grid">
-        <div className="metric">
-          <div className="metric-top">
-            <span>Yêu cầu hiện tại</span>
-            <span className="metric-icon">
-              <Icon.file />
-            </span>
-          </div>
-          <strong>{String(stats.activeRequests).padStart(2, '0')}</strong>
-          <small>{stats.activeRequests ? 'Đang chờ xử lý' : 'Chưa có yêu cầu mới'}</small>
-        </div>
-        <div className="metric">
-          <div className="metric-top">
-            <span>Lịch sắp tới</span>
-            <span className="metric-icon blue">
-              <Icon.calendar />
-            </span>
-          </div>
-          <strong>{String(stats.upcoming).padStart(2, '0')}</strong>
-          <small>{stats.nextSession ? `${stats.nextSession.date} lúc ${stats.nextSession.start}` : 'Chưa có lịch được xác nhận'}</small>
-        </div>
-        <div className="metric">
-          <div className="metric-top">
-            <span>Điều dưỡng tin cậy</span>
-            <span className="metric-icon amber">
-              <Icon.shield />
-            </span>
-          </div>
-          <strong>{String(stats.trustedNurses).padStart(2, '0')}</strong>
-          <small>Đã xuất hiện trong kết quả tìm kiếm</small>
-        </div>
-        <div className="metric">
-          <div className="metric-top">
-            <span>Buổi đã hoàn thành</span>
-            <span className="metric-icon red">
-              <Icon.check />
-            </span>
-          </div>
-          <strong>{String(stats.completedSessions).padStart(2, '0')}</strong>
-          <small>Tổng số buổi chăm sóc</small>
-        </div>
+      <div className="metric-grid" ref={metricsRef}>
+        {DASHBOARD_METRICS.map((m) => {
+          const MetricIcon = Icon[m.icon]
+          return (
+            <Link key={m.key} to={m.to} className="metric metric-link">
+              <div className="metric-top">
+                <span>{m.label}</span>
+                <span className={`metric-icon ${m.tone}`}>
+                  <MetricIcon />
+                </span>
+              </div>
+              <strong>
+                <CountUp value={stats.values[m.key]} />
+              </strong>
+              <small>{hints[m.key]}</small>
+            </Link>
+          )
+        })}
       </div>
 
       <div className="dashboard-grid">
@@ -101,29 +84,50 @@ export default function PatientOverview() {
           <div className="panel-head">
             <div>
               <h2>Yêu cầu chăm sóc gần nhất</h2>
-              <p>Trạng thái được cập nhật theo thời gian thực</p>
+              <p>{DASHBOARD_RECENT_LIMIT} yêu cầu mới nhất, cập nhật theo thời gian thực</p>
             </div>
-            <Link to="/patient/request" className="text-button">
-              Xem chi tiết
-            </Link>
+            <div className="panel-head-actions">
+              <Link to="/patient/request" className="text-button">
+                Xem tất cả
+              </Link>
+              <Button variant="contained" size="small" startIcon={<Icon.plus />} onClick={() => navigate('/patient/request', { state: { openWizard: true } })}>
+                Tạo yêu cầu chăm sóc
+              </Button>
+            </div>
           </div>
-          {active ? (
-            <div className="active-care">
-              <CareRequestBody careRequest={active} showCancel={false} />
-            </div>
+          {recent.length === 0 ? (
+            <EmptyState icon={<Icon.plus />} title="Bắt đầu yêu cầu chăm sóc" description="Chỉ mất khoảng 2 phút để mô tả nhu cầu và nhận danh sách điều dưỡng phù hợp." />
           ) : (
-            <EmptyState
-              icon={<Icon.plus />}
-              title="Bắt đầu yêu cầu chăm sóc"
-              description="Chỉ mất khoảng 2 phút để mô tả nhu cầu và nhận danh sách điều dưỡng phù hợp."
-              action={
-                <button type="button" className="btn secondary" onClick={() => setWizardOpen(true)}>
-                  Tạo yêu cầu
-                </button>
-              }
-            />
+            <div className="recent-list" ref={recentRef}>
+              {recent.map((r) => {
+                const nurse = r.selectedNurseId ? getNurse(state, r.selectedNurseId) : null
+                return (
+                  <Card key={r.id} variant="outlined" className="recent-card">
+                    <CardActionArea component={Link} to={`/patient/request/${r.id}`} sx={{ p: 2 }}>
+                      <div className="recent-card-top">
+                        <b>{careTypeLabel(r.careType)}</b>
+                        <StatusBadge status={r.status} labelMap={CARE_REQUEST_STATUS_LABEL} />
+                      </div>
+                      <div className="recent-card-meta">
+                        <span>
+                          <Icon.calendar /> {formatDate(r.desiredStartDate)} · {r.timeSlot?.start}
+                        </span>
+                        <span>
+                          <Icon.pin /> {r.district}
+                        </span>
+                        <span>
+                          <Icon.user /> {nurse ? nurse.name : r.status === CARE_REQUEST_STATUS.MATCHED ? `${r.matchedNurseIds.length} điều dưỡng phù hợp` : 'Chưa chọn điều dưỡng'}
+                        </span>
+                      </div>
+                      <small className="recent-card-id">#{r.id}</small>
+                    </CardActionArea>
+                  </Card>
+                )
+              })}
+            </div>
           )}
         </section>
+
         <section className="panel">
           <div className="panel-head">
             <div>
@@ -132,60 +136,25 @@ export default function PatientOverview() {
             </div>
           </div>
           <div className="quick-list">
-            <Link to="/patient/bookings" className="quick-item" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <span className="quick-icon">
-                <Icon.calendar />
-              </span>
-              <span>
-                <b>Lịch chăm sóc</b>
-                <small>Xem và quản lý lịch đã đặt</small>
-              </span>
-              <Icon.chevron />
-            </Link>
-            <Link to="/patient/nurses" className="quick-item" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <span className="quick-icon">
-                <Icon.user />
-              </span>
-              <span>
-                <b>Điều dưỡng đã lưu</b>
-                <small>{stats.trustedNurses} hồ sơ được tin cậy</small>
-              </span>
-              <Icon.chevron />
-            </Link>
-            <Link to="/patient/family" className="quick-item" data-page-jump style={{ textDecoration: 'none', color: 'inherit' }}>
-              <span className="quick-icon">
-                <Icon.users />
-              </span>
-              <span>
-                <b>Người thân liên kết</b>
-                <small>{primary ? `${primary.name} có thể nhận cảnh báo SOS` : 'Chưa liên kết người thân'}</small>
-              </span>
-              <Icon.chevron />
-            </Link>
+            {DASHBOARD_QUICK_LINKS.map((q) => {
+              const QuickIcon = Icon[q.icon]
+              const subtitle = q.id === 'ql-family' && primary ? `${primary.name} nhận cảnh báo SOS trước` : q.subtitle
+              return (
+                <Link key={q.id} to={q.to} className="quick-item" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <span className="quick-icon">
+                    <QuickIcon />
+                  </span>
+                  <span>
+                    <b>{q.title}</b>
+                    <small>{subtitle}</small>
+                  </span>
+                  <Icon.chevron />
+                </Link>
+              )
+            })}
           </div>
         </section>
       </div>
-
-      <div className="service-banner">
-        <div>
-          <h3>Cần hỗ trợ tạo yêu cầu?</h3>
-          <p>Đội ngũ CareShift có thể hướng dẫn bạn từng bước qua điện thoại.</p>
-        </div>
-        <button type="button" className="btn">
-          Liên hệ hỗ trợ
-        </button>
-      </div>
-
-      {todaySession && (
-        <SosButton
-          bookingId={todaySession.bookingId}
-          sessionId={todaySession.id}
-          role="patient"
-          familyLabel={primary ? `${primary.name} · ${primary.relation}` : ''}
-        />
-      )}
-
-      <CareRequestWizardModal open={wizardOpen} onClose={() => setWizardOpen(false)} patientId={session.id} createdBy="patient" onCreated={() => setWizardOpen(false)} />
     </>
   )
 }

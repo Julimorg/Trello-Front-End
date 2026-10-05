@@ -85,11 +85,22 @@ export function computeNorthStarMetrics(state) {
 
 // ---------- notifications ----------
 
-function notify(state, { role, targetId, message }) {
+function notify(state, { role, targetId, message, link }) {
   state.notifications = [
     ...(state.notifications || []),
-    { id: genId('ntf'), role, targetId, message, createdAt: now(), read: false },
+    { id: genId('ntf'), role, targetId, message, link, createdAt: now(), read: false },
   ]
+}
+
+export function markNotificationsRead(role, targetId) {
+  setState((state) => {
+    const hasUnread = (state.notifications || []).some((n) => n.role === role && n.targetId === targetId && !n.read)
+    if (!hasUnread) return state
+    return {
+      ...state,
+      notifications: state.notifications.map((n) => (n.role === role && n.targetId === targetId ? { ...n, read: true } : n)),
+    }
+  })
 }
 
 // ---------- Care Request ----------
@@ -236,6 +247,7 @@ export function selectNurseForCareRequest(careRequestId, nurseId) {
       role: 'patient',
       targetId: careRequest.patientId,
       message: `Đã gửi yêu cầu đến ${nurse.name}. Điều dưỡng có 15 phút để chấp nhận hoặc từ chối.`,
+      link: `/patient/request/${careRequestId}`,
     })
     return {
       ...state,
@@ -284,6 +296,7 @@ export function respondToCareRequest(careRequestId, decision) {
         role: 'patient',
         targetId: careRequest.patientId,
         message: `${nurse?.name || 'Điều dưỡng'} đã xác nhận nhận ca. Lịch chăm sóc đã được tạo.`,
+        link: `/patient/bookings/${bookingId}`,
       })
       if (nurse) {
         notify(state, {
@@ -312,6 +325,7 @@ export function respondToCareRequest(careRequestId, decision) {
       message: nextNurseId
         ? `${nurse?.name || 'Điều dưỡng'} đã từ chối yêu cầu. Đang gửi tới điều dưỡng phù hợp tiếp theo.`
         : `${nurse?.name || 'Điều dưỡng'} đã từ chối yêu cầu. Không còn điều dưỡng phù hợp nào khác, vui lòng liên hệ bệnh viện để được hỗ trợ.`,
+      link: `/patient/request/${careRequestId}`,
     })
     if (nextNurseId) {
       notify(state, {
@@ -373,6 +387,7 @@ export function reportCannotPerform({ bookingId, sessionId, reason }) {
       message: replacement
         ? `Điều dưỡng đã đổi cho buổi ${session.date}. Điều dưỡng mới: ${replacement.name}.`
         : `Điều dưỡng báo không thể thực hiện buổi ${session.date}. Chúng tôi đang tìm người thay thế.`,
+      link: `/patient/bookings/${bookingId}`,
     })
     if (hospitalId) {
       notify(state, {
@@ -431,34 +446,58 @@ export function manualReassignSession({ bookingId, sessionId, nurseId }) {
 
 // ---------- SOS ----------
 
-export function triggerSOS({ bookingId, sessionId, triggeredBy, type, note, location }) {
+// Works with or without a booking: the patient-app SOS button is available on every
+// page, so when it is pressed outside a session we attach today's session if any.
+export function triggerSOS({ bookingId, sessionId, patientId, triggeredBy, type, note, location, contactIds = [] }) {
+  const eventId = genId('sos')
   setState((state) => {
-    const booking = getBooking(state, bookingId)
-    const nurse = booking ? getNurse(state, booking.nurseId) : null
+    let booking = bookingId ? getBooking(state, bookingId) : null
+    let session = booking?.sessions.find((s) => s.id === sessionId) || null
+    if (!booking && patientId) {
+      const today = dayjs().format('YYYY-MM-DD')
+      booking = state.bookings.find((b) => b.patientId === patientId && b.sessions.some((s) => s.date === today))
+      session = booking?.sessions.find((s) => s.date === today) || null
+    }
+    const ownerPatientId = patientId || booking?.patientId || null
+    const nurse = booking ? getNurse(state, session?.nurseId || booking.nurseId) : null
     const event = {
-      id: genId('sos'),
-      bookingId,
-      sessionId,
+      id: eventId,
+      patientId: ownerPatientId,
+      bookingId: booking?.id || null,
+      sessionId: session?.id || null,
       triggeredBy,
       type,
+      contactIds,
       note: note || '',
       location: location || null,
       createdAt: now(),
     }
-    if (booking && nurse) {
+    if (nurse) {
       notify(state, {
         role: 'hospital',
         targetId: nurse.hospitalId,
-        message: `Cảnh báo SOS trong ca đang diễn ra (booking ${bookingId}).`,
+        message: `Cảnh báo SOS${booking ? ` trong ca chăm sóc (booking ${booking.id})` : ''}.`,
       })
+    }
+    if (ownerPatientId) {
       notify(state, {
         role: 'patient',
-        targetId: booking.patientId,
-        message: 'Có cảnh báo SOS được kích hoạt trong ca chăm sóc của bạn.',
+        targetId: ownerPatientId,
+        message: 'Đã ghi nhận cảnh báo SOS của bạn.',
+        link: booking ? `/patient/bookings/${booking.id}` : undefined,
       })
     }
     return { ...state, sosEvents: [...state.sosEvents, event] }
   })
+  return eventId
+}
+
+// Location is attached after the fact so raising the alert never waits on GPS.
+export function attachSosLocation(eventId, location) {
+  setState((state) => ({
+    ...state,
+    sosEvents: state.sosEvents.map((e) => (e.id === eventId ? { ...e, location } : e)),
+  }))
 }
 
 // ---------- Hospital Roster Management ----------

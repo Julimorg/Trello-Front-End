@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import { seedState } from './seed'
 
-const STORAGE_KEY = 'careshift_db_v1'
+// Bump when the seed shape changes so existing browsers pick up the new data.
+const STORAGE_KEY = 'careshift_db_v2'
 const listeners = new Set()
 
 function loadInitialState() {

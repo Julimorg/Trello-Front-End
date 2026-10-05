@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import Button from '@mui/material/Button'
 import PageHead from '../../components/PageHead'
 import StatusBadge from '../../components/StatusBadge'
+import EmptyState from '../../components/EmptyState'
 import FamilyLinkModal from './FamilyLinkModal'
-import SosButton from './SosButton'
 import { useAuth } from '../../auth/AuthContext'
 import { useToast } from '../../components/ToastProvider'
 import { useDb } from '../../lib/store'
-import { getPatient, getPrimaryFamilyContact, setPrimaryFamilyContact } from '../../lib/db'
+import { getPatient, setPrimaryFamilyContact } from '../../lib/db'
+import { useStaggerIn } from '../../patient/anime'
 import { Icon } from '../../lib/icons'
 
 function initials(name) {
@@ -18,17 +20,15 @@ function initials(name) {
     .toUpperCase()
 }
 
-function statusTone(status) {
-  return status === 'Đã liên kết' ? 'success' : 'pending'
-}
-
 export default function FamilyContacts() {
   const { session } = useAuth()
   const toast = useToast()
   const state = useDb()
   const patient = getPatient(state, session.id)
-  const primary = getPrimaryFamilyContact(state, session.id)
   const [linkOpen, setLinkOpen] = useState(false)
+  const gridRef = useRef(null)
+
+  useStaggerIn(gridRef, '.family-card', [patient?.familyContacts.length])
 
   if (!patient) return null
 
@@ -39,24 +39,18 @@ export default function FamilyContacts() {
         title="Người thân liên kết"
         description="Cho phép người thân nhận cảnh báo SOS và theo dõi những thông tin bạn chủ động chia sẻ."
         action={
-          <button type="button" className="btn primary" onClick={() => setLinkOpen(true)}>
-            <Icon.plus /> Liên kết người thân
-          </button>
+          <Button variant="contained" startIcon={<Icon.plus />} onClick={() => setLinkOpen(true)}>
+            Liên kết người thân
+          </Button>
         }
       />
 
       {patient.familyContacts.length === 0 ? (
         <section className="panel">
-          <div className="empty-state">
-            <div className="empty-icon">
-              <Icon.users />
-            </div>
-            <h3>Chưa liên kết người thân nào</h3>
-            <p>Hãy thêm ít nhất một người liên hệ để nhận cảnh báo khẩn cấp SOS.</p>
-          </div>
+          <EmptyState icon={<Icon.users />} title="Chưa liên kết người thân nào" description="Hãy thêm ít nhất một người liên hệ để nhận cảnh báo khẩn cấp SOS." />
         </section>
       ) : (
-        <div className="family-grid">
+        <div className="family-grid" ref={gridRef}>
           {patient.familyContacts.map((c) => (
             <article className="family-card" key={c.id}>
               <div className="family-card-head">
@@ -67,7 +61,7 @@ export default function FamilyContacts() {
                     {c.relation} · {c.phone}
                   </p>
                 </div>
-                <StatusBadge label={c.status} tone={statusTone(c.status)} />
+                <StatusBadge label={c.status} tone={c.status === 'Đã liên kết' ? 'success' : 'pending'} />
               </div>
               <div className="family-permissions">
                 {(c.permissions || []).map((p) => (
@@ -78,22 +72,22 @@ export default function FamilyContacts() {
               <div className="family-card-actions">
                 <small>{c.primary ? 'Người liên hệ khẩn cấp ưu tiên' : 'Có thể nhận cảnh báo theo quyền đã cấp'}</small>
                 {c.status === 'Đã liên kết' && !c.primary ? (
-                  <button
-                    type="button"
-                    className="btn ghost small"
+                  <Button
+                    variant="outlined"
+                    size="small"
                     onClick={() => {
                       setPrimaryFamilyContact(session.id, c.id)
                       toast('Đã đổi người liên hệ ưu tiên', 'Cảnh báo SOS sẽ được gửi tới người này trước.')
                     }}
                   >
                     Đặt làm ưu tiên
-                  </button>
+                  </Button>
                 ) : c.primary ? (
                   <span className="status success">Ưu tiên SOS</span>
                 ) : (
-                  <button type="button" className="btn ghost small" onClick={() => toast('Đã gửi lại lời mời', `Đang chờ ${c.name} xác nhận.`)}>
+                  <Button variant="outlined" size="small" onClick={() => toast('Đã gửi lại lời mời', `Đang chờ ${c.name} xác nhận.`)}>
                     Gửi lại lời mời
-                  </button>
+                  </Button>
                 )}
               </div>
             </article>
@@ -107,8 +101,6 @@ export default function FamilyContacts() {
           <b>Quyền riêng tư do bạn kiểm soát.</b> Người thân chỉ xem được các nội dung đã được cấp quyền. Vị trí chính xác chỉ được chia sẻ khi SOS được kích hoạt.
         </span>
       </div>
-
-      <SosButton role="patient" familyLabel={primary ? `${primary.name} · ${primary.relation}` : ''} onNeedFamilyLink={() => setLinkOpen(true)} />
 
       <FamilyLinkModal open={linkOpen} onClose={() => setLinkOpen(false)} patientId={session.id} />
     </>

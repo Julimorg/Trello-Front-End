@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import ConfirmDialog from '../../components/ConfirmDialog'
+import Button from '@mui/material/Button'
 import EmptyState from '../../components/EmptyState'
 import StatusBadge from '../../components/StatusBadge'
+import PatientConfirmDialog from '../../patient/PatientConfirmDialog'
 import NurseProfileCard from '../nurseMatching/NurseProfileCard'
 import { useDb } from '../../lib/store'
 import { cancelCareRequest, getNurse, retryMatching, selectNurseForCareRequest } from '../../lib/db'
@@ -29,6 +30,36 @@ function Timeline({ careRequest }) {
   )
 }
 
+function Meta({ careRequest, nurse, nurseLabel }) {
+  return (
+    <div className="active-care-meta">
+      <div className="meta-item">
+        <Icon.calendar />
+        <span>
+          <small>Thời gian</small>
+          <b>
+            {formatDate(careRequest.desiredStartDate)} · {careRequest.timeSlot?.start}
+          </b>
+        </span>
+      </div>
+      <div className="meta-item">
+        <Icon.pin />
+        <span>
+          <small>Khu vực</small>
+          <b>{careRequest.district}</b>
+        </span>
+      </div>
+      <div className="meta-item">
+        <Icon.user />
+        <span>
+          <small>{nurseLabel}</small>
+          <b>{nurse ? <Link to={`/patient/nurses/${nurse.id}`}>{nurse.name}</Link> : '—'}</b>
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export default function CareRequestBody({ careRequest, showCancel = true }) {
   const state = useDb()
   const [cancelOpen, setCancelOpen] = useState(false)
@@ -40,7 +71,9 @@ export default function CareRequestBody({ careRequest, showCancel = true }) {
       <div className="active-care-top" style={{ marginBottom: 6 }}>
         <div>
           <h3 style={{ margin: '0 0 2px' }}>{careTypeLabel(careRequest.careType)}</h3>
-          <p style={{ margin: 0, color: 'var(--muted)', fontSize: '.8rem' }}>Mã yêu cầu #{careRequest.id}</p>
+          <p style={{ margin: 0, color: 'var(--muted)', fontSize: '.8rem' }}>
+            Mã yêu cầu <Link to={`/patient/request/${careRequest.id}`}>#{careRequest.id}</Link>
+          </p>
         </div>
         <StatusBadge status={careRequest.status} labelMap={CARE_REQUEST_STATUS_LABEL} />
       </div>
@@ -86,66 +119,18 @@ export default function CareRequestBody({ careRequest, showCancel = true }) {
       {careRequest.status === CARE_REQUEST_STATUS.NURSE_PENDING && (
         <>
           <Timeline careRequest={careRequest} />
-          <div className="active-care-meta">
-            <div className="meta-item">
-              <Icon.calendar />
-              <span>
-                <small>Thời gian</small>
-                <b>
-                  {formatDate(careRequest.desiredStartDate)} · {careRequest.timeSlot?.start}
-                </b>
-              </span>
-            </div>
-            <div className="meta-item">
-              <Icon.pin />
-              <span>
-                <small>Khu vực</small>
-                <b>{careRequest.district}</b>
-              </span>
-            </div>
-            <div className="meta-item">
-              <Icon.user />
-              <span>
-                <small>Điều dưỡng đã chọn</small>
-                <b>{selectedNurse?.name}</b>
-              </span>
-            </div>
-          </div>
+          <Meta careRequest={careRequest} nurse={selectedNurse} nurseLabel="Điều dưỡng đã chọn" />
         </>
       )}
 
       {careRequest.status === CARE_REQUEST_STATUS.COMPLETED && (
         <>
           <Timeline careRequest={careRequest} />
-          <div className="active-care-meta">
-            <div className="meta-item">
-              <Icon.calendar />
-              <span>
-                <small>Thời gian</small>
-                <b>
-                  {formatDate(careRequest.desiredStartDate)} · {careRequest.timeSlot?.start}
-                </b>
-              </span>
-            </div>
-            <div className="meta-item">
-              <Icon.pin />
-              <span>
-                <small>Khu vực</small>
-                <b>{careRequest.district}</b>
-              </span>
-            </div>
-            <div className="meta-item">
-              <Icon.user />
-              <span>
-                <small>Điều dưỡng</small>
-                <b>{selectedNurse?.name}</b>
-              </span>
-            </div>
-          </div>
+          <Meta careRequest={careRequest} nurse={selectedNurse} nurseLabel="Điều dưỡng" />
           {careRequest.bookingId && (
-            <Link to={`/patient/bookings/${careRequest.bookingId}`} className="text-button">
+            <Button component={Link} to={`/patient/bookings/${careRequest.bookingId}`} sx={{ mt: 2 }}>
               Xem lịch chăm sóc →
-            </Link>
+            </Button>
           )}
         </>
       )}
@@ -156,9 +141,9 @@ export default function CareRequestBody({ careRequest, showCancel = true }) {
           title="Không tìm được điều dưỡng phù hợp"
           description="Hệ thống sẽ tự động chạy lại khi có điều dưỡng mới được cấp phép. Bạn có thể thử tìm lại ngay hoặc liên hệ bệnh viện để được hỗ trợ thủ công."
           action={
-            <button type="button" className="btn secondary" onClick={() => retryMatching(careRequest.id)}>
+            <Button variant="contained" color="secondary" onClick={() => retryMatching(careRequest.id)}>
               Thử tìm lại
-            </button>
+            </Button>
           }
         />
       )}
@@ -169,18 +154,18 @@ export default function CareRequestBody({ careRequest, showCancel = true }) {
 
       {showCancel && canCancel && (
         <div style={{ marginTop: 18 }}>
-          <button type="button" className="btn ghost" onClick={() => setCancelOpen(true)}>
+          <Button variant="outlined" onClick={() => setCancelOpen(true)}>
             Hủy yêu cầu
-          </button>
+          </Button>
         </div>
       )}
 
-      <ConfirmDialog
+      <PatientConfirmDialog
         open={cancelOpen}
         title="Hủy yêu cầu chăm sóc?"
         description="Bạn có chắc muốn hủy yêu cầu này? Hành động này không thể hoàn tác."
         confirmLabel="Hủy yêu cầu"
-        confirmTone="danger"
+        confirmColor="error"
         onClose={() => setCancelOpen(false)}
         onConfirm={() => {
           cancelCareRequest(careRequest.id)

@@ -1,19 +1,27 @@
 import { useEffect, useState } from 'react'
-import Modal, { ModalCloseButton } from '../../components/Modal'
+import dayjs from 'dayjs'
+import Button from '@mui/material/Button'
+import Checkbox from '@mui/material/Checkbox'
+import Chip from '@mui/material/Chip'
+import Dialog from '@mui/material/Dialog'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import IconButton from '@mui/material/IconButton'
+import MenuItem from '@mui/material/MenuItem'
+import Step from '@mui/material/Step'
+import StepLabel from '@mui/material/StepLabel'
+import Stepper from '@mui/material/Stepper'
+import TextField from '@mui/material/TextField'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+import PatientThemeProvider from '../../patient/PatientThemeProvider'
 import { useToast } from '../../components/ToastProvider'
-import { createCareRequest } from '../../lib/db'
+import { useDb } from '../../lib/store'
+import { createCareRequest, getPatient } from '../../lib/db'
 import { CARE_TYPES, DISTRICTS, FREQUENCIES, WEEKDAYS } from '../../lib/constants'
 import { careTypeLabel, weekdayLabel } from '../../lib/format'
+import { CARE_OPTION_META } from '../../Data/patient/care-request-data'
+import { Icon } from '../../lib/icons'
 
-const CARE_TYPE_GLYPH = {
-  'wound-dressing': '✚',
-  'vitals-monitoring': '♡',
-  'mobility-support': '↗',
-  medication: '℞',
-  'post-surgery': '✛',
-  'elderly-care': '⌂',
-  other: '…',
-}
+const STEPS = ['Nhu cầu', 'Thời gian', 'Xác nhận']
 
 function draftKey(patientId) {
   return `careshift_draft_carerequest_${patientId}`
@@ -29,47 +37,46 @@ const initialForm = {
   frequency: 'once',
   weekdays: [],
   notes: '',
-  consent: true,
+  consent: false,
 }
 
-export default function CareRequestWizardModal({ open, onClose, patientId, createdBy = 'patient', onCreated }) {
+function WizardContent({ open, onClose, patientId, createdBy, onCreated }) {
   const toast = useToast()
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(0)
   const [form, setForm] = useState(initialForm)
+  const patientDistrict = getPatient(useDb(), patientId)?.district
 
   useEffect(() => {
     if (!open) return
+    // Default the care location to the patient's own district when there is no saved draft.
+    const base = DISTRICTS.includes(patientDistrict) ? { ...initialForm, district: patientDistrict } : initialForm
     try {
       const raw = localStorage.getItem(draftKey(patientId))
-      if (raw) setForm(JSON.parse(raw))
+      setForm(raw ? { ...base, ...JSON.parse(raw) } : base)
     } catch {
-      // ignore
+      setForm(base)
     }
-    setStep(1)
-  }, [open, patientId])
+    setStep(0)
+  }, [open, patientId, patientDistrict])
 
   const update = (patch) => setForm((f) => ({ ...f, ...patch }))
-  const saveDraft = () => {
+
+  const handleClose = () => {
     try {
       localStorage.setItem(draftKey(patientId), JSON.stringify(form))
     } catch {
       // ignore
     }
-  }
-
-  const canNext1 = form.careType && (form.careType !== 'other' || form.otherNote.trim())
-  const canNext2 = form.desiredStartDate && form.timeStart && form.timeEnd && (form.frequency !== 'weekly' || form.weekdays.length > 0)
-
-  const handleClose = () => {
-    saveDraft()
     onClose()
   }
 
-  const handleNext = () => {
-    if (step < 3) {
-      setStep(step + 1)
-      return
-    }
+  const timeValid = form.timeStart && form.timeEnd && form.timeEnd > form.timeStart
+  const step1Valid = Boolean(form.careType && form.district && (form.careType !== 'other' || form.otherNote.trim()))
+  const step2Filled = Boolean(form.desiredStartDate && timeValid && form.frequency && (form.frequency !== 'weekly' || form.weekdays.length > 0))
+  const step2Valid = step2Filled && form.consent
+  const canNext = step === 0 ? step1Valid : step === 1 ? step2Valid : true
+
+  const submit = () => {
     const id = createCareRequest({
       patientId,
       careType: form.careType,
@@ -92,177 +99,183 @@ export default function CareRequestWizardModal({ open, onClose, patientId, creat
   }
 
   return (
-    <Modal open={open} onClose={handleClose} className="care-wizard" labelledBy="careModalTitle">
-      <div className="modal-head">
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" aria-labelledby="careModalTitle">
+      <div className="modal-head" style={{ paddingBottom: 12 }}>
         <div>
           <span className="eyebrow">Yêu cầu chăm sóc mới</span>
           <h2 id="careModalTitle">Bạn cần hỗ trợ điều gì?</h2>
         </div>
-        <ModalCloseButton onClose={handleClose} />
+        <IconButton aria-label="Đóng" onClick={handleClose} sx={{ border: '1px solid var(--line)', borderRadius: '10px' }}>
+          <Icon.close />
+        </IconButton>
       </div>
+      <Stepper activeStep={step} alternativeLabel sx={{ px: 2, pb: 2, borderBottom: '1px solid #edf2f2' }}>
+        {STEPS.map((label) => (
+          <Step key={label}>
+            <StepLabel>{label}</StepLabel>
+          </Step>
+        ))}
+      </Stepper>
 
-      <div className="wizard-progress">
-        <span style={{ width: `${step * 33.333}%` }} />
-      </div>
-      <div className="wizard-steps">
-        <span className={step >= 1 ? 'active' : ''}>1. Nhu cầu</span>
-        <span className={step >= 2 ? 'active' : ''}>2. Thời gian</span>
-        <span className={step >= 3 ? 'active' : ''}>3. Xác nhận</span>
-      </div>
-
-      {step === 1 && (
-        <div className="wizard-panel active">
-          <span className="field-label">
-            Loại chăm sóc <em>*</em>
-          </span>
-          <div className="care-options">
-            {CARE_TYPES.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                className={form.careType === c.id ? 'selected' : ''}
-                onClick={() => update({ careType: c.id })}
-              >
-                <span>{CARE_TYPE_GLYPH[c.id]}</span>
-                <b>{c.label}</b>
-              </button>
-            ))}
-          </div>
-          {form.careType === 'other' && (
-            <label>
-              <span className="field-label">Mô tả nhu cầu</span>
-              <textarea rows={3} value={form.otherNote} onChange={(e) => update({ otherNote: e.target.value })} />
-            </label>
-          )}
-          <div className="field-grid">
-            <label>
-              <span className="field-label">
-                Khu vực chăm sóc <em>*</em>
-              </span>
-              <select value={form.district} onChange={(e) => update({ district: e.target.value })}>
-                {DISTRICTS.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </div>
-      )}
-
-      {step === 2 && (
-        <div className="wizard-panel active">
-          <div className="field-grid">
-            <label>
-              <span className="field-label">
-                Ngày chăm sóc <em>*</em>
-              </span>
-              <input type="date" value={form.desiredStartDate} onChange={(e) => update({ desiredStartDate: e.target.value })} />
-            </label>
-            <label>
-              <span className="field-label">
-                Giờ bắt đầu <em>*</em>
-              </span>
-              <input type="time" value={form.timeStart} onChange={(e) => update({ timeStart: e.target.value })} />
-            </label>
-          </div>
-          <div className="field-grid">
-            <label>
-              <span className="field-label">Tần suất</span>
-              <select value={form.frequency} onChange={(e) => update({ frequency: e.target.value })}>
-                {FREQUENCIES.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span className="field-label">Giờ kết thúc mỗi buổi</span>
-              <input type="time" value={form.timeEnd} onChange={(e) => update({ timeEnd: e.target.value })} />
-            </label>
-          </div>
-          {form.frequency === 'weekly' && (
-            <div className="chip-row" style={{ marginBottom: 16 }}>
-              {WEEKDAYS.map((w) => (
-                <button
-                  key={w.id}
-                  type="button"
-                  className={`chip-select${form.weekdays.includes(w.id) ? ' selected' : ''}`}
-                  onClick={() =>
-                    update({
-                      weekdays: form.weekdays.includes(w.id)
-                        ? form.weekdays.filter((d) => d !== w.id)
-                        : [...form.weekdays, w.id],
-                    })
-                  }
-                >
-                  {w.label}
+      <div className="wizard-panel active">
+        {step === 0 && (
+          <>
+            <span className="field-label">
+              Loại chăm sóc <em>*</em>
+            </span>
+            <div className="care-options">
+              {CARE_TYPES.map((c) => (
+                <button key={c.id} type="button" className={form.careType === c.id ? 'selected' : ''} onClick={() => update({ careType: c.id })}>
+                  <span>{CARE_OPTION_META[c.id]?.glyph}</span>
+                  <b>{c.label}</b>
+                  <small>{CARE_OPTION_META[c.id]?.hint}</small>
                 </button>
               ))}
             </div>
-          )}
-          <label>
-            <span className="field-label">Ghi chú cho điều dưỡng</span>
-            <textarea
-              rows={4}
+            {form.careType === 'other' && (
+              <TextField
+                fullWidth
+                multiline
+                minRows={2}
+                label="Mô tả nhu cầu"
+                required
+                value={form.otherNote}
+                onChange={(e) => update({ otherNote: e.target.value })}
+                sx={{ mb: 2 }}
+              />
+            )}
+            <TextField select fullWidth required label="Khu vực chăm sóc" value={form.district} onChange={(e) => update({ district: e.target.value })}>
+              {DISTRICTS.map((d) => (
+                <MenuItem key={d} value={d}>
+                  {d}
+                </MenuItem>
+              ))}
+            </TextField>
+          </>
+        )}
+
+        {step === 1 && (
+          <div className="wizard-fields">
+            <DatePicker
+              label="Ngày chăm sóc *"
+              disablePast
+              value={form.desiredStartDate ? dayjs(form.desiredStartDate) : null}
+              onChange={(v) => update({ desiredStartDate: v && v.isValid() ? v.format('YYYY-MM-DD') : '' })}
+              slotProps={{ textField: { fullWidth: true } }}
+            />
+            <TextField select fullWidth label="Tần suất" value={form.frequency} onChange={(e) => update({ frequency: e.target.value })}>
+              {FREQUENCIES.map((f) => (
+                <MenuItem key={f.id} value={f.id}>
+                  {f.label}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              type="time"
+              label="Giờ bắt đầu *"
+              value={form.timeStart}
+              onChange={(e) => update({ timeStart: e.target.value })}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <TextField
+              type="time"
+              label="Giờ kết thúc *"
+              value={form.timeEnd}
+              error={Boolean(form.timeStart && form.timeEnd) && !timeValid}
+              helperText={form.timeStart && form.timeEnd && !timeValid ? 'Giờ kết thúc phải sau giờ bắt đầu' : ' '}
+              onChange={(e) => update({ timeEnd: e.target.value })}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            {form.frequency === 'weekly' && (
+              <div className="field-full">
+                <span className="field-label">
+                  Lặp lại vào <em>*</em>
+                </span>
+                <div className="chip-row">
+                  {WEEKDAYS.map((w) => {
+                    const active = form.weekdays.includes(w.id)
+                    return (
+                      <Chip
+                        key={w.id}
+                        label={w.label}
+                        clickable
+                        color={active ? 'primary' : 'default'}
+                        variant={active ? 'filled' : 'outlined'}
+                        onClick={() => update({ weekdays: active ? form.weekdays.filter((d) => d !== w.id) : [...form.weekdays, w.id] })}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            <TextField
+              className="field-full"
+              multiline
+              minRows={3}
+              label="Ghi chú cho điều dưỡng"
               placeholder="Ví dụ: bệnh nhân vừa phẫu thuật, cần thay băng và theo dõi vết mổ..."
               value={form.notes}
               onChange={(e) => update({ notes: e.target.value })}
             />
-          </label>
-          <label className="consent">
-            <input type="checkbox" checked={form.consent} onChange={(e) => update({ consent: e.target.checked })} />
-            <span>Tôi đồng ý chia sẻ thông tin yêu cầu này với các điều dưỡng phù hợp đã được xác minh.</span>
-          </label>
-        </div>
-      )}
-
-      {step === 3 && (
-        <div className="wizard-panel active">
-          <div className="review-card">
-            <h3>Tóm tắt yêu cầu</h3>
-            {[
-              ['Nhu cầu', form.careType === 'other' ? form.otherNote : careTypeLabel(form.careType)],
-              ['Khu vực', form.district],
-              ['Thời gian', `${form.desiredStartDate || '—'} · ${form.timeStart}–${form.timeEnd}`],
-              [
-                'Tần suất',
-                FREQUENCIES.find((f) => f.id === form.frequency)?.label +
-                  (form.frequency === 'weekly' && form.weekdays.length ? ` (${form.weekdays.map(weekdayLabel).join(', ')})` : ''),
-              ],
-              ['Ghi chú', form.notes || '—'],
-            ].map(([label, value]) => (
-              <div className="review-row" key={label}>
-                <span>{label}</span>
-                <b>{value}</b>
-              </div>
-            ))}
+            <FormControlLabel
+              className="field-full wizard-consent"
+              control={<Checkbox checked={form.consent} onChange={(e) => update({ consent: e.target.checked })} />}
+              label="Tôi đồng ý chia sẻ thông tin yêu cầu này với các điều dưỡng phù hợp đã được xác minh."
+            />
           </div>
-          <div className="info-callout">
-            <svg viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 10v6M12 7h.01" />
-            </svg>
-            <span>CareShift chỉ gợi ý điều dưỡng đã được bệnh viện xác minh, đúng chuyên môn và đang rảnh theo lịch.</span>
-          </div>
-        </div>
-      )}
+        )}
 
-      <div className="modal-actions">
-        <button type="button" className="btn ghost" style={{ visibility: step === 1 ? 'hidden' : 'visible' }} onClick={() => setStep(step - 1)}>
-          Quay lại
-        </button>
-        <button
-          type="button"
-          className="btn primary"
-          disabled={step === 1 ? !canNext1 : step === 2 ? !canNext2 : false}
-          onClick={handleNext}
-        >
-          {step === 3 ? 'Tìm điều dưỡng' : 'Tiếp tục'}
-        </button>
+        {step === 2 && (
+          <>
+            <div className="review-card">
+              <h3>Tóm tắt yêu cầu</h3>
+              {[
+                ['Nhu cầu', form.careType === 'other' ? form.otherNote : careTypeLabel(form.careType)],
+                ['Khu vực', form.district],
+                ['Thời gian', `${form.desiredStartDate ? dayjs(form.desiredStartDate).format('DD/MM/YYYY') : '—'} · ${form.timeStart}–${form.timeEnd}`],
+                [
+                  'Tần suất',
+                  FREQUENCIES.find((f) => f.id === form.frequency)?.label +
+                    (form.frequency === 'weekly' && form.weekdays.length ? ` (${form.weekdays.map(weekdayLabel).join(', ')})` : ''),
+                ],
+                ['Ghi chú', form.notes || '—'],
+              ].map(([label, value]) => (
+                <div className="review-row" key={label}>
+                  <span>{label}</span>
+                  <b>{value}</b>
+                </div>
+              ))}
+            </div>
+            <div className="info-callout">
+              <Icon.info />
+              <span>CareShift chỉ gợi ý điều dưỡng đã được bệnh viện xác minh, đúng chuyên môn và đang rảnh theo lịch.</span>
+            </div>
+          </>
+        )}
       </div>
-    </Modal>
+
+      <div className="modal-actions wizard-actions">
+        {step === 1 && !step2Valid && (
+          <small className="wizard-hint">
+            {step2Filled ? 'Vui lòng đánh dấu đồng ý chia sẻ thông tin để tiếp tục.' : 'Vui lòng điền đủ ngày, giờ và tần suất để tiếp tục.'}
+          </small>
+        )}
+        <Button variant="outlined" sx={{ visibility: step === 0 ? 'hidden' : 'visible' }} onClick={() => setStep(step - 1)}>
+          Quay lại
+        </Button>
+        <Button variant="contained" disabled={!canNext} onClick={() => (step < 2 ? setStep(step + 1) : submit())}>
+          {step === 2 ? 'Tìm điều dưỡng' : 'Tiếp tục'}
+        </Button>
+      </div>
+    </Dialog>
+  )
+}
+
+// Self-themed so it renders the same from the hospital portal (create-on-behalf) too.
+export default function CareRequestWizardModal({ open, onClose, patientId, createdBy = 'patient', onCreated }) {
+  return (
+    <PatientThemeProvider>
+      <WizardContent open={open} onClose={onClose} patientId={patientId} createdBy={createdBy} onCreated={onCreated} />
+    </PatientThemeProvider>
   )
 }

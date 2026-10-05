@@ -39,7 +39,7 @@ export default function SosLog() {
                 {events.map((e) => {
                   const booking = getBooking(state, e.bookingId)
                   const nurse = booking ? getNurse(state, booking.nurseId) : null
-                  const patient = booking ? getPatient(state, booking.patientId) : null
+                  const patient = getPatient(state, e.patientId || booking?.patientId)
                   return (
                     <tr key={e.id}>
                       <td>{formatDateTime(e.createdAt)}</td>

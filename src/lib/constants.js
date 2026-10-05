@@ -109,12 +109,14 @@ export const BOOKING_STATUS_LABEL = {
 export const SOS_TYPES = {
   CALL_115: 'call_115',
   NOTIFY_HOSPITAL: 'notify_hospital',
+  NOTIFY_PRIMARY_FAMILY: 'notify_primary_family',
   NOTIFY_FAMILY: 'notify_family',
 }
 
 export const SOS_TYPE_LABEL = {
   [SOS_TYPES.CALL_115]: 'Gọi 115',
   [SOS_TYPES.NOTIFY_HOSPITAL]: 'Báo bệnh viện',
+  [SOS_TYPES.NOTIFY_PRIMARY_FAMILY]: 'Báo người thân ưu tiên',
   [SOS_TYPES.NOTIFY_FAMILY]: 'Báo người thân',
 }
 
