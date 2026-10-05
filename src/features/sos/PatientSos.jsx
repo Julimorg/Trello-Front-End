@@ -127,10 +127,13 @@ export default function PatientSos({ patientId }) {
       return
     }
     if (type === 'notify_primary_family') {
-      if (!primary) {
+      if (!primary || primary.status !== 'Đã liên kết') {
         close()
         navigate('/patient/family')
-        toast('Chưa có người thân ưu tiên', 'Hãy liên kết và đặt một người thân làm người liên hệ ưu tiên.')
+        toast(
+          primary ? `${primary.name} chưa xác nhận liên kết` : 'Chưa có người thân ưu tiên',
+          primary ? 'Người thân ưu tiên cần xác nhận lời mời trước khi nhận cảnh báo.' : 'Hãy đặt một người thân đã liên kết làm người liên hệ ưu tiên.',
+        )
         return
       }
       send('notify_primary_family', [primary.id], `Đã báo ${primary.name}`, 'Mô phỏng cảnh báo kèm vị trí hiện tại; không gửi tin thật.')
@@ -163,7 +166,7 @@ export default function PatientSos({ patientId }) {
                 const hint =
                   action.type === 'notify_primary_family'
                     ? primary
-                      ? `${primary.name} · ${primary.relation}`
+                      ? `${primary.name} · ${primary.relation}${primary.status === 'Đã liên kết' ? '' : ' (chờ xác nhận)'}`
                       : 'Chưa có người thân ưu tiên'
                     : action.type === 'notify_family'
                       ? `${linkedContacts.length} người thân đã liên kết`

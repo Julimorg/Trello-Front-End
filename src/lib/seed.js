@@ -2,7 +2,7 @@ import { HOSPITAL_STATUS } from './constants'
 import { NURSES } from '../Data/patient/nurse-data'
 import { CARE_REQUESTS } from '../Data/patient/care-request-data'
 import { BOOKINGS } from '../Data/patient/booking-data'
-import { FAMILY_CONTACTS } from '../Data/patient/family-data'
+import { FAMILY_CONTACTS, FAMILY_INVITES } from '../Data/patient/family-data'
 import { PATIENT_PROFILES } from '../Data/patient/profile-data'
 import { SOS_EVENTS } from '../Data/patient/sos-data'
 import { NOTIFICATIONS } from '../Data/patient/notification-data'
@@ -66,6 +66,7 @@ export function seedState() {
     patients: PATIENT_PROFILES.map((p) => ({ ...clone(p), familyContacts: clone(FAMILY_CONTACTS[p.id] || []) })),
     careRequests: clone(CARE_REQUESTS),
     bookings: clone(BOOKINGS),
+    familyInvites: clone(FAMILY_INVITES),
     sosEvents: clone(SOS_EVENTS),
     pricing: clone(PRICING),
     notifications: clone(NOTIFICATIONS),

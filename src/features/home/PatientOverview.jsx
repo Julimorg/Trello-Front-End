@@ -138,7 +138,7 @@ export default function PatientOverview() {
           <div className="quick-list">
             {DASHBOARD_QUICK_LINKS.map((q) => {
               const QuickIcon = Icon[q.icon]
-              const subtitle = q.id === 'ql-family' && primary ? `${primary.name} nhận cảnh báo SOS trước` : q.subtitle
+              const subtitle = q.id === 'ql-family' && primary?.status === 'Đã liên kết' ? `${primary.name} nhận cảnh báo SOS trước` : q.subtitle
               return (
                 <Link key={q.id} to={q.to} className="quick-item" style={{ textDecoration: 'none', color: 'inherit' }}>
                   <span className="quick-icon">

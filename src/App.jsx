@@ -16,6 +16,7 @@ const BookingList = lazy(() => import('./features/booking/BookingList'))
 const BookingDetail = lazy(() => import('./features/booking/BookingDetail'))
 const FamilyContacts = lazy(() => import('./features/sos/FamilyContacts'))
 const PatientProfile = lazy(() => import('./features/home/PatientProfile'))
+const FamilyInviteAccept = lazy(() => import('./features/sos/FamilyInviteAccept'))
 
 const HospitalLayout = lazy(() => import('./layouts/HospitalLayout'))
 const HospitalOverview = lazy(() => import('./features/hospitalRoster/HospitalOverview'))
@@ -45,6 +46,9 @@ function App() {
     <Suspense fallback={<div className="route-loading" aria-busy="true" />}>
       <Routes>
         <Route path="/" element={<LoginPage />} />
+        {/* Public: opened by a relative scanning the patient's QR invite. */}
+        <Route path="/family-invite" element={<FamilyInviteAccept />} />
+        <Route path="/family-invite/:code" element={<FamilyInviteAccept />} />
 
         <Route
           path="/patient"

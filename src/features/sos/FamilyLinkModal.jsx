@@ -13,7 +13,7 @@ import { Icon } from '../../lib/icons'
 
 const initialForm = { name: '', relationship: 'Con', contact: '', permissions: ['emergency', 'schedule'], primary: false }
 
-export default function FamilyLinkModal({ open, onClose, patientId }) {
+export default function FamilyLinkModal({ open, onClose, patientId, currentPrimary }) {
   const toast = useToast()
   const [form, setForm] = useState(initialForm)
 
@@ -92,6 +92,11 @@ export default function FamilyLinkModal({ open, onClose, patientId }) {
           control={<Checkbox checked={form.primary} onChange={(e) => update({ primary: e.target.checked })} />}
           label="Đặt làm người liên hệ khẩn cấp ưu tiên (sau khi được xác nhận)."
         />
+        {form.primary && currentPrimary && (
+          <p className="wizard-hint">
+            Mỗi tài khoản chỉ có một người ưu tiên: {currentPrimary.name} sẽ không còn là người ưu tiên.
+          </p>
+        )}
         <div className="patient-sos-actions">
           <Button variant="outlined" onClick={onClose}>
             Hủy

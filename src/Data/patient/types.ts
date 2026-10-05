@@ -120,8 +120,24 @@ export interface FamilyContact {
   phone: string
   relation: string
   status: 'Đã liên kết' | 'Chờ xác nhận'
+  /** Only one contact per patient may be primary (the SOS "người thân ưu tiên nhất"). */
   primary: boolean
   permissions: string[]
+  /** Set when the relative linked by scanning the patient's QR invite. */
+  inviteCode?: string
+}
+
+/** QR / link invite a patient shares so a relative can link their CareShift account. */
+export interface FamilyInvite {
+  code: string
+  patientId: string
+  permissions: string[]
+  createdAt: string
+  expiresAt: string
+  /** Set once a relative accepts; points at the FamilyContact it created. */
+  usedAt?: string
+  contactId?: string
+  revokedAt?: string
 }
 
 export interface PatientProfile {

@@ -31,6 +31,10 @@ export const Icon = {
   upload: (p) => <Svg {...p}><path d="M12 16V4M7 9l5-5 5 5M4 15v4h16v-4" /></Svg>,
   info: (p) => <Svg {...p}><circle cx="12" cy="12" r="9" /><path d="M12 10v6M12 7h.01" /></Svg>,
   down: (p) => <Svg {...p}><path d="m7 10 5 5 5-5" /></Svg>,
+  qr: (p) => <Svg {...p}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h4v4h-4" /></Svg>,
+  copy: (p) => <Svg {...p}><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></Svg>,
+  download: (p) => <Svg {...p}><path d="M12 4v12M7 11l5 5 5-5M4 20h16" /></Svg>,
+  refresh: (p) => <Svg {...p}><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" /></Svg>,
 }
 
 export function IconGlyph({ name, ...props }) {

@@ -756,3 +756,262 @@ button.link-reset {
 .route-loading {
   min-height: 40vh;
 }
+
+/* ---------- Family: single primary contact + QR invites ---------- */
+.family-primary-strip {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--teal-soft);
+  border: 1px solid #c9e8e2;
+}
+.family-primary-strip svg {
+  flex: 0 0 auto;
+  color: var(--teal);
+}
+.family-primary-strip b,
+.family-primary-strip small {
+  display: block;
+}
+.family-primary-strip b {
+  font-size: 0.82rem;
+}
+.family-primary-strip small {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.family-primary-strip.is-warning {
+  background: var(--amber-soft);
+  border-color: #f2ddb6;
+}
+.family-primary-strip.is-warning svg {
+  color: var(--amber);
+}
+.family-card.is-primary {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px rgba(11, 107, 104, 0.08);
+}
+.family-permissions .family-via-qr {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.family-via-qr svg {
+  width: 13px;
+  height: 13px;
+}
+
+.qr-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 22px;
+  align-items: start;
+}
+.qr-column {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+.qr-box {
+  position: relative;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 64, 68, 0.08);
+  line-height: 0;
+}
+.qr-box canvas {
+  display: block;
+  border-radius: 6px;
+}
+.qr-box.is-expired canvas {
+  filter: blur(4px);
+  opacity: 0.35;
+}
+.qr-expired {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  text-align: center;
+  line-height: 1.4;
+}
+.qr-expired b {
+  font-size: 0.84rem;
+}
+.qr-code-text {
+  text-align: center;
+}
+.qr-code-text small {
+  display: block;
+  font-size: 0.66rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.qr-code-text b {
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+.qr-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--teal-soft);
+  color: var(--teal);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.qr-countdown svg {
+  width: 14px;
+  height: 14px;
+}
+.qr-countdown.is-expired {
+  background: var(--red-soft);
+  color: var(--red);
+}
+.qr-steps {
+  margin: 0 0 14px;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: #3d575e;
+}
+.qr-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 16px 0 0;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.qr-note svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  color: var(--teal);
+}
+.qr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #edf2f2;
+}
+.qr-success {
+  text-align: center;
+  padding: 10px 0 0;
+}
+.qr-success h3 {
+  margin: 12px 0 4px;
+}
+.qr-success-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: var(--green-soft);
+  color: var(--green);
+}
+.qr-success-icon.is-error {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.invite-card .auth-brand {
+  margin-bottom: 22px;
+}
+.invite-form {
+  display: grid;
+  gap: 14px;
+  text-align: left;
+}
+.invite-form h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+.invite-form > .qr-success-icon + h1,
+.invite-form > .qr-success-icon ~ p {
+  text-align: center;
+}
+.invite-form .detail-text {
+  margin: 0;
+}
+.invite-permissions {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f6fafa;
+  font-size: 0.76rem;
+}
+.invite-permissions small {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+.invite-permissions span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 650;
+}
+.invite-permissions svg {
+  width: 15px;
+  height: 15px;
+  color: var(--green);
+}
+
+@media (max-width: 640px) {
+  .qr-layout {
+    grid-template-columns: 1fr;
+  }
+  .qr-actions > * {
+    flex: 1 1 100%;
+  }
+}
+.page-head > .panel-head-actions {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+@media (max-width: 780px) {
+  .page-head > .panel-head-actions {
+    margin-top: 15px;
+    flex-wrap: wrap;
+  }
+  .page-head > .panel-head-actions > * {
+    flex: 1 1 auto;
+  }
+}
+.family-card-head > div {
+  min-width: 0;
+}
+.family-card-head p {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 780px) {
+  .family-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .family-card-actions .MuiButton-root {
+    width: 100%;
+  }
+}

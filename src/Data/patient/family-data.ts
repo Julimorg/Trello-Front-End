@@ -1,4 +1,5 @@
-import type { FamilyContact } from './types'
+import type { FamilyContact, FamilyInvite } from './types'
+import { timestampAt } from './date-utils'
 
 // Data for "Người thân liên kết" (/patient/family) and the SOS "Báo người thân" list.
 // Keys are patient ids from profile-data.ts.
@@ -31,6 +32,7 @@ export const FAMILY_CONTACTS: Record<string, FamilyContact[]> = {
       status: 'Đã liên kết',
       primary: false,
       permissions: ['Nhận cảnh báo SOS'],
+      inviteCode: 'CS-LAN4K7',
     },
     {
       id: 'fc-an-4',
@@ -71,3 +73,19 @@ export const FAMILY_PERMISSIONS = [
   { id: 'schedule', label: 'Xem lịch chăm sóc', hint: 'Lịch đã xác nhận và thay đổi quan trọng' },
   { id: 'status', label: 'Xem trạng thái yêu cầu', hint: 'Tiến độ matching và xác nhận điều dưỡng' },
 ] as const
+
+// QR invites: a relative scans the code (or opens the link) to link their account.
+// fc-an-3 (Trần Thị Lan) was linked through the used invite below.
+export const FAMILY_INVITE_TTL_MINUTES = 10
+
+export const FAMILY_INVITES: FamilyInvite[] = [
+  {
+    code: 'CS-LAN4K7',
+    patientId: 'patient-an',
+    permissions: ['Nhận cảnh báo SOS'],
+    createdAt: timestampAt(-40, '19:02'),
+    expiresAt: timestampAt(-40, '19:12'),
+    usedAt: timestampAt(-40, '19:05'),
+    contactId: 'fc-an-3',
+  },
+]

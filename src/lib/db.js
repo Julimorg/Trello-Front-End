@@ -18,10 +18,22 @@ export const getHospital = (state, id) => state.hospitals.find((h) => h.id === i
 export const getNurse = (state, id) => state.nurses.find((n) => n.id === id)
 export const getPatient = (state, id) => state.patients.find((p) => p.id === id)
 
-export const getPrimaryFamilyContact = (state, patientId) => {
-  const contacts = getPatient(state, patientId)?.familyContacts || []
-  return contacts.find((c) => c.primary && c.status === 'Đã liên kết') || contacts.find((c) => c.status === 'Đã liên kết') || null
+// The single contact marked primary (it may still be awaiting confirmation), or null when none is set.
+export const getPrimaryFamilyContact = (state, patientId) =>
+  (getPatient(state, patientId)?.familyContacts || []).find((c) => c.primary) || null
+
+export const getFamilyInvite = (state, code) =>
+  (state.familyInvites || []).find((i) => i.code.toUpperCase() === String(code || '').toUpperCase()) || null
+
+// 'active' | 'used' | 'revoked' | 'expired'
+export const familyInviteStatus = (invite, now = Date.now()) => {
+  if (invite.usedAt) return 'used'
+  if (invite.revokedAt) return 'revoked'
+  return new Date(invite.expiresAt).getTime() <= now ? 'expired' : 'active'
 }
+
+export const getActiveFamilyInvite = (state, patientId) =>
+  (state.familyInvites || []).find((i) => i.patientId === patientId && familyInviteStatus(i) === 'active') || null
 export const getCareRequest = (state, id) => state.careRequests.find((c) => c.id === id)
 export const getBooking = (state, id) => state.bookings.find((b) => b.id === id)
 
@@ -662,29 +674,35 @@ export function updatePatient(patientId, patch) {
   }))
 }
 
+// Only one contact may be primary: adding a primary contact demotes the others.
+const withContact = (contacts, contact) => [
+  ...(contact.primary ? contacts.map((c) => ({ ...c, primary: false })) : contacts),
+  contact,
+]
+
 export function addFamilyContact(patientId, contact) {
+  const id = genId('fc')
   setState((state) => ({
     ...state,
     patients: state.patients.map((p) =>
       p.id === patientId
         ? {
             ...p,
-            familyContacts: [
-              ...p.familyContacts,
-              {
-                id: genId('fc'),
-                status: 'Chờ xác nhận',
-                primary: false,
-                permissions: [],
-                ...contact,
-              },
-            ],
+            familyContacts: withContact(p.familyContacts, {
+              id,
+              status: 'Chờ xác nhận',
+              primary: false,
+              permissions: [],
+              ...contact,
+            }),
           }
         : p,
     ),
   }))
+  return id
 }
 
+// Pass null to remove the primary contact entirely.
 export function setPrimaryFamilyContact(patientId, contactId) {
   setState((state) => ({
     ...state,
@@ -705,4 +723,84 @@ export function removeFamilyContact(patientId, contactId) {
         : p,
     ),
   }))
+}
+
+// ---------- family QR invites ----------
+
+const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+function genInviteCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(6))
+  return `CS-${Array.from(bytes, (b) => INVITE_ALPHABET[b % INVITE_ALPHABET.length]).join('')}`
+}
+
+// Creates a fresh invite and revokes the patient's previous active one, so only one QR works at a time.
+export function createFamilyInvite(patientId, { permissions, ttlMinutes }) {
+  const now = new Date()
+  const invite = {
+    code: genInviteCode(),
+    patientId,
+    permissions,
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + ttlMinutes * 60000).toISOString(),
+  }
+  setState((state) => ({
+    ...state,
+    familyInvites: [
+      ...(state.familyInvites || []).map((i) =>
+        i.patientId === patientId && familyInviteStatus(i) === 'active' ? { ...i, revokedAt: invite.createdAt } : i,
+      ),
+      invite,
+    ],
+  }))
+  return invite
+}
+
+export function updateFamilyInvite(code, patch) {
+  setState((state) => ({
+    ...state,
+    familyInvites: (state.familyInvites || []).map((i) => (i.code === code ? { ...i, ...patch } : i)),
+  }))
+}
+
+// A relative accepts an invite: they become a linked contact right away (scanning the QR is the confirmation).
+export function acceptFamilyInvite(code, { name, phone, relation }) {
+  const invite = getFamilyInvite(getState(), code)
+  if (!invite) return { error: 'not_found' }
+  const status = familyInviteStatus(invite)
+  if (status !== 'active') return { error: status }
+
+  const contactId = genId('fc')
+  const usedAt = new Date().toISOString()
+  setState((state) => {
+    const next = {
+      ...state,
+      familyInvites: state.familyInvites.map((i) => (i.code === invite.code ? { ...i, usedAt, contactId } : i)),
+      patients: state.patients.map((p) =>
+        p.id === invite.patientId
+          ? {
+              ...p,
+              familyContacts: withContact(p.familyContacts, {
+                id: contactId,
+                name,
+                phone,
+                relation,
+                status: 'Đã liên kết',
+                primary: false,
+                permissions: invite.permissions,
+                inviteCode: invite.code,
+              }),
+            }
+          : p,
+      ),
+    }
+    notify(next, {
+      role: 'patient',
+      targetId: invite.patientId,
+      message: `${name} đã quét mã QR và liên kết tài khoản với bạn.`,
+      link: '/patient/family',
+    })
+    return next
+  })
+  return { contactId, patientId: invite.patientId }
 }
