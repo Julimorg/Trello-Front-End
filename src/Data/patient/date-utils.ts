@@ -27,3 +27,8 @@ export function weekdayAt(offset: number): number {
 export function timestampAt(offset: number, time = '09:00'): string {
   return new Date(`${dayOffset(offset)}T${time}:00`).toISOString()
 }
+
+/** ISO timestamp `minutes` before now — for "just happened" seed records that must never be in the future. */
+export function minutesAgo(minutes: number): string {
+  return new Date(Date.now() - minutes * 60000).toISOString()
+}

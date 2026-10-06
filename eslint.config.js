@@ -37,4 +37,9 @@ export default [
       ],
     },
   },
+  {
+    // Node-side code: realtime relay and Vite config.
+    files: ['realtime/**/*.js', 'vite.config.js'],
+    languageOptions: { globals: globals.node },
+  },
 ]

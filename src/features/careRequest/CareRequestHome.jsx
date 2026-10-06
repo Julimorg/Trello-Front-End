@@ -162,7 +162,11 @@ export default function CareRequestHome() {
         </div>
       )}
 
-      <CareRequestWizardModal open={wizardOpen} onClose={() => setWizardOpen(false)} patientId={session.id} createdBy="patient" onCreated={() => setWizardOpen(false)} />
+      <CareRequestWizardModal open={wizardOpen} onClose={() => setWizardOpen(false)} patientId={session.id} createdBy="patient" onCreated={(id) => {
+          setWizardOpen(false)
+          navigate(`/patient/request/${id}`)
+        }}
+      />
     </>
   )
 }

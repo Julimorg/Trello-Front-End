@@ -1,4 +1,4 @@
-import { timestampAt } from './date-utils'
+import { minutesAgo, timestampAt } from './date-utils'
 import type { AppNotification } from './types'
 
 // Data for the header bell. `link` points at the detail page the notification is about.
@@ -9,7 +9,7 @@ export const NOTIFICATIONS: AppNotification[] = [
     role: 'patient',
     targetId: 'patient-an',
     message: 'Đã gửi yêu cầu #cr-1012 đến Trần Thị Hoa. Điều dưỡng có 15 phút để phản hồi.',
-    createdAt: timestampAt(0, '08:31'),
+    createdAt: minutesAgo(6),
     read: false,
     link: '/patient/request/cr-1012',
   },
@@ -18,7 +18,7 @@ export const NOTIFICATIONS: AppNotification[] = [
     role: 'patient',
     targetId: 'patient-an',
     message: 'Hôm nay 18:00 có buổi chăm sóc hậu phẫu với Nguyễn Thị Mai.',
-    createdAt: timestampAt(0, '07:00'),
+    createdAt: minutesAgo(45),
     read: false,
     link: '/patient/bookings/bk-2008',
   },
@@ -53,9 +53,10 @@ export const NOTIFICATIONS: AppNotification[] = [
     id: 'ntf-5101',
     role: 'nurse',
     targetId: 'nurse-hoa',
-    message: 'Bạn có một yêu cầu chăm sóc mới cần phản hồi trong 15 phút.',
-    createdAt: timestampAt(0, '08:31'),
+    message: 'Nguyễn Văn An đã chọn bạn cho ca Hỗ trợ vận động. Phản hồi trong 15 phút.',
+    createdAt: minutesAgo(7),
     read: false,
+    link: '/hospital/nurse/requests?id=cr-1012',
   },
   {
     id: 'ntf-5201',

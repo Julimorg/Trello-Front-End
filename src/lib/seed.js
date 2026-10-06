@@ -6,6 +6,9 @@ import { FAMILY_CONTACTS, FAMILY_INVITES } from '../Data/patient/family-data'
 import { PATIENT_PROFILES } from '../Data/patient/profile-data'
 import { SOS_EVENTS } from '../Data/patient/sos-data'
 import { NOTIFICATIONS } from '../Data/patient/notification-data'
+import { NURSE_CARE_REQUESTS } from '../Data/nurse/requests-data'
+import { NURSE_BOOKINGS } from '../Data/nurse/schedule-data'
+import { NURSE_NOTIFICATIONS } from '../Data/nurse/notification-data'
 
 const HOSPITALS = [
   {
@@ -64,11 +67,11 @@ export function seedState() {
     hospitals: clone(HOSPITALS),
     nurses: clone(NURSES),
     patients: PATIENT_PROFILES.map((p) => ({ ...clone(p), familyContacts: clone(FAMILY_CONTACTS[p.id] || []) })),
-    careRequests: clone(CARE_REQUESTS),
-    bookings: clone(BOOKINGS),
+    careRequests: clone([...CARE_REQUESTS, ...NURSE_CARE_REQUESTS]),
+    bookings: clone([...BOOKINGS, ...NURSE_BOOKINGS]),
     familyInvites: clone(FAMILY_INVITES),
     sosEvents: clone(SOS_EVENTS),
     pricing: clone(PRICING),
-    notifications: clone(NOTIFICATIONS),
+    notifications: clone([...NOTIFICATIONS, ...NURSE_NOTIFICATIONS]),
   }
 }

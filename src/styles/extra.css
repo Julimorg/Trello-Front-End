@@ -1015,3 +1015,461 @@ button.link-reset {
     width: 100%;
   }
 }
+
+/* ---------- Alternative nurses (no full match) ---------- */
+.matching-bar.is-alternative {
+  background: var(--amber-soft);
+  border-color: #f2ddb6;
+}
+.matching-bar.is-alternative .pulse {
+  background: var(--amber);
+  box-shadow: 0 0 0 6px rgba(185, 107, 8, 0.12);
+}
+.matching-bar.is-alternative > span:nth-child(2) {
+  flex: 1;
+}
+.fit-reasons {
+  list-style: none;
+  margin: 0;
+  padding: 0 18px 14px;
+  display: grid;
+  gap: 4px;
+  font-size: 0.7rem;
+}
+.fit-reasons li.ok {
+  color: var(--green);
+}
+.fit-reasons li.warn {
+  color: var(--amber);
+}
+
+/* ---------- Realtime status ---------- */
+.realtime-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.realtime-pill i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a7b5b8;
+}
+.realtime-pill.is-online {
+  color: var(--green);
+  border-color: #bfe5d1;
+  background: var(--green-soft);
+}
+.realtime-pill.is-online i {
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(33, 132, 91, 0.5);
+  animation: realtimePulse 2s infinite;
+}
+.realtime-pill.is-connecting i {
+  background: var(--amber);
+}
+@keyframes realtimePulse {
+  70% {
+    box-shadow: 0 0 0 7px rgba(33, 132, 91, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(33, 132, 91, 0);
+  }
+}
+@media (max-width: 780px) {
+  .realtime-pill {
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+  .realtime-pill span {
+    display: none;
+  }
+}
+
+/* ---------- Ant Design inside the ported design system ----------
+   base.css styles bare svg/input/select elements; undo that for antd components. */
+.anticon svg {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+  stroke: none;
+}
+.antd-scope input[class*='ant-'],
+.antd-scope input[class*='ant-']:focus,
+.antd-scope .ant-select input,
+.antd-scope .ant-select input:focus,
+.antd-scope .ant-picker input,
+.antd-scope .ant-picker input:focus,
+.ant-modal input[class*='ant-'],
+.ant-modal input[class*='ant-']:focus {
+  box-shadow: none;
+}
+.antd-scope .ant-select input,
+.antd-scope .ant-picker input,
+.antd-scope .ant-input-affix-wrapper > input,
+.ant-modal .ant-input-affix-wrapper > input {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+.antd-scope textarea.ant-input:focus,
+.ant-modal textarea.ant-input:focus {
+  box-shadow: 0 0 0 2px rgba(11, 107, 104, 0.1);
+}
+
+/* ---------- Nurse portal (Ant Design) ---------- */
+.nurse-toolbar .segmented-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.nurse-request {
+  border-radius: 16px;
+  transition: box-shadow 0.3s;
+}
+.nurse-request .ant-card {
+  border-radius: 16px;
+}
+.nurse-request-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #edf2f2;
+}
+.nurse-request.is-highlighted .ant-card {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(11, 107, 104, 0.15);
+}
+.nurse-request.is-new .ant-card {
+  animation: nurseRequestIn 1.6s ease;
+  border-left: 4px solid #c41d7f;
+}
+@keyframes nurseRequestIn {
+  0% {
+    transform: translateY(-8px);
+    opacity: 0;
+    box-shadow: 0 0 0 0 rgba(196, 29, 127, 0.4);
+  }
+  30% {
+    transform: none;
+    opacity: 1;
+    box-shadow: 0 0 0 8px rgba(196, 29, 127, 0.12);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(196, 29, 127, 0);
+  }
+}
+
+.nurse-metric-link {
+  display: block;
+  color: inherit;
+}
+.nurse-metric-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+}
+
+/* schedule calendar */
+.schedule-calendar-card .ant-card-body {
+  padding: 16px 18px 12px;
+}
+.schedule-header {
+  padding: 4px 2px 14px;
+}
+.schedule-calendar-card .ant-picker-calendar-date-content {
+  height: 92px !important;
+}
+.shift-cell {
+  display: grid;
+  gap: 3px;
+  text-align: left;
+}
+.shift-chip {
+  display: block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+.shift-chip b {
+  font-weight: 750;
+}
+.shift-chip.is-completed {
+  background: #eef2f3;
+  color: #65757a;
+}
+.shift-chip.is-reassigned {
+  background: #f3edfd;
+  color: #6646bd;
+}
+.shift-chip.is-cannot_perform {
+  background: var(--red-soft);
+  color: var(--red);
+}
+.shift-more {
+  justify-self: start;
+  border: 0;
+  background: transparent;
+  padding: 0 6px;
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.shift-more:hover {
+  text-decoration: underline;
+}
+.schedule-legend {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.schedule-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.shift-chip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--teal-soft);
+  border: 1px solid #a9d8d2;
+}
+.shift-chip-dot.is-completed {
+  background: #eef2f3;
+  border-color: #d3dcde;
+}
+.shift-chip-dot.is-reassigned {
+  background: #f3edfd;
+  border-color: #cdbcf2;
+}
+.shift-chip-dot.is-cannot_perform {
+  background: var(--red-soft);
+  border-color: #f1b9bc;
+}
+.shift-list {
+  display: grid;
+  gap: 10px;
+}
+.shift-row {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.shift-row-time {
+  border-radius: 10px;
+  background: var(--teal-soft);
+  color: var(--teal);
+  text-align: center;
+  padding: 6px 2px;
+  align-self: start;
+}
+.shift-row-time b,
+.shift-row-time small {
+  display: block;
+}
+.shift-row.is-completed .shift-row-time {
+  background: #eef2f3;
+  color: #65757a;
+}
+.shift-row.is-cannot_perform .shift-row-time {
+  background: var(--red-soft);
+  color: var(--red);
+}
+.shift-row-body {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 16px;
+}
+.week-strip-day {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px 2px;
+  display: grid;
+  gap: 1px;
+  cursor: pointer;
+  text-align: center;
+}
+.week-strip-day small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.week-strip-day span {
+  font-size: 10.5px;
+  color: #a7b5b8;
+}
+.week-strip-day span.has-shifts {
+  color: var(--teal);
+  font-weight: 700;
+}
+.week-strip-day.is-today {
+  border-color: #a9d8d2;
+}
+.week-strip-day.is-selected {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+}
+.week-strip-day.is-selected small,
+.week-strip-day.is-selected span {
+  color: #d5f2ed;
+}
+
+/* nurse SOS */
+.nurse-sos-button {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+  height: 52px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #d63d45;
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 11px 30px rgba(205, 48, 59, 0.35);
+}
+.nurse-sos-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: var(--red);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  box-shadow: 0 0 0 8px var(--red-soft);
+  margin-bottom: 10px;
+}
+.ant-btn.nurse-sos-action {
+  height: auto;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 38px 1fr 14px;
+  gap: 10px;
+  text-align: left;
+  white-space: normal;
+}
+.nurse-sos-action-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: var(--red-soft);
+  color: var(--red);
+  font-size: 17px;
+}
+.nurse-sos-action-text b,
+.nurse-sos-action-text small {
+  display: block;
+}
+.nurse-sos-action-text small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* nurse profile */
+.cert-row {
+  padding: 9px 0;
+  border-bottom: 1px solid #edf2f2;
+}
+.cert-row:last-child {
+  border-bottom: 0;
+}
+.skill-row {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 780px) {
+  .schedule-calendar-card .ant-card-body {
+    padding: 12px 8px;
+  }
+  .schedule-calendar-card .ant-picker-calendar-date {
+    margin: 0 1px !important;
+    padding: 2px 1px 0 !important;
+  }
+  .schedule-calendar-card .ant-picker-calendar-date-content {
+    height: auto !important;
+    min-height: 58px;
+    overflow: visible !important;
+  }
+  .shift-chip {
+    font-size: 9.5px;
+    line-height: 15px;
+    padding: 0 1px;
+    text-align: center;
+    text-overflow: clip;
+  }
+  .shift-more {
+    padding: 0;
+    font-size: 9.5px;
+    justify-self: center;
+  }
+  .shift-chip-name {
+    display: none;
+  }
+  .nurse-sos-button {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+.ant-progress-circle svg {
+  width: 100%;
+  height: 100%;
+}
+.ant-empty-image svg {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+}
+.nurse-request .ant-descriptions-item-content {
+  white-space: nowrap;
+}
+.nurse-request .ant-descriptions-item:last-child .ant-descriptions-item-content,
+.nurse-request .ant-descriptions-item:nth-child(4) .ant-descriptions-item-content {
+  white-space: normal;
+}
+.schedule-calendar-card .ant-picker-cell-selected .ant-picker-calendar-date {
+  background: #e7f5f2 !important;
+}
+.schedule-calendar-card .ant-picker-cell-selected .ant-picker-calendar-date-value {
+  color: var(--teal) !important;
+  font-weight: 800;
+}

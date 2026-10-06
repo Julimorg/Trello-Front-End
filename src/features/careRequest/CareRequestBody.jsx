@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Button from '@mui/material/Button'
-import EmptyState from '../../components/EmptyState'
 import StatusBadge from '../../components/StatusBadge'
 import PatientConfirmDialog from '../../patient/PatientConfirmDialog'
 import NurseProfileCard from '../nurseMatching/NurseProfileCard'
 import { useDb } from '../../lib/store'
-import { cancelCareRequest, getNurse, retryMatching, selectNurseForCareRequest } from '../../lib/db'
+import { cancelCareRequest, getAlternativeNurses, getNurse, retryMatching, selectNurseForCareRequest } from '../../lib/db'
 import { careTypeLabel, formatDate } from '../../lib/format'
 import { CARE_REQUEST_STATUS, CARE_REQUEST_STATUS_LABEL } from '../../lib/constants'
 import { Icon } from '../../lib/icons'
@@ -57,6 +56,46 @@ function Meta({ careRequest, nurse, nurseLabel }) {
         </span>
       </div>
     </div>
+  )
+}
+
+// Shown instead of a dead-end "no nurse found": the closest verified nurses, with what differs.
+function AlternativeNurses({ careRequest, alternatives }) {
+  const declined = careRequest.declinedNurseIds?.length || 0
+  return (
+    <>
+      <div className="matching-bar is-alternative">
+        <span className="pulse" />
+        <span>
+          <b>
+            {declined ? 'Các điều dưỡng đã chọn chưa nhận ca' : 'Chưa có điều dưỡng khớp hoàn toàn'} · {alternatives.length} điều dưỡng thay thế
+          </b>
+          <small>
+            Gợi ý gần nhất theo chuyên môn, khu vực {careRequest.district} và lịch rảnh. Điểm khác biệt được ghi rõ trên từng hồ sơ.
+          </small>
+        </span>
+        <Button size="small" onClick={() => retryMatching(careRequest.id)}>
+          Tìm lại
+        </Button>
+      </div>
+      {alternatives.length === 0 && (
+        <p className="detail-text">Tất cả điều dưỡng đang hoạt động đều đã được đề xuất. Bệnh viện điều phối sẽ liên hệ để hỗ trợ bạn.</p>
+      )}
+      <div className="match-grid">
+        {alternatives.map(({ nurse, score, reasons }) => (
+          <NurseProfileCard
+            key={nurse.id}
+            nurse={nurse}
+            matchScore={`${score}%`}
+            careType={careRequest.careType}
+            reasons={reasons}
+            profileHref={`/patient/nurses/${nurse.id}`}
+            selectLabel="Chọn thay thế"
+            onSelect={(n) => selectNurseForCareRequest(careRequest.id, n.id)}
+          />
+        ))}
+      </div>
+    </>
   )
 }
 
@@ -136,16 +175,7 @@ export default function CareRequestBody({ careRequest, showCancel = true }) {
       )}
 
       {careRequest.status === CARE_REQUEST_STATUS.NO_MATCH && (
-        <EmptyState
-          icon={<Icon.search />}
-          title="Không tìm được điều dưỡng phù hợp"
-          description="Hệ thống sẽ tự động chạy lại khi có điều dưỡng mới được cấp phép. Bạn có thể thử tìm lại ngay hoặc liên hệ bệnh viện để được hỗ trợ thủ công."
-          action={
-            <Button variant="contained" color="secondary" onClick={() => retryMatching(careRequest.id)}>
-              Thử tìm lại
-            </Button>
-          }
-        />
+        <AlternativeNurses careRequest={careRequest} alternatives={getAlternativeNurses(state, careRequest)} />
       )}
 
       {careRequest.status === CARE_REQUEST_STATUS.CANCELLED && (

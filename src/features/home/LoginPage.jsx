@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
-import { useDb } from '../../lib/store'
+import { resetState, useDb } from '../../lib/store'
 import { NURSE_AUTH_STATUS_LABEL } from '../../lib/constants'
 
 const TABS = [
@@ -104,7 +104,19 @@ export default function LoginPage() {
         <button type="button" className="btn primary" style={{ width: '100%', minHeight: 48 }} disabled={tab !== 'platformAdmin' && !selectedId} onClick={handleLogin}>
           Đăng nhập
         </button>
-        <p className="auth-note">Đây là bản dựng demo với dữ liệu mẫu, không dùng để lưu thông tin thật.</p>
+        <p className="auth-note">
+          Đây là bản dựng demo với dữ liệu mẫu, không dùng để lưu thông tin thật.{' '}
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => {
+              // Also resets every other connected device through the realtime relay.
+              if (window.confirm('Đặt lại toàn bộ dữ liệu demo về ban đầu cho mọi thiết bị đang kết nối?')) resetState()
+            }}
+          >
+            Đặt lại dữ liệu demo
+          </button>
+        </p>
       </div>
     </div>
   )

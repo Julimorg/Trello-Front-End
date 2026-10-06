@@ -17,7 +17,7 @@ function initials(name) {
     .toUpperCase()
 }
 
-export default function NurseProfileCard({ nurse, matchScore, careType, onSelect, selectLabel = 'Chọn', profileHref }) {
+export default function NurseProfileCard({ nurse, matchScore, careType, onSelect, selectLabel = 'Chọn', profileHref, reasons }) {
   const state = useDb()
   const [open, setOpen] = useState(false)
   const hospital = getHospital(state, nurse.hospitalId)
@@ -47,6 +47,15 @@ export default function NurseProfileCard({ nurse, matchScore, careType, onSelect
           </span>
           <span>★ {nurse.rating ?? '—'}</span>
         </div>
+        {reasons && (
+          <ul className="fit-reasons">
+            {reasons.map((r) => (
+              <li key={r.label} className={r.ok ? 'ok' : 'warn'}>
+                {r.ok ? '✓' : '!'} {r.label}
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="nurse-card-actions" style={onSelect ? undefined : { gridTemplateColumns: '1fr' }}>
           {profileHref ? (
             <Button variant="outlined" component={Link} to={profileHref}>

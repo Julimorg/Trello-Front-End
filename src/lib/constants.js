@@ -61,7 +61,7 @@ export const CARE_REQUEST_STATUS_LABEL = {
   [CARE_REQUEST_STATUS.MATCHING]: { label: 'Đang tìm điều dưỡng', tone: 'info' },
   [CARE_REQUEST_STATUS.MATCHED]: { label: 'Đã có điều dưỡng phù hợp', tone: 'success' },
   [CARE_REQUEST_STATUS.NURSE_PENDING]: { label: 'Đang chờ phản hồi', tone: 'pending' },
-  [CARE_REQUEST_STATUS.NO_MATCH]: { label: 'Không tìm được điều dưỡng', tone: 'danger' },
+  [CARE_REQUEST_STATUS.NO_MATCH]: { label: 'Chờ chọn điều dưỡng thay thế', tone: 'pending' },
   [CARE_REQUEST_STATUS.CANCELLED]: { label: 'Đã hủy', tone: 'neutral' },
   [CARE_REQUEST_STATUS.COMPLETED]: { label: 'Đã chấp nhận', tone: 'success' },
 }

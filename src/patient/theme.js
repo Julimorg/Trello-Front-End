@@ -58,6 +58,9 @@ export const patientTheme = createTheme({
         },
       },
     },
+    // Two-letter Vietnamese weekday headers (T2…CN) instead of the ambiguous single letters.
+    MuiDateCalendar: { defaultProps: { dayOfWeekFormatter: (day) => day.format('dd') } },
+    MuiDatePicker: { defaultProps: { dayOfWeekFormatter: (day) => day.format('dd') } },
     MuiDialog: {
       styleOverrides: {
         paper: { borderRadius: 22, boxShadow: '0 30px 90px rgba(0,20,28,.25)' },

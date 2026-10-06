@@ -12,6 +12,7 @@ import ListItemText from '@mui/material/ListItemText'
 import { useToast } from '../../components/ToastProvider'
 import { useDb } from '../../lib/store'
 import { attachSosLocation, getPatient, getPrimaryFamilyContact, triggerSOS } from '../../lib/db'
+import { getLocation } from '../../lib/geo'
 import { SOS_ACTIONS } from '../../Data/patient/sos-data'
 import { prefersReducedMotion } from '../../patient/anime'
 import { Icon } from '../../lib/icons'
@@ -26,24 +27,6 @@ function readSavedPosition() {
   } catch {
     return null
   }
-}
-
-function getLocation() {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) return resolve(null)
-    const timer = setTimeout(() => resolve(null), 3000)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        clearTimeout(timer)
-        resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-      },
-      () => {
-        clearTimeout(timer)
-        resolve(null)
-      },
-      { timeout: 3000 },
-    )
-  })
 }
 
 export default function PatientSos({ patientId }) {

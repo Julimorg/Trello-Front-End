@@ -12,6 +12,7 @@ import StepLabel from '@mui/material/StepLabel'
 import Stepper from '@mui/material/Stepper'
 import TextField from '@mui/material/TextField'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+import { TimePicker } from '@mui/x-date-pickers/TimePicker'
 import PatientThemeProvider from '../../patient/PatientThemeProvider'
 import { useToast } from '../../components/ToastProvider'
 import { useDb } from '../../lib/store'
@@ -22,6 +23,10 @@ import { CARE_OPTION_META } from '../../Data/patient/care-request-data'
 import { Icon } from '../../lib/icons'
 
 const STEPS = ['Nhu cầu', 'Thời gian', 'Xác nhận']
+
+// Form keeps times as 'HH:mm' strings; the picker works with dayjs values.
+const toTime = (hhmm) => (hhmm ? dayjs(`2000-01-01T${hhmm}`) : null)
+const fromTime = (value) => (value && value.isValid() ? value.format('HH:mm') : '')
 
 function draftKey(patientId) {
   return `careshift_draft_carerequest_${patientId}`
@@ -170,21 +175,25 @@ function WizardContent({ open, onClose, patientId, createdBy, onCreated }) {
                 </MenuItem>
               ))}
             </TextField>
-            <TextField
-              type="time"
+            <TimePicker
               label="Giờ bắt đầu *"
-              value={form.timeStart}
-              onChange={(e) => update({ timeStart: e.target.value })}
-              slotProps={{ inputLabel: { shrink: true } }}
+              ampm={false}
+              value={toTime(form.timeStart)}
+              onChange={(v) => update({ timeStart: fromTime(v) })}
+              slotProps={{ textField: { fullWidth: true } }}
             />
-            <TextField
-              type="time"
+            <TimePicker
               label="Giờ kết thúc *"
-              value={form.timeEnd}
-              error={Boolean(form.timeStart && form.timeEnd) && !timeValid}
-              helperText={form.timeStart && form.timeEnd && !timeValid ? 'Giờ kết thúc phải sau giờ bắt đầu' : ' '}
-              onChange={(e) => update({ timeEnd: e.target.value })}
-              slotProps={{ inputLabel: { shrink: true } }}
+              ampm={false}
+              value={toTime(form.timeEnd)}
+              onChange={(v) => update({ timeEnd: fromTime(v) })}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  error: Boolean(form.timeStart && form.timeEnd) && !timeValid,
+                  helperText: form.timeStart && form.timeEnd && !timeValid ? 'Giờ kết thúc phải sau giờ bắt đầu' : ' ',
+                },
+              }}
             />
             {form.frequency === 'weekly' && (
               <div className="field-full">

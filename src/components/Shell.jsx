@@ -2,7 +2,8 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Icon } from '../lib/icons'
 import { useAuth } from '../auth/AuthContext'
-import { useDb } from '../lib/store'
+import { onRemotePatch, useDb, useRealtimeStatus } from '../lib/store'
+import { useToast } from './ToastProvider'
 import { listNotificationsFor, markNotificationsRead } from '../lib/db'
 import { formatDateTime } from '../lib/format'
 
@@ -17,6 +18,24 @@ function NotificationBell({ role, targetId }) {
 
   const notifications = useMemo(() => (role && targetId ? listNotificationsFor(state, role, targetId) : []), [state, role, targetId])
   const hasUnread = notifications.some((n) => !n.read)
+
+  // Pop a toast when a notification for this user arrives from another device (realtime relay).
+  const toast = useToast()
+  const seenIdsRef = useRef(null)
+  if (seenIdsRef.current === null) seenIdsRef.current = new Set(notifications.map((n) => n.id))
+  useEffect(
+    () =>
+      onRemotePatch((patch) => {
+        const incoming = (patch.notifications?.upsert || []).filter(
+          (n) => n.role === role && n.targetId === targetId && !n.read && !seenIdsRef.current.has(n.id),
+        )
+        incoming.forEach((n) => {
+          seenIdsRef.current.add(n.id)
+          toast('Thông báo mới', n.message)
+        })
+      }),
+    [role, targetId, toast],
+  )
 
   useEffect(() => {
     if (!open) return
@@ -80,6 +99,21 @@ function NotificationBell({ role, targetId }) {
         </div>
       )}
     </div>
+  )
+}
+
+const REALTIME_LABEL = { online: 'Realtime', connecting: 'Đang kết nối', offline: 'Ngoại tuyến' }
+
+function RealtimePill() {
+  const { status, clients } = useRealtimeStatus()
+  return (
+    <span
+      className={`realtime-pill is-${status}`}
+      title={status === 'online' ? `Đồng bộ trực tiếp · ${clients} thiết bị đang mở` : 'Chưa kết nối máy chủ realtime — dữ liệu chỉ lưu trên trình duyệt này'}
+    >
+      <i aria-hidden="true" />
+      <span>{REALTIME_LABEL[status]}</span>
+    </span>
   )
 }
 
@@ -174,6 +208,7 @@ export default function Shell({
             <strong>{currentTitle}</strong>
           </div>
           <div className="top-actions">
+            <RealtimePill />
             <NotificationBell role={notificationRole} targetId={notificationTargetId} />
             {profileTo ? (
               <Link to={profileTo} className="header-profile">

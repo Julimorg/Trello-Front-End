@@ -81,7 +81,10 @@ export interface CareRequest {
   createdBy: 'patient' | 'hospital'
   matchedNurseIds: string[]
   selectedNurseId: string | null
+  /** When the current selectedNurseId was asked; starts the nurse's response window. */
+  selectedAt?: string | null
   declinedNurseIds: string[]
+  declineReasons?: { nurseId: string; reason: string; at: string }[]
   bookingId: string | null
   lastMatchedAt: string | null
   createdAt: string

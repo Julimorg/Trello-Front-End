@@ -1,4 +1,5 @@
 import Shell from '../components/Shell'
+import AntdThemeProvider from '../antd/AntdThemeProvider'
 import { useAuth } from '../auth/AuthContext'
 import { useDb } from '../lib/store'
 import { getHospital, getNurse, listPendingRequestsForNurse } from '../lib/db'
@@ -15,7 +16,7 @@ const adminNavItems = [
 
 const nurseNavItemsBase = [
   { to: '/hospital/nurse/overview', label: 'Tổng quan', icon: 'home' },
-  { to: '/hospital/nurse/requests', label: 'Ca mới', icon: 'bell' },
+  { to: '/hospital/nurse/requests', label: 'Ca chăm sóc mới', icon: 'bell' },
   { to: '/hospital/nurse/schedule', label: 'Lịch làm việc', icon: 'calendar' },
   { to: '/hospital/nurse/profile', label: 'Hồ sơ nghề nghiệp', icon: 'shield' },
 ]
@@ -41,7 +42,7 @@ export default function HospitalLayout() {
     item.to === '/hospital/nurse/requests' && pendingCount ? { ...item, badge: pendingCount } : item,
   )
 
-  return (
+  const shell = (
     <Shell
       appLabel={isNurse ? 'Ứng dụng điều dưỡng' : 'Cổng bệnh viện'}
       roleDot={isNurse ? 'nurse' : 'hospital'}
@@ -57,4 +58,7 @@ export default function HospitalLayout() {
       notificationTargetId={isNurse ? session.id : hospital?.id}
     />
   )
+
+  // Nurse portal is built with Ant Design; hospital admin pages move over next.
+  return isNurse ? <AntdThemeProvider>{shell}</AntdThemeProvider> : shell
 }

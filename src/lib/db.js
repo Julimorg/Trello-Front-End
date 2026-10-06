@@ -8,6 +8,7 @@ import {
   BOOKING_STATUS,
   RECURRING_SESSION_COUNT,
 } from './constants'
+import { careTypeLabel } from './format'
 
 const genId = (prefix) => `${prefix}-${uuid().slice(0, 8)}`
 const now = () => new Date().toISOString()
@@ -55,6 +56,24 @@ export const listPendingRequestsForNurse = (state, nurseId) =>
   state.careRequests.filter(
     (c) => c.status === CARE_REQUEST_STATUS.NURSE_PENDING && c.selectedNurseId === nurseId,
   )
+
+// Every request a nurse has been involved in, tagged with how it relates to them:
+// pending (waiting for their answer), suggested (on the shortlist, patient hasn't picked),
+// accepted, declined, or closed (cancelled / given to another nurse).
+export function listNurseRequests(state, nurseId) {
+  return state.careRequests
+    .map((c) => {
+      const involved = c.matchedNurseIds.includes(nurseId) || c.selectedNurseId === nurseId || c.declinedNurseIds.includes(nurseId)
+      if (!involved) return null
+      let relation = 'closed'
+      if (c.declinedNurseIds.includes(nurseId)) relation = 'declined'
+      else if (c.status === CARE_REQUEST_STATUS.NURSE_PENDING && c.selectedNurseId === nurseId) relation = 'pending'
+      else if (c.status === CARE_REQUEST_STATUS.COMPLETED && c.selectedNurseId === nurseId) relation = 'accepted'
+      else if (c.status === CARE_REQUEST_STATUS.MATCHED) relation = 'suggested'
+      return { careRequest: c, relation }
+    })
+    .filter(Boolean)
+}
 
 export function computeBookingStatus(booking) {
   const today = dayjs().format('YYYY-MM-DD')
@@ -104,6 +123,13 @@ function notify(state, { role, targetId, message, link }) {
   ]
 }
 
+const nurseRequestLink = (careRequestId) => `/hospital/nurse/requests?id=${careRequestId}`
+
+function requestSummary(state, careRequest) {
+  const patient = getPatient(state, careRequest.patientId)
+  return `${patient?.name || 'Bệnh nhân'} · ${careTypeLabel(careRequest.careType)} tại ${careRequest.district}`
+}
+
 export function markNotificationsRead(role, targetId) {
   setState((state) => {
     const hasUnread = (state.notifications || []).some((n) => n.role === role && n.targetId === targetId && !n.read)
@@ -145,6 +171,38 @@ function runMatchingLogic(state, careRequest) {
   return ranked.slice(0, HARD_FILTER_MATCH_LIMIT).map((n) => n.id)
 }
 
+// Ranked fallbacks for a request that has no full match (or whose matches all declined).
+// Care-type authorisation stays a hard requirement when possible; district and availability
+// are relaxed and reported back as reasons so the patient can judge each alternative.
+const ALTERNATIVE_LIMIT = 6
+
+export function getAlternativeNurses(state, careRequest, limit = ALTERNATIVE_LIMIT) {
+  const excluded = new Set([...(careRequest.declinedNurseIds || []), careRequest.selectedNurseId].filter(Boolean))
+  const scored = state.nurses
+    .filter((n) => n.authStatus === NURSE_AUTH_STATUS.AUTHORIZED && !excluded.has(n.id))
+    .map((nurse) => {
+      const typeOk = nurse.authorizedCareTypes.includes(careRequest.careType)
+      const areaOk = nurse.serviceAreas.includes(careRequest.district)
+      const timeOk = nurseAvailabilityOverlaps(nurse, careRequest.weekdays, careRequest.timeSlot)
+      const score = Math.round((typeOk ? 40 : 0) + (areaOk ? 25 : 0) + (timeOk ? 20 : 0) + ((nurse.rating || 4) / 5) * 15)
+      return {
+        nurse,
+        typeOk,
+        score,
+        reasons: [
+          typeOk
+            ? { ok: true, label: 'Được cấp phép đúng loại ca' }
+            : { ok: false, label: 'Bệnh viện cần xác nhận chuyên môn cho loại ca này' },
+          areaOk ? { ok: true, label: `Phục vụ ${careRequest.district}` } : { ok: false, label: `Khu vực gần: ${nurse.serviceAreas.slice(0, 2).join(', ')}` },
+          timeOk ? { ok: true, label: 'Lịch rảnh khớp khung giờ' } : { ok: false, label: 'Cần thỏa thuận lại giờ' },
+        ],
+      }
+    })
+  // Prefer nurses authorised for the care type; only fall back to others when none exist.
+  const pool = scored.some((s) => s.typeOk) ? scored.filter((s) => s.typeOk) : scored
+  return pool.sort((a, b) => b.score - a.score || b.nurse.experienceYears - a.nurse.experienceYears).slice(0, limit)
+}
+
 export function createCareRequest(payload) {
   const id = genId('cr')
   setState((state) => {
@@ -178,7 +236,8 @@ export function createCareRequest(payload) {
       notify(state, {
         role: 'nurse',
         targetId: nurseId,
-        message: 'Bạn được đề xuất phù hợp cho một yêu cầu chăm sóc mới.',
+        message: `Yêu cầu mới phù hợp với bạn: ${requestSummary(state, careRequest)}. Đang chờ bệnh nhân chọn điều dưỡng.`,
+        link: nurseRequestLink(id),
       })
     })
 
@@ -202,7 +261,8 @@ export function retryMatching(careRequestId) {
       notify(state, {
         role: 'nurse',
         targetId: nurseId,
-        message: 'Bạn được đề xuất phù hợp cho một yêu cầu chăm sóc mới.',
+        message: `Yêu cầu mới phù hợp với bạn: ${requestSummary(state, careRequest)}. Đang chờ bệnh nhân chọn điều dưỡng.`,
+        link: nurseRequestLink(careRequestId),
       })
     })
     return {
@@ -253,7 +313,8 @@ export function selectNurseForCareRequest(careRequestId, nurseId) {
     notify(state, {
       role: 'nurse',
       targetId: nurseId,
-      message: 'Bạn có một yêu cầu chăm sóc mới cần phản hồi trong 15 phút.',
+      message: `${requestSummary(state, careRequest)} — bệnh nhân đã chọn bạn. Phản hồi trong 15 phút.`,
+      link: nurseRequestLink(careRequestId),
     })
     notify(state, {
       role: 'patient',
@@ -265,14 +326,20 @@ export function selectNurseForCareRequest(careRequestId, nurseId) {
       ...state,
       careRequests: state.careRequests.map((c) =>
         c.id === careRequestId
-          ? { ...c, selectedNurseId: nurseId, status: CARE_REQUEST_STATUS.NURSE_PENDING }
+          ? {
+              ...c,
+              selectedNurseId: nurseId,
+              selectedAt: now(),
+              matchedNurseIds: c.matchedNurseIds.includes(nurseId) ? c.matchedNurseIds : [...c.matchedNurseIds, nurseId],
+              status: CARE_REQUEST_STATUS.NURSE_PENDING,
+            }
           : c,
       ),
     }
   })
 }
 
-export function respondToCareRequest(careRequestId, decision) {
+export function respondToCareRequest(careRequestId, decision, { reason } = {}) {
   let bookingId = null
   setState((state) => {
     const careRequest = getCareRequest(state, careRequestId)
@@ -330,20 +397,23 @@ export function respondToCareRequest(careRequestId, decision) {
 
     // decline: cascade to the next matched nurse who hasn't declined yet
     const declinedNurseIds = [...careRequest.declinedNurseIds, nurseId]
+    const declineReasons = [...(careRequest.declineReasons || []), { nurseId, reason: reason || '', at: now() }]
     const nextNurseId = careRequest.matchedNurseIds.find((id) => !declinedNurseIds.includes(id))
+    const declinedBy = `${nurse?.name || 'Điều dưỡng'} đã từ chối yêu cầu${reason ? ` (${reason})` : ''}.`
     notify(state, {
       role: 'patient',
       targetId: careRequest.patientId,
       message: nextNurseId
-        ? `${nurse?.name || 'Điều dưỡng'} đã từ chối yêu cầu. Đang gửi tới điều dưỡng phù hợp tiếp theo.`
-        : `${nurse?.name || 'Điều dưỡng'} đã từ chối yêu cầu. Không còn điều dưỡng phù hợp nào khác, vui lòng liên hệ bệnh viện để được hỗ trợ.`,
+        ? `${declinedBy} Đang gửi tới ${getNurse(state, nextNurseId)?.name || 'điều dưỡng phù hợp tiếp theo'}.`
+        : `${declinedBy} Hãy chọn một điều dưỡng thay thế được gợi ý.`,
       link: `/patient/request/${careRequestId}`,
     })
     if (nextNurseId) {
       notify(state, {
         role: 'nurse',
         targetId: nextNurseId,
-        message: 'Bạn có một yêu cầu chăm sóc mới cần phản hồi trong 15 phút.',
+        message: `${requestSummary(state, careRequest)} — được chuyển tới bạn. Phản hồi trong 15 phút.`,
+        link: nurseRequestLink(careRequestId),
       })
     }
     return {
@@ -353,7 +423,9 @@ export function respondToCareRequest(careRequestId, decision) {
           ? {
               ...c,
               declinedNurseIds,
+              declineReasons,
               selectedNurseId: nextNurseId || null,
+              selectedAt: nextNurseId ? now() : null,
               status: nextNurseId ? CARE_REQUEST_STATUS.NURSE_PENDING : CARE_REQUEST_STATUS.NO_MATCH,
             }
           : c,

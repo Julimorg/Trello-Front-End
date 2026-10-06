@@ -1,4 +1,4 @@
-import { dayOffset, timestampAt, weekdayAt } from './date-utils'
+import { dayOffset, minutesAgo, timestampAt, weekdayAt } from './date-utils'
 import type { CareRequest, CareTypeId } from './types'
 
 // Data for "Yêu cầu chăm sóc" (/patient/request and /patient/request/:id).
@@ -236,7 +236,7 @@ export const CARE_REQUESTS: CareRequest[] = [
     matchedNurseIds: ['nurse-hoa', 'nurse-phuc'],
     selectedNurseId: 'nurse-hoa',
     bookingId: null,
-    createdAt: timestampAt(0, '08:30'),
+    createdAt: minutesAgo(8),
   }),
 
   // ---- Trần Thị Thu (patient-thu) ----
