@@ -1,8 +1,7 @@
-import { timestampAt } from '../patient/date-utils'
 import type { NurseProfileDetail } from './types'
 
 // Data for "Hồ sơ nghề nghiệp" (/hospital/nurse/profile), keyed by nurse id from
-// Data/patient/nurse-data.ts. Reviews point at patient profiles and the bookings they rated.
+// Data/patient/nurse-data.ts.
 
 export const NURSE_PROFILE_DETAILS: Record<string, NurseProfileDetail> = {
   'nurse-hoa': {
@@ -43,12 +42,6 @@ export const NURSE_PROFILE_DETAILS: Record<string, NurseProfileDetail> = {
     maxSessionsPerWeek: 18,
     acceptanceRate: 0.86,
     onTimeRate: 0.97,
-    reviews: [
-      { id: 'rv-hoa-1', patientId: 'patient-lien', bookingId: 'bk-3101', rating: 5, comment: 'Chị Hoa rất nhẹ nhàng, mẹ tôi hợp tác tập đi tốt hơn hẳn.', createdAt: timestampAt(-9, '10:15') },
-      { id: 'rv-hoa-2', patientId: 'patient-hanh', bookingId: 'bk-3102', rating: 5, comment: 'Đúng giờ, hướng dẫn gia đình cách hỗ trợ ông tập ở nhà.', createdAt: timestampAt(-7, '16:20') },
-      { id: 'rv-hoa-3', patientId: 'patient-an', bookingId: 'bk-2004', rating: 4, comment: 'Chu đáo, nhắc thuốc đầy đủ. Một buổi phải đổi người vì chị bị ốm.', createdAt: timestampAt(-14, '21:00') },
-      { id: 'rv-hoa-4', patientId: 'patient-dung', bookingId: 'bk-3103', rating: 5, comment: 'Đo huyết áp và ghi chép rất cẩn thận.', createdAt: timestampAt(-5, '19:05') },
-    ],
   },
   'nurse-mai': {
     nurseId: 'nurse-mai',
@@ -81,9 +74,6 @@ export const NURSE_PROFILE_DETAILS: Record<string, NurseProfileDetail> = {
     maxSessionsPerWeek: 12,
     acceptanceRate: 0.78,
     onTimeRate: 0.99,
-    reviews: [
-      { id: 'rv-mai-1', patientId: 'patient-an', bookingId: 'bk-2001', rating: 5, comment: 'Thay băng rất cẩn thận, vết mổ lành nhanh.', createdAt: timestampAt(-46, '20:00') },
-    ],
   },
 }
 

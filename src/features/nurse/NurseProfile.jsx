@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import dayjs from 'dayjs'
-import { Avatar, Card, Col, Descriptions, Empty, Flex, Progress, Rate, Row, Statistic, Table, Tabs, Tag, Timeline, Typography } from 'antd'
+import { Avatar, Card, Col, Descriptions, Flex, Progress, Row, Statistic, Table, Tabs, Tag, Timeline, Typography } from 'antd'
 import {
   BookOutlined,
   CarOutlined,
@@ -14,7 +14,7 @@ import {
 } from '@ant-design/icons'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { getHospital, getNurse, getPatient, getPricing, listBookingsByNurse } from '../../lib/db'
+import { getHospital, getNurse, getPricing, listBookingsByNurse } from '../../lib/db'
 import { careTypeLabel, formatCurrency, formatDate, weekdayLabel } from '../../lib/format'
 import { NURSE_AUTH_STATUS_LABEL, SESSION_STATUS } from '../../lib/constants'
 import { NURSE_PROFILE_DETAILS, SKILL_LEVEL_LABEL } from '../../Data/nurse/profile-data'
@@ -45,7 +45,6 @@ function fallbackDetail(nurse) {
     maxSessionsPerWeek: 10,
     acceptanceRate: null,
     onTimeRate: null,
-    reviews: [],
   }
 }
 
@@ -297,29 +296,6 @@ export default function NurseProfile() {
     />
   )
 
-  const reviews = detail.reviews.length ? (
-    <Flex vertical gap={12}>
-      {detail.reviews.map((r) => {
-        const patient = getPatient(state, r.patientId)
-        return (
-          <Card size="small" key={r.id}>
-            <Flex justify="space-between" wrap gap={8}>
-              <Text strong>{patient?.name}</Text>
-              <Rate disabled value={r.rating} style={{ fontSize: 14 }} />
-            </Flex>
-            <Paragraph style={{ margin: '6px 0 2px' }}>“{r.comment}”</Paragraph>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {formatDate(r.createdAt)}
-              {r.bookingId ? ` · Liệu trình #${r.bookingId}` : ''}
-            </Text>
-          </Card>
-        )
-      })}
-    </Flex>
-  ) : (
-    <Empty description="Chưa có đánh giá" />
-  )
-
   return (
     <>
       <Card className="nurse-profile-hero">
@@ -387,7 +363,6 @@ export default function NurseProfile() {
             { key: 'experience', label: 'Học vấn & kinh nghiệm', children: experience },
             { key: 'expertise', label: 'Chuyên môn & kỹ năng', children: expertise },
             { key: 'availability', label: 'Lịch rảnh', children: availability },
-            { key: 'reviews', label: `Đánh giá (${detail.reviews.length})`, children: reviews },
           ]}
         />
       </Card>

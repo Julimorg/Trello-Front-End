@@ -29,17 +29,6 @@ export interface Training {
   hours: number
 }
 
-export interface NurseReview {
-  id: string
-  /** Points at a patient profile id. */
-  patientId: string
-  /** Points at the booking the review is about. */
-  bookingId: string | null
-  rating: number
-  comment: string
-  createdAt: string
-}
-
 export interface NurseProfileDetail {
   nurseId: string
   dateOfBirth: string
@@ -61,5 +50,4 @@ export interface NurseProfileDetail {
   maxSessionsPerWeek: number
   acceptanceRate: number
   onTimeRate: number
-  reviews: NurseReview[]
 }

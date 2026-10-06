@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { Button, Card, Col, Empty, Flex, Row, Space, Statistic, Tag, Timeline, Typography } from 'antd'
-import { BellOutlined, CalendarOutlined, CheckCircleOutlined, StarFilled } from '@ant-design/icons'
+import { BellOutlined, CalendarOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import PageHead from '../../components/PageHead'
 import NurseRequestCard from './NurseRequestCard'
 import NurseSos from './NurseSos'
@@ -81,10 +81,10 @@ export default function NurseOverview() {
       />
 
       <Row gutter={[16, 16]}>
-        <Col xs={12} lg={6}>
+        <Col xs={12} lg={8}>
           <MetricCard to="/hospital/nurse/requests" title="Chờ phản hồi" value={pending.length} icon={<BellOutlined />} color="#b96b08" hint="Phản hồi trong 15 phút" />
         </Col>
-        <Col xs={12} lg={6}>
+        <Col xs={12} lg={8}>
           <MetricCard
             to={`/hospital/nurse/schedule?date=${today}`}
             title="Ca hôm nay"
@@ -94,11 +94,8 @@ export default function NurseOverview() {
             hint={nextToday ? `Ca tiếp theo lúc ${nextToday.start}` : 'Đã xong các ca hôm nay'}
           />
         </Col>
-        <Col xs={12} lg={6}>
+        <Col xs={24} lg={8}>
           <MetricCard to="/hospital/nurse/schedule" title="Hoàn thành tháng này" value={completedThisMonth} icon={<CheckCircleOutlined />} color="#21845b" hint="Buổi chăm sóc đã xong" />
-        </Col>
-        <Col xs={12} lg={6}>
-          <MetricCard to="/hospital/nurse/profile" title="Đánh giá" value={nurse?.rating ?? '—'} icon={<StarFilled />} color="#d4880f" hint={`${nurse?.reviewCount || 0} lượt từ bệnh nhân`} />
         </Col>
       </Row>
 
