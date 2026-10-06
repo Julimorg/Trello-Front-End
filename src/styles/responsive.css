@@ -1,0 +1,242 @@
+/* Responsive layer: loaded last so it can adjust every portal for tablet (≤1024px) and phone (≤780px / ≤560px).
+   Breakpoints: 1024 = sidebar turns into a slide-in drawer, 780 = phone layout, 560 = small phone. */
+
+/* ---------- App shell: drawer navigation on tablet and phone ---------- */
+@media (max-width: 1024px) {
+  .app-shell {
+    display: block;
+  }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    width: min(300px, 86vw);
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: none;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 0 0 60px rgba(0, 20, 28, 0.45);
+  }
+  .mobile-menu {
+    display: flex;
+    flex: 0 0 auto;
+  }
+  .topbar {
+    padding: 0 16px;
+    gap: 10px;
+  }
+  .crumb {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-left: 10px;
+  }
+  .crumb strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .top-actions {
+    flex: 0 0 auto;
+  }
+  .support-button {
+    display: flex;
+    white-space: nowrap;
+  }
+  .app-content {
+    padding: 26px clamp(16px, 3.5vw, 40px) calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Wide tables scroll sideways as a whole; sticky columns would cover most of a small screen */
+@media (max-width: 1024px) {
+  .ant-table-cell-fix-left,
+  .ant-table-cell-fix-right,
+  .ant-table-cell-fix-start,
+  .ant-table-cell-fix-end {
+    position: static !important;
+  }
+  .ant-table-cell-fix-left::after,
+  .ant-table-cell-fix-right::after,
+  .ant-table-cell-fix-start::after,
+  .ant-table-cell-fix-end::after {
+    display: none !important;
+  }
+}
+
+/* ---------- Phone ---------- */
+@media (max-width: 780px) {
+  .topbar {
+    height: 64px;
+  }
+  .crumb {
+    margin-left: 4px;
+  }
+  .page-head {
+    margin-bottom: 20px;
+  }
+  .page-head h1 {
+    font-size: 1.5rem;
+  }
+  .page-head > div:last-child:not(:first-child) {
+    margin-top: 14px;
+    width: 100%;
+  }
+  .page-head .ant-space,
+  .page-head .ant-flex {
+    width: 100%;
+  }
+  .page-head .ant-btn {
+    flex: 1 1 auto;
+  }
+
+  /* Panels / card headers wrap instead of squeezing their title */
+  .panel-head {
+    flex-wrap: wrap;
+  }
+  .panel-head-actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .ant-card-head {
+    padding: 0 14px;
+  }
+  .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .ant-card-body {
+    padding: 14px;
+  }
+
+  .ant-table-wrapper .ant-table-thead > tr > th,
+  .ant-table-wrapper .ant-table-tbody > tr > td {
+    padding: 10px 12px;
+  }
+  .ant-table-pagination {
+    flex-wrap: wrap;
+    justify-content: center !important;
+  }
+
+  /* Form controls: 16px stops iOS from zooming the page on focus */
+  .ant-input,
+  .ant-input-affix-wrapper input,
+  .ant-input-number-input,
+  .ant-select-selection-search-input,
+  .ant-picker-input input,
+  textarea.ant-input,
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Toolbars: search on its own row, filters two per row */
+  .nurse-toolbar .ant-flex > .ant-input-affix-wrapper {
+    flex: 1 1 100% !important;
+  }
+  .nurse-toolbar .ant-flex > .ant-select,
+  .nurse-toolbar .ant-flex > .ant-picker {
+    flex: 1 1 calc(50% - 10px) !important;
+    min-width: 0;
+  }
+
+  /* Overlays use the full screen width */
+  .ant-modal {
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px auto !important;
+    top: 12px !important;
+  }
+  .ant-modal .ant-modal-body {
+    max-height: 72vh;
+    overflow-y: auto;
+  }
+  .ant-drawer-content-wrapper {
+    max-width: 100vw;
+  }
+  .ant-descriptions-bordered .ant-descriptions-item-label {
+    width: 38%;
+  }
+  .ant-tabs-nav {
+    margin-bottom: 12px;
+  }
+
+  /* Descriptions inside nurse request cards may wrap again */
+  .session-hero .ant-btn,
+  .session-hero .ant-space {
+    max-width: 100%;
+  }
+  .contract-viewer {
+    height: 70vh;
+  }
+  .maintenance-banner {
+    padding: 10px 16px;
+  }
+  .ant-statistic .ant-statistic-content {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 560px) {
+  .support-button {
+    padding: 0 9px;
+    font-size: 0.72rem;
+  }
+  .topbar .icon-button {
+    width: 38px;
+    height: 38px;
+  }
+  .toast-stack {
+    right: 12px;
+    left: 12px;
+    top: 74px;
+  }
+  .toast {
+    width: 100%;
+  }
+  .nurse-toolbar .ant-flex > .ant-select,
+  .nurse-toolbar .ant-flex > .ant-picker {
+    flex-basis: 100% !important;
+  }
+}
+
+/* ---------- Tablet ---------- */
+@media (min-width: 781px) and (max-width: 1024px) {
+  .page-head {
+    gap: 16px;
+  }
+  .nurse-request .ant-descriptions-item-content {
+    white-space: normal;
+  }
+  .contract-viewer {
+    height: 620px;
+  }
+}
+
+/* ---------- Everything ---------- */
+.ant-segmented {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.ant-table-wrapper .ant-table-container {
+  max-width: 100%;
+}
+.ant-tabs-nav-list {
+  scrollbar-width: none;
+}
+
+/* Bigger touch targets for small buttons on touch screens */
+@media (pointer: coarse) {
+  .ant-btn-sm {
+    min-height: 34px;
+    padding-inline: 12px;
+  }
+  .ant-table-wrapper .ant-btn-sm {
+    min-height: 34px;
+  }
+  .ant-select-single:not(.ant-select-customize-input) .ant-select-selector {
+    min-height: 40px;
+  }
+}

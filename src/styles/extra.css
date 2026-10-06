@@ -1426,7 +1426,7 @@ button.link-reset {
   background: var(--teal-soft);
   color: var(--teal);
 }
-@media (min-width: 781px) {
+@media (min-width: 1025px) {
   .app-shell {
     transition: grid-template-columns 0.2s ease;
   }
@@ -1473,7 +1473,7 @@ button.link-reset {
     padding: 10px 0;
   }
 }
-@media (max-width: 780px) {
+@media (max-width: 1024px) {
   .sidebar-collapse {
     display: none;
   }

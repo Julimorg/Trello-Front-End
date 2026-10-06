@@ -3,7 +3,7 @@
   display: none;
 }
 
-@media (max-width: 780px) {
+@media (max-width: 1024px) {
   body.nav-open {
     overflow: hidden;
   }
