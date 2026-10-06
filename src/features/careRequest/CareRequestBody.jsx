@@ -87,7 +87,6 @@ function AlternativeNurses({ careRequest, alternatives }) {
             key={nurse.id}
             nurse={nurse}
             matchScore={`${score}%`}
-            careType={careRequest.careType}
             reasons={reasons}
             profileHref={`/patient/nurses/${nurse.id}`}
             selectLabel="Chọn thay thế"
@@ -145,7 +144,6 @@ export default function CareRequestBody({ careRequest, showCancel = true }) {
                   key={id}
                   nurse={nurse}
                   matchScore="96%"
-                  careType={careRequest.careType}
                   selectLabel="Chọn"
                   onSelect={(n) => selectNurseForCareRequest(careRequest.id, n.id)}
                 />

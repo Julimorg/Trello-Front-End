@@ -19,20 +19,19 @@ const PatientProfile = lazy(() => import('./features/home/PatientProfile'))
 const FamilyInviteAccept = lazy(() => import('./features/sos/FamilyInviteAccept'))
 
 const HospitalLayout = lazy(() => import('./layouts/HospitalLayout'))
-const HospitalOverview = lazy(() => import('./features/hospitalRoster/HospitalOverview'))
-const NurseTable = lazy(() => import('./features/hospitalRoster/NurseTable'))
-const NurseDetail = lazy(() => import('./features/hospitalRoster/NurseDetail'))
-const HospitalVerification = lazy(() => import('./features/hospitalRoster/HospitalVerification'))
-const HospitalSchedule = lazy(() => import('./features/hospitalRoster/HospitalSchedule'))
-const HospitalRequests = lazy(() => import('./features/hospitalRoster/HospitalRequests'))
+const HospitalOverview = lazy(() => import('./features/hospitalAdmin/HospitalOverview'))
+const NurseTable = lazy(() => import('./features/hospitalAdmin/NurseTable'))
+const NurseDetail = lazy(() => import('./features/hospitalAdmin/NurseDetail'))
+const HospitalVerification = lazy(() => import('./features/hospitalAdmin/HospitalVerification'))
+const HospitalSchedule = lazy(() => import('./features/hospitalAdmin/HospitalSchedule'))
+const HospitalRequests = lazy(() => import('./features/hospitalAdmin/HospitalRequests'))
 const NurseOverview = lazy(() => import('./features/nurse/NurseOverview'))
 const NurseRequests = lazy(() => import('./features/nurse/NurseRequests'))
 const NurseSchedule = lazy(() => import('./features/nurse/NurseSchedule'))
 const NurseProfileSelf = lazy(() => import('./features/nurse/NurseProfile'))
 const NurseSessionDetail = lazy(() => import('./features/nurse/NurseSessionDetail'))
 const NurseRequestDetail = lazy(() => import('./features/nurse/NurseRequestDetail'))
-const SosLog = lazy(() => import('./features/sos/SosLog'))
-const PricingConfig = lazy(() => import('./features/pricing/PricingConfig'))
+const SosLog = lazy(() => import('./features/hospitalAdmin/SosLog'))
 
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'))
 const PlatformDashboard = lazy(() => import('./features/platformAdmin/PlatformDashboard'))
@@ -134,14 +133,6 @@ function App() {
             element={
               <RoleGate roles={['hospitalAdmin']}>
                 <SosLog />
-              </RoleGate>
-            }
-          />
-          <Route
-            path="admin/pricing"
-            element={
-              <RoleGate roles={['hospitalAdmin']}>
-                <PricingConfig />
               </RoleGate>
             }
           />

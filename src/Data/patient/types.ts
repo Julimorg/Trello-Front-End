@@ -28,11 +28,22 @@ export type Frequency = 'once' | 'daily' | 'weekly'
 
 export type SosType = 'call_115' | 'notify_primary_family' | 'notify_family' | 'notify_hospital'
 
+export interface CertificateFile {
+  name: string
+  type: string
+  size: number
+  /** Only kept for small uploads (see the hospital certificate modal); seed files are metadata only. */
+  dataUrl?: string
+}
+
 export interface Certificate {
   id: string
   name: string
   number: string
   issuedBy: string
+  issuedAt?: string
+  expiresAt?: string
+  file?: CertificateFile | null
 }
 
 export interface AvailabilitySlot {
@@ -174,7 +185,16 @@ export interface SosEvent {
   note: string
   location: { lat: number; lng: number } | null
   createdAt: string
+  /** Nurse who raised it / was on duty — lets a no-shift nurse SOS reach the hospital. */
+  nurseId?: string | null
+  status?: SosStatus
+  acknowledgedAt?: string
+  resolvedAt?: string
+  /** Coordinator's handling note, shown in the hospital SOS log. */
+  resolution?: string
 }
+
+export type SosStatus = 'open' | 'acknowledged' | 'resolved'
 
 export interface AppNotification {
   id: string

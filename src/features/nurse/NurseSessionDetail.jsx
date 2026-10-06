@@ -30,12 +30,11 @@ import {
   FileTextOutlined,
   PhoneOutlined,
 } from '@ant-design/icons'
-import NurseSos from './NurseSos'
 import PatientInfoCard from './PatientInfoCard'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { completeSession, findSession, getCareRequest, getNurse, getPatient, getPricing, reportCannotPerform, updateSessionWork } from '../../lib/db'
-import { careTypeLabel, formatCurrency, formatDate } from '../../lib/format'
+import { completeSession, findSession, getCareRequest, getNurse, getPatient, reportCannotPerform, updateSessionWork } from '../../lib/db'
+import { careTypeLabel, formatDate } from '../../lib/format'
 import { CARE_REQUEST_STATUS, SESSION_STATUS } from '../../lib/constants'
 import { SESSION_STATUS_META, frequencyText, sessionWork } from './nurse-shared'
 
@@ -77,8 +76,6 @@ export default function NurseSessionDetail() {
   const { booking, session } = found
   const patient = getPatient(state, booking.patientId)
   const careRequest = getCareRequest(state, booking.careRequestId)
-  const nurse = getNurse(state, session.nurseId)
-  const price = careRequest ? getPricing(state, nurse?.hospitalId, careRequest.careType) : null
   const meta = SESSION_STATUS_META[session.status] || SESSION_STATUS_META.confirmed
   const today = dayjs().format('YYYY-MM-DD')
   const date = dayjs(session.date)
@@ -323,7 +320,6 @@ export default function NurseSessionDetail() {
                 { key: 'freq', label: 'Tần suất', children: frequency || '—' },
                 { key: 'start', label: 'Bắt đầu', children: formatDate(careRequest?.desiredStartDate) },
                 { key: 'count', label: 'Số buổi', children: `${booking.sessions.length} buổi` },
-                { key: 'price', label: 'Đơn giá', children: price ? `${formatCurrency(price.price)}/${price.unit}` : '—' },
                 {
                   key: 'time',
                   label: 'Thời lượng',
@@ -353,7 +349,6 @@ export default function NurseSessionDetail() {
         <Input.TextArea rows={3} autoFocus style={{ marginTop: 12 }} placeholder="Lý do (ốm, việc đột xuất…)" value={reason} onChange={(e) => setReason(e.target.value)} />
       </Modal>
 
-      {session.date === today && isActive && <NurseSos bookingId={booking.id} sessionId={session.id} nurseId={auth.id} />}
     </>
   )
 }

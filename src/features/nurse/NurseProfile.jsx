@@ -14,8 +14,8 @@ import {
 } from '@ant-design/icons'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { getHospital, getNurse, getPricing, listBookingsByNurse } from '../../lib/db'
-import { careTypeLabel, formatCurrency, formatDate, weekdayLabel } from '../../lib/format'
+import { getHospital, getNurse, listBookingsByNurse } from '../../lib/db'
+import { careTypeLabel, formatDate, weekdayLabel } from '../../lib/format'
 import { NURSE_AUTH_STATUS_LABEL, SESSION_STATUS } from '../../lib/constants'
 import { NURSE_PROFILE_DETAILS, SKILL_LEVEL_LABEL } from '../../Data/nurse/profile-data'
 import { initials } from './nurse-shared'
@@ -221,19 +221,16 @@ export default function NurseProfile() {
   const expertise = (
     <Row gutter={[24, 16]}>
       <Col xs={24} md={12}>
-        <Title level={5}>Loại ca được cấp phép & đơn giá</Title>
+        <Title level={5}>Loại ca được cấp phép</Title>
         {nurse.authorizedCareTypes.length ? (
-          nurse.authorizedCareTypes.map((c) => {
-            const price = getPricing(state, nurse.hospitalId, c)
-            return (
-              <Flex key={c} justify="space-between" className="cert-row">
-                <Text>
-                  <CheckCircleOutlined style={{ color: '#21845b' }} /> {careTypeLabel(c)}
-                </Text>
-                <Text strong>{price ? `${formatCurrency(price.price)}/${price.unit}` : '—'}</Text>
-              </Flex>
-            )
-          })
+          nurse.authorizedCareTypes.map((c) => (
+            <Flex key={c} justify="space-between" className="cert-row">
+              <Text>
+                <CheckCircleOutlined style={{ color: '#21845b' }} /> {careTypeLabel(c)}
+              </Text>
+              <Tag color="green">Đã cấp phép</Tag>
+            </Flex>
+          ))
         ) : (
           <Text type="secondary">Chưa được cấp phép ca nào.</Text>
         )}

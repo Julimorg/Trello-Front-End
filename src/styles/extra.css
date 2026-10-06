@@ -1346,25 +1346,6 @@ button.link-reset {
 }
 
 /* nurse SOS */
-.nurse-sos-button {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 1000;
-  height: 52px;
-  padding: 0 20px;
-  border: 0;
-  border-radius: 999px;
-  background: #d63d45;
-  color: #fff;
-  font-weight: 800;
-  font-size: 15px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  box-shadow: 0 11px 30px rgba(205, 48, 59, 0.35);
-}
 .nurse-sos-icon {
   width: 64px;
   height: 64px;
@@ -1444,10 +1425,6 @@ button.link-reset {
   }
   .shift-chip-name {
     display: none;
-  }
-  .nurse-sos-button {
-    right: 16px;
-    bottom: 16px;
   }
 }
 .ant-progress-circle svg {
@@ -1714,4 +1691,151 @@ button.link-reset {
     grid-column: 1 / -1;
     justify-self: start;
   }
+}
+
+/* ---------- Hospital admin (Ant Design) ---------- */
+.checkbox-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px 12px;
+}
+.cert-list {
+  display: grid;
+  gap: 10px;
+}
+.cert-item {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.cert-item.is-expired {
+  border-color: #f1b9bc;
+  background: #fffafa;
+}
+.cert-item.is-expiring {
+  border-color: #f2ddb6;
+}
+.cert-item-main {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.cert-item-main b,
+.cert-item-main small {
+  display: block;
+}
+.cert-item-main small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+.cert-item-main:hover b {
+  color: var(--teal);
+}
+.cert-item-icon {
+  font-size: 22px;
+  color: var(--green);
+  margin-top: 2px;
+}
+.cert-item.is-expired .cert-item-icon {
+  color: var(--red);
+}
+.cert-item-file {
+  margin-top: 4px;
+  color: var(--blue) !important;
+}
+.cert-file-chip {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfdfd;
+  text-align: left;
+}
+.cert-file-chip > .anticon {
+  font-size: 18px;
+  color: var(--teal);
+}
+.cert-file-chip > span:not(.anticon):not(.ant-tag) {
+  flex: 1;
+  min-width: 0;
+}
+.cert-file-chip b,
+.cert-file-chip small {
+  display: block;
+}
+.cert-file-chip small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.cert-file-chip.is-button {
+  cursor: pointer;
+}
+.cert-file-chip.is-button:hover {
+  border-color: #a9d8d2;
+}
+.verify-certs {
+  margin-top: 8px;
+}
+.cert-preview {
+  margin: 16px 0;
+  min-height: 160px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #fbfdfd;
+}
+.cert-preview img {
+  max-width: 100%;
+  max-height: 420px;
+}
+.cert-preview iframe {
+  width: 100%;
+  height: 420px;
+  border: 0;
+}
+.sos-note-box {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--red-soft);
+  border: 1px solid #f1c7ca;
+}
+.sos-row-open td {
+  background: #fff8f8;
+}
+.attention-link {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf2f2;
+  color: inherit;
+}
+.attention-link:last-child {
+  border-bottom: 0;
+}
+.attention-link:hover {
+  color: inherit;
+}
+.attention-link:hover .ant-typography strong {
+  color: var(--teal);
+}
+.antd-scope .ant-table .ant-tag.tag-wrap {
+  white-space: normal;
 }

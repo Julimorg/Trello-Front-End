@@ -4,8 +4,8 @@ import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import IconButton from '@mui/material/IconButton'
 import { useDb } from '../../lib/store'
-import { getHospital, getPricing } from '../../lib/db'
-import { careTypeLabel, formatCurrency } from '../../lib/format'
+import { getHospital } from '../../lib/db'
+import { careTypeLabel } from '../../lib/format'
 import { Icon } from '../../lib/icons'
 
 function initials(name) {
@@ -17,11 +17,10 @@ function initials(name) {
     .toUpperCase()
 }
 
-export default function NurseProfileCard({ nurse, matchScore, careType, onSelect, selectLabel = 'Chọn', profileHref, reasons }) {
+export default function NurseProfileCard({ nurse, matchScore, onSelect, selectLabel = 'Chọn', profileHref, reasons }) {
   const state = useDb()
   const [open, setOpen] = useState(false)
   const hospital = getHospital(state, nurse.hospitalId)
-  const price = careType ? getPricing(state, nurse.hospitalId, careType) : null
 
   return (
     <>
@@ -126,14 +125,6 @@ export default function NurseProfileCard({ nurse, matchScore, careType, onSelect
               <p className="detail-text">Chưa cập nhật</p>
             )}
           </div>
-          {price && (
-            <div className="info-callout">
-              <Icon.info />
-              <span>
-                Giá tham khảo: {formatCurrency(price.price)} / {price.unit} (thanh toán ngoài hệ thống)
-              </span>
-            </div>
-          )}
           <div className="detail-actions">
             <Button variant="outlined" component={Link} to={`/patient/nurses/${nurse.id}`}>
               Trang hồ sơ đầy đủ

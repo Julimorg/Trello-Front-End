@@ -9,6 +9,8 @@ import { NOTIFICATIONS } from '../Data/patient/notification-data'
 import { NURSE_CARE_REQUESTS } from '../Data/nurse/requests-data'
 import { NURSE_BOOKINGS } from '../Data/nurse/schedule-data'
 import { NURSE_NOTIFICATIONS } from '../Data/nurse/notification-data'
+import { HOSPITAL_SOS_EVENTS } from '../Data/hospital/sos-log-data'
+import { COMPLIANCE_REPORTS } from '../Data/admin/compliance-data'
 
 const HOSPITALS = [
   {
@@ -40,25 +42,6 @@ const HOSPITALS = [
   },
 ]
 
-const price = (hospitalId, careType, value) => ({ id: `price-${hospitalId}-${careType}`, hospitalId, careType, unit: 'buổi', price: value })
-
-const PRICING = [
-  price('hosp-115', 'wound-dressing', 150000),
-  price('hosp-115', 'post-surgery', 250000),
-  price('hosp-115', 'vitals-monitoring', 120000),
-  price('hosp-115', 'mobility-support', 180000),
-  price('hosp-115', 'elderly-care', 200000),
-  price('hosp-115', 'medication', 130000),
-  price('hosp-ydvn', 'post-surgery', 280000),
-  price('hosp-ydvn', 'wound-dressing', 160000),
-  price('hosp-ydvn', 'elderly-care', 210000),
-  price('hosp-ydvn', 'medication', 140000),
-  price('hosp-tdh', 'post-surgery', 240000),
-  price('hosp-tdh', 'wound-dressing', 145000),
-  price('hosp-tdh', 'elderly-care', 190000),
-  price('hosp-tdh', 'mobility-support', 175000),
-]
-
 // Deep copies so store mutations never touch the imported data modules.
 const clone = (value) => JSON.parse(JSON.stringify(value))
 
@@ -70,8 +53,8 @@ export function seedState() {
     careRequests: clone([...CARE_REQUESTS, ...NURSE_CARE_REQUESTS]),
     bookings: clone([...BOOKINGS, ...NURSE_BOOKINGS]),
     familyInvites: clone(FAMILY_INVITES),
-    sosEvents: clone(SOS_EVENTS),
-    pricing: clone(PRICING),
+    sosEvents: clone([...SOS_EVENTS, ...HOSPITAL_SOS_EVENTS]),
+    reports: clone(COMPLIANCE_REPORTS),
     notifications: clone([...NOTIFICATIONS, ...NURSE_NOTIFICATIONS]),
   }
 }

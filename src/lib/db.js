@@ -87,9 +87,18 @@ export function computeBookingStatus(booking) {
 export const listSosEventsForHospital = (state, hospitalId) => {
   const nurseIds = new Set(listNursesByHospital(state, hospitalId).map((n) => n.id))
   return state.sosEvents.filter((e) => {
+    if (e.nurseId && nurseIds.has(e.nurseId)) return true
     const booking = getBooking(state, e.bookingId)
-    return booking && nurseIds.has(booking.nurseId)
+    const session = booking?.sessions.find((s) => s.id === e.sessionId)
+    return booking && nurseIds.has(session?.nurseId || booking.nurseId)
   })
+}
+
+// Nurse on duty for an SOS event (the session's nurse, else the booking's, else who raised it).
+export function getSosNurse(state, event) {
+  const booking = getBooking(state, event.bookingId)
+  const session = booking?.sessions.find((s) => s.id === event.sessionId)
+  return getNurse(state, session?.nurseId || booking?.nurseId || event.nurseId)
 }
 
 export const listNotificationsFor = (state, role, targetId) =>
@@ -571,7 +580,7 @@ export function manualReassignSession({ bookingId, sessionId, nurseId }) {
 
 // Works with or without a booking: the patient-app SOS button is available on every
 // page, so when it is pressed outside a session we attach today's session if any.
-export function triggerSOS({ bookingId, sessionId, patientId, triggeredBy, type, note, location, contactIds = [] }) {
+export function triggerSOS({ bookingId, sessionId, patientId, nurseId, triggeredBy, type, note, location, contactIds = [] }) {
   const eventId = genId('sos')
   setState((state) => {
     let booking = bookingId ? getBooking(state, bookingId) : null
@@ -582,12 +591,14 @@ export function triggerSOS({ bookingId, sessionId, patientId, triggeredBy, type,
       session = booking?.sessions.find((s) => s.date === today) || null
     }
     const ownerPatientId = patientId || booking?.patientId || null
-    const nurse = booking ? getNurse(state, session?.nurseId || booking.nurseId) : null
+    const nurse = booking ? getNurse(state, session?.nurseId || booking.nurseId) : nurseId ? getNurse(state, nurseId) : null
     const event = {
       id: eventId,
       patientId: ownerPatientId,
       bookingId: booking?.id || null,
       sessionId: session?.id || null,
+      nurseId: nurse?.id || null,
+      status: 'open',
       triggeredBy,
       type,
       contactIds,
@@ -599,7 +610,8 @@ export function triggerSOS({ bookingId, sessionId, patientId, triggeredBy, type,
       notify(state, {
         role: 'hospital',
         targetId: nurse.hospitalId,
-        message: `Cảnh báo SOS${booking ? ` trong ca chăm sóc (booking ${booking.id})` : ''}.`,
+        message: `Cảnh báo SOS từ ${triggeredBy === 'nurse' ? `điều dưỡng ${nurse.name}` : 'bệnh nhân'}${booking ? ` trong ca chăm sóc ${booking.id}` : ''}.`,
+        link: `/hospital/admin/sos-log?id=${eventId}`,
       })
     }
     if (ownerPatientId) {
@@ -621,6 +633,30 @@ export function attachSosLocation(eventId, location) {
     ...state,
     sosEvents: state.sosEvents.map((e) => (e.id === eventId ? { ...e, location } : e)),
   }))
+}
+
+// Hospital coordinator handling an SOS: acknowledge (đang xử lý) or resolve, with a note.
+export function updateSosStatus(eventId, status, resolution) {
+  setState((state) => {
+    const event = state.sosEvents.find((e) => e.id === eventId)
+    if (!event) return state
+    const nurse = getSosNurse(state, event)
+    const at = now()
+    const patch = {
+      status,
+      ...(resolution !== undefined ? { resolution } : {}),
+      ...(status === 'acknowledged' && !event.acknowledgedAt ? { acknowledgedAt: at } : {}),
+      ...(status === 'resolved' ? { resolvedAt: at, acknowledgedAt: event.acknowledgedAt || at } : {}),
+    }
+    if (nurse && event.triggeredBy === 'nurse') {
+      notify(state, {
+        role: 'nurse',
+        targetId: nurse.id,
+        message: status === 'resolved' ? `Bệnh viện đã xử lý xong cảnh báo SOS của bạn.${resolution ? ` ${resolution}` : ''}` : 'Bệnh viện đã tiếp nhận cảnh báo SOS của bạn và đang xử lý.',
+      })
+    }
+    return { ...state, sosEvents: state.sosEvents.map((e) => (e.id === eventId ? { ...e, ...patch } : e)) }
+  })
 }
 
 // ---------- Hospital Roster Management ----------
@@ -645,6 +681,9 @@ export function addNurse(hospitalId, data) {
         certificates: [],
         availability: [],
         rating: null,
+        reviewCount: 0,
+        completedCases: 0,
+        bio: '',
       },
     ],
   }))
@@ -663,6 +702,15 @@ export function addCertificate(nurseId, cert) {
     ...state,
     nurses: state.nurses.map((n) =>
       n.id === nurseId ? { ...n, certificates: [...n.certificates, { id: genId('cert'), ...cert }] } : n,
+    ),
+  }))
+}
+
+export function updateCertificate(nurseId, certId, patch) {
+  setState((state) => ({
+    ...state,
+    nurses: state.nurses.map((n) =>
+      n.id === nurseId ? { ...n, certificates: n.certificates.map((c) => (c.id === certId ? { ...c, ...patch } : c)) } : n,
     ),
   }))
 }
@@ -722,27 +770,6 @@ export function setNurseAuthStatus(nurseId, status, authorizedCareTypes) {
   }))
   return { ok: true }
 }
-
-// ---------- Pricing ----------
-
-export function setPricing(hospitalId, careType, unit, price) {
-  setState((state) => {
-    const existing = state.pricing.find((p) => p.hospitalId === hospitalId && p.careType === careType)
-    if (existing) {
-      return {
-        ...state,
-        pricing: state.pricing.map((p) => (p === existing ? { ...p, unit, price } : p)),
-      }
-    }
-    return {
-      ...state,
-      pricing: [...state.pricing, { id: genId('price'), hospitalId, careType, unit, price }],
-    }
-  })
-}
-
-export const getPricing = (state, hospitalId, careType) =>
-  state.pricing.find((p) => p.hospitalId === hospitalId && p.careType === careType)
 
 // ---------- Platform Admin: hospitals / accounts ----------
 
@@ -914,4 +941,13 @@ export function acceptFamilyInvite(code, { name, phone, relation }) {
     return next
   })
   return { contactId, patientId: invite.patientId }
+}
+
+// ---------- Compliance reports (platform admin) ----------
+
+export function updateReport(reportId, patch) {
+  setState((state) => ({
+    ...state,
+    reports: (state.reports || []).map((r) => (r.id === reportId ? { ...r, ...patch, updatedAt: now() } : r)),
+  }))
 }

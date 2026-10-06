@@ -3,12 +3,20 @@ import type { AvailabilitySlot, Certificate, Nurse } from './types'
 // Data for "Điều dưỡng tin cậy" (/patient/nurses) and the nurse detail page
 // (/patient/nurses/:id). hospitalId values point at hospitals defined in lib/seed.js.
 
-const cchn = (id: string, number: string, issuedBy = 'Sở Y tế TP.HCM'): Certificate => ({
-  id,
-  name: 'Chứng chỉ hành nghề Điều dưỡng',
-  number,
-  issuedBy,
-})
+// Licence dates follow the year in the number (DD-<year>-…), valid 10 years; the scan is
+// referenced by file name only (no content in the demo data).
+const cchn = (id: string, number: string, issuedBy = 'Sở Y tế TP.HCM'): Certificate => {
+  const year = Number(number.split('-')[1])
+  return {
+    id,
+    name: 'Chứng chỉ hành nghề Điều dưỡng',
+    number,
+    issuedBy,
+    issuedAt: `${year}-03-15`,
+    expiresAt: `${year + 10}-03-15`,
+    file: { name: `CCHN-${number}.pdf`, type: 'application/pdf', size: 248_000 + year },
+  }
+}
 
 const slot = (id: string, weekday: number, start: string, end: string): AvailabilitySlot => ({ id, weekday, start, end })
 

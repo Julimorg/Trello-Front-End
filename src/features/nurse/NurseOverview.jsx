@@ -5,7 +5,6 @@ import { Button, Card, Col, Empty, Flex, Row, Space, Statistic, Tag, Timeline, T
 import { BellOutlined, CalendarOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import PageHead from '../../components/PageHead'
 import NurseRequestCard from './NurseRequestCard'
-import NurseSos from './NurseSos'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
 import { getCareRequest, getNurse, getPatient, listBookingsByNurse, listNurseRequests } from '../../lib/db'
@@ -64,7 +63,6 @@ export default function NurseOverview() {
   const todaySessions = sessions.filter((s) => s.date === today).sort((a, b) => a.start.localeCompare(b.start))
   const monthPrefix = dayjs().format('YYYY-MM')
   const completedThisMonth = sessions.filter((s) => s.status === SESSION_STATUS.COMPLETED && s.date.startsWith(monthPrefix)).length
-  const todayActive = todaySessions.find((s) => s.status === SESSION_STATUS.CONFIRMED || s.status === SESSION_STATUS.REASSIGNED)
   const nextToday = todaySessions.find((s) => s.end >= dayjs().format('HH:mm'))
 
   return (
@@ -148,7 +146,6 @@ export default function NurseOverview() {
         </Col>
       </Row>
 
-      {todayActive && <NurseSos bookingId={todayActive.booking.id} sessionId={todayActive.id} nurseId={session.id} />}
     </>
   )
 }

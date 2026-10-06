@@ -21,6 +21,11 @@ export const SOS_EVENTS: SosEvent[] = [
     note: 'Vết mổ có dấu hiệu sưng đỏ nhẹ, đã báo bác sĩ phụ trách tư vấn.',
     location: { lat: 10.8, lng: 106.71 },
     createdAt: timestampAt(-56, '18:10'),
+    nurseId: 'nurse-mai',
+    status: 'resolved',
+    acknowledgedAt: timestampAt(-56, '18:14'),
+    resolvedAt: timestampAt(-56, '19:02'),
+    resolution: 'Bác sĩ trực tư vấn qua điện thoại, kê thêm kháng sinh. Theo dõi tiếp ở buổi sau.',
   },
   {
     id: 'sos-3002',
@@ -33,5 +38,10 @@ export const SOS_EVENTS: SosEvent[] = [
     note: 'Choáng nhẹ khi đứng dậy, đã báo con gái.',
     location: { lat: 10.802, lng: 106.712 },
     createdAt: timestampAt(-22, '19:05'),
+    nurseId: 'nurse-hoa',
+    status: 'resolved',
+    acknowledgedAt: timestampAt(-22, '19:08'),
+    resolvedAt: timestampAt(-22, '19:40'),
+    resolution: 'Hạ huyết áp tư thế; điều dưỡng hướng dẫn đứng dậy chậm, gia đình đã có mặt.',
   },
 ]

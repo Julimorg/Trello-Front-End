@@ -7,8 +7,8 @@ import EmptyState from '../../components/EmptyState'
 import StatusBadge from '../../components/StatusBadge'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { getHospital, getNurse, getPricing, listBookingsByPatient, listCareRequestsByPatient } from '../../lib/db'
-import { careTypeLabel, formatCurrency, formatDate, weekdayLabel } from '../../lib/format'
+import { getHospital, getNurse, listBookingsByPatient, listCareRequestsByPatient } from '../../lib/db'
+import { careTypeLabel, formatDate, weekdayLabel } from '../../lib/format'
 import { CARE_REQUEST_STATUS_LABEL, SESSION_STATUS_LABEL } from '../../lib/constants'
 import { useStaggerIn } from '../../patient/anime'
 import { Icon } from '../../lib/icons'
@@ -136,16 +136,13 @@ export default function PatientNurseDetail() {
 
         <div className="stack-gap-12">
           <section className="panel panel-body">
-            <h3 className="detail-heading">Chuyên môn được cấp phép &amp; giá tham khảo</h3>
-            {nurse.authorizedCareTypes.map((c) => {
-              const price = getPricing(state, nurse.hospitalId, c)
-              return (
-                <div className="review-row" key={c}>
-                  <span>{careTypeLabel(c)}</span>
-                  <b>{price ? `${formatCurrency(price.price)} / ${price.unit}` : 'Liên hệ để biết giá'}</b>
-                </div>
-              )
-            })}
+            <h3 className="detail-heading">Chuyên môn được cấp phép</h3>
+            {nurse.authorizedCareTypes.map((c) => (
+              <div className="review-row" key={c}>
+                <span>{careTypeLabel(c)}</span>
+                <b>✓ Đã cấp phép</b>
+              </div>
+            ))}
             {nurse.authorizedCareTypes.length === 0 && <p className="detail-text">Chưa có phạm vi được cấp phép</p>}
             <h3 className="detail-heading">Khu vực phục vụ</h3>
             <div className="chip-row">

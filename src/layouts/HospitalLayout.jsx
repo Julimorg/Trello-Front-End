@@ -1,5 +1,6 @@
 import Shell from '../components/Shell'
 import AntdThemeProvider from '../antd/AntdThemeProvider'
+import NurseSos from '../features/nurse/NurseSos'
 import { useAuth } from '../auth/AuthContext'
 import { useDb } from '../lib/store'
 import { getHospital, getNurse, listPendingRequestsForNurse } from '../lib/db'
@@ -11,7 +12,6 @@ const adminNavItems = [
   { to: '/hospital/admin/schedule', label: 'Điều phối lịch', icon: 'calendar' },
   { to: '/hospital/admin/requests', label: 'Yêu cầu chăm sóc', icon: 'file' },
   { to: '/hospital/admin/sos-log', label: 'Cảnh báo SOS', icon: 'bell' },
-  { to: '/hospital/admin/pricing', label: 'Giá dịch vụ', icon: 'chart' },
 ]
 
 const nurseNavItemsBase = [
@@ -60,6 +60,11 @@ export default function HospitalLayout() {
     />
   )
 
-  // Nurse portal is built with Ant Design; hospital admin pages move over next.
-  return isNurse ? <AntdThemeProvider>{shell}</AntdThemeProvider> : shell
+  // Nurse and hospital admin portals are both built with Ant Design.
+  return (
+    <AntdThemeProvider>
+      {shell}
+      {isNurse && <NurseSos nurseId={session.id} />}
+    </AntdThemeProvider>
+  )
 }

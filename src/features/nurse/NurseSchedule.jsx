@@ -4,7 +4,6 @@ import dayjs from 'dayjs'
 import { App, Badge, Button, Calendar, Card, Col, Empty, Flex, Input, Modal, Row, Segmented, Select, Space, Statistic, Tag, Typography } from 'antd'
 import { CalendarOutlined, ClockCircleOutlined, EnvironmentOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons'
 import PageHead from '../../components/PageHead'
-import NurseSos from './NurseSos'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
 import { getCareRequest, getPatient, listBookingsByNurse, reportCannotPerform } from '../../lib/db'
@@ -155,7 +154,6 @@ export default function NurseSchedule() {
   const weekDays = Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day'))
   const weekShifts = weekDays.flatMap((d) => byDate.get(d.format(ISO)) || [])
   const weekMinutes = weekShifts.reduce((sum, s) => sum + minutesBetween(s.start, s.end), 0)
-  const todayActive = (byDate.get(today) || []).find((s) => s.status === SESSION_STATUS.CONFIRMED || s.status === SESSION_STATUS.REASSIGNED)
 
   const openDay = (d) => {
     setValue(d)
@@ -353,7 +351,6 @@ export default function NurseSchedule() {
         />
       </Modal>
 
-      {todayActive && <NurseSos bookingId={todayActive.booking.id} sessionId={todayActive.id} nurseId={session.id} />}
     </>
   )
 }

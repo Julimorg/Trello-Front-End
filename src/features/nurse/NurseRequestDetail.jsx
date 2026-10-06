@@ -6,8 +6,8 @@ import NurseRequestActions from './NurseRequestActions'
 import PatientInfoCard from './PatientInfoCard'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { getBooking, getCareRequest, getNurse, getPatient, getPricing, listNurseRequests } from '../../lib/db'
-import { careTypeLabel, formatCurrency, formatDate, formatDateTime } from '../../lib/format'
+import { getBooking, getCareRequest, getNurse, getPatient, listNurseRequests } from '../../lib/db'
+import { careTypeLabel, formatDate, formatDateTime } from '../../lib/format'
 import { SESSION_STATUS } from '../../lib/constants'
 import { tasksFor } from '../../Data/nurse/session-data'
 import { CLOSED_REASON, SESSION_STATUS_META, frequencyText, requestStage, sessionWork } from './nurse-shared'
@@ -69,9 +69,7 @@ export default function NurseRequestDetail() {
   const { relation } = entry
   const stage = requestStage(state, careRequest, relation)
   const patient = getPatient(state, careRequest.patientId)
-  const nurse = getNurse(state, auth.id)
   const booking = relation === 'accepted' && careRequest.bookingId ? getBooking(state, careRequest.bookingId) : null
-  const price = getPricing(state, nurse?.hospitalId, careRequest.careType)
   const history = buildHistory(state, careRequest, auth.id, booking)
   const readOnlyCopy = READ_ONLY_COPY[stage.key]
   const today = dayjs().format('YYYY-MM-DD')
@@ -139,14 +137,11 @@ export default function NurseRequestDetail() {
           {booking ? (
             <Card title={`Các buổi chăm sóc của bạn (${mySessions.length})`}>
               <Row gutter={12} style={{ marginBottom: 14 }}>
-                <Col span={8}>
+                <Col span={12}>
                   <Statistic title="Buổi đã xong" value={doneSessions} suffix={`/ ${mySessions.length}`} />
                 </Col>
-                <Col span={8}>
+                <Col span={12}>
                   <Statistic title="Việc đã làm" value={tasksDone} suffix={`/ ${tasksTotal}`} />
-                </Col>
-                <Col span={8}>
-                  <Statistic title="Đơn giá" value={price ? formatCurrency(price.price) : '—'} />
                 </Col>
               </Row>
               <div className="request-sessions">
@@ -239,7 +234,6 @@ export default function NurseRequestDetail() {
                 { key: 'time', label: 'Khung giờ', children: `${careRequest.timeSlot?.start}–${careRequest.timeSlot?.end}` },
                 { key: 'freq', label: 'Tần suất', children: frequencyText(careRequest) },
                 { key: 'area', label: 'Khu vực', children: careRequest.district },
-                { key: 'price', label: 'Đơn giá', children: price ? `${formatCurrency(price.price)}/${price.unit}` : '—' },
               ]}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>

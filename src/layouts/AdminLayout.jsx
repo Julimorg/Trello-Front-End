@@ -1,4 +1,5 @@
 import Shell from '../components/Shell'
+import AntdThemeProvider from '../antd/AntdThemeProvider'
 
 const navItems = [
   { to: '/admin/overview', label: 'Tổng quan hệ thống', icon: 'chart' },
@@ -9,18 +10,21 @@ const navItems = [
 ]
 
 export default function AdminLayout() {
+  // Ant Design is available to platform admin pages (Compliance uses it; the rest move over next).
   return (
-    <Shell
-      appLabel="CareShift Admin"
-      roleDot="platform"
-      roleAvatar="CS"
-      roleLabel="Admin CareShift"
-      orgLabel="CareShift Operations"
-      navItems={navItems}
-      profileName="Linh Phạm"
-      profileMeta="Platform Administrator"
-      profileInitials="LP"
-      showRealtime
-    />
+    <AntdThemeProvider>
+      <Shell
+        appLabel="CareShift Admin"
+        roleDot="platform"
+        roleAvatar="CS"
+        roleLabel="Admin CareShift"
+        orgLabel="CareShift Operations"
+        navItems={navItems}
+        profileName="Linh Phạm"
+        profileMeta="Platform Administrator"
+        profileInitials="LP"
+        showRealtime
+      />
+    </AntdThemeProvider>
   )
 }

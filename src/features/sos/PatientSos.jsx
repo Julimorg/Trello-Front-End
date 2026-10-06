@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { animate, createDraggable } from 'animejs'
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
 import Dialog from '@mui/material/Dialog'
@@ -14,28 +13,14 @@ import { useDb } from '../../lib/store'
 import { attachSosLocation, getPatient, getPrimaryFamilyContact, triggerSOS } from '../../lib/db'
 import { getLocation } from '../../lib/geo'
 import { SOS_ACTIONS } from '../../Data/patient/sos-data'
-import { prefersReducedMotion } from '../../patient/anime'
+import { useDraggableFab } from '../../lib/draggableFab'
 import { Icon } from '../../lib/icons'
-
-const POSITION_KEY = 'careshift_sos_position'
-const EDGE_PADDING = 14
-
-function readSavedPosition() {
-  try {
-    const raw = localStorage.getItem(POSITION_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-}
 
 export default function PatientSos({ patientId }) {
   const state = useDb()
   const toast = useToast()
   const navigate = useNavigate()
-  const buttonRef = useRef(null)
-  const ringRef = useRef(null)
-  const draggedRef = useRef(false)
+  const { buttonRef, ringRef, consumeDrag } = useDraggableFab('careshift_sos_position')
   const [open, setOpen] = useState(false)
   const [view, setView] = useState('actions')
   const [selectedIds, setSelectedIds] = useState([])
@@ -44,55 +29,13 @@ export default function PatientSos({ patientId }) {
   const linkedContacts = contacts.filter((c) => c.status === 'Đã liên kết')
   const primary = getPrimaryFamilyContact(state, patientId)
 
-  // Draggable anywhere inside the viewport (animejs clamps fixed elements to the window);
-  // the drop position is remembered per browser.
-  useEffect(() => {
-    const el = buttonRef.current
-    if (!el) return undefined
-    const draggable = createDraggable(el, {
-      container: document.body,
-      containerPadding: EDGE_PADDING,
-      onGrab: () => {
-        draggedRef.current = false
-      },
-      onDrag: () => {
-        draggedRef.current = true
-      },
-      onSettle: (d) => {
-        try {
-          localStorage.setItem(POSITION_KEY, JSON.stringify({ x: d.x, y: d.y }))
-        } catch {
-          // ignore
-        }
-      },
-    })
-    const saved = readSavedPosition()
-    if (saved) {
-      const rect = el.getBoundingClientRect()
-      const minX = -(rect.left - EDGE_PADDING)
-      const minY = -(rect.top - EDGE_PADDING)
-      draggable.setX(Math.min(0, Math.max(minX, saved.x)))
-      draggable.setY(Math.min(0, Math.max(minY, saved.y)))
-    }
-    const pulse = prefersReducedMotion()
-      ? null
-      : animate(ringRef.current, { scale: [1, 1.5], opacity: [0.55, 0], duration: 1700, loop: true, ease: 'outQuad' })
-    return () => {
-      pulse?.revert()
-      draggable.revert()
-    }
-  }, [])
-
   const close = () => {
     setOpen(false)
     setView('actions')
   }
 
   const handleButtonClick = () => {
-    if (draggedRef.current) {
-      draggedRef.current = false
-      return
-    }
+    if (consumeDrag()) return
     setSelectedIds(linkedContacts.map((c) => c.id))
     setOpen(true)
   }
