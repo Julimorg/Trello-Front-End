@@ -131,9 +131,11 @@ export default function NurseOverview() {
                     content: (
                       <>
                         <Flex justify="space-between" gap={6} wrap>
-                          <Text strong>
-                            {s.start}–{s.end} · {s.patient?.name}
-                          </Text>
+                          <Link to={`/hospital/nurse/sessions/${s.id}`}>
+                            <Text strong>
+                              {s.start}–{s.end} · {s.patient?.name}
+                            </Text>
+                          </Link>
                           <Tag color={meta.color}>{meta.label}</Tag>
                         </Flex>
                         <Text type="secondary" style={{ fontSize: 12 }}>

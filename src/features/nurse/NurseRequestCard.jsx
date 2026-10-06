@@ -121,9 +121,16 @@ export default function NurseRequestCard({ careRequest, relation, nurseId, highl
     footer = (
       <Flex justify="space-between" align="center" wrap gap={10}>
         <Text type="secondary">{nextSession ? `Buổi tiếp theo: ${formatDate(nextSession.date)} · ${nextSession.start}` : 'Tất cả buổi đã hoàn thành'}</Text>
-        <Link to={`/hospital/nurse/schedule?date=${nextSession?.date || booking?.sessions[0]?.date || ''}`}>
-          <Button>Xem trên lịch</Button>
-        </Link>
+        <Space wrap>
+          {nextSession && (
+            <Link to={`/hospital/nurse/sessions/${nextSession.id}`}>
+              <Button>Chi tiết buổi tới</Button>
+            </Link>
+          )}
+          <Link to={`/hospital/nurse/schedule?date=${nextSession?.date || booking?.sessions[0]?.date || ''}`}>
+            <Button>Xem trên lịch</Button>
+          </Link>
+        </Space>
       </Flex>
     )
   } else if (relation === 'declined') {

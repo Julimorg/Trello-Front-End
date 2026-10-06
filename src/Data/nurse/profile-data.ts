@@ -41,7 +41,6 @@ export const NURSE_PROFILE_DETAILS: Record<string, NurseProfileDetail> = {
     equipment: ['Máy đo huyết áp điện tử', 'Máy đo SpO₂', 'Đai hỗ trợ di chuyển'],
     transport: 'Xe máy — di chuyển tối đa 8 km',
     maxSessionsPerWeek: 18,
-    responseTimeMinutes: 6,
     acceptanceRate: 0.86,
     onTimeRate: 0.97,
     reviews: [
@@ -80,7 +79,6 @@ export const NURSE_PROFILE_DETAILS: Record<string, NurseProfileDetail> = {
     equipment: ['Bộ thay băng vô khuẩn', 'Máy đo huyết áp điện tử'],
     transport: 'Ô tô — di chuyển tối đa 12 km',
     maxSessionsPerWeek: 12,
-    responseTimeMinutes: 9,
     acceptanceRate: 0.78,
     onTimeRate: 0.99,
     reviews: [

@@ -20,6 +20,7 @@ export default function AdminLayout() {
       profileName="Linh Phạm"
       profileMeta="Platform Administrator"
       profileInitials="LP"
+      showRealtime
     />
   )
 }

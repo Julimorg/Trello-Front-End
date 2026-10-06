@@ -102,6 +102,7 @@ function NotificationBell({ role, targetId }) {
   )
 }
 
+const SIDEBAR_KEY = 'careshift_sidebar_collapsed'
 const REALTIME_LABEL = { online: 'Realtime', connecting: 'Đang kết nối', offline: 'Ngoại tuyến' }
 
 function RealtimePill() {
@@ -130,10 +131,28 @@ export default function Shell({
   notificationRole,
   notificationTargetId,
   profileTo,
+  showRealtime = false,
 }) {
   const { logout } = useAuth()
   const location = useLocation()
   const [navOpen, setNavOpen] = useState(false)
+  // Desktop sidebar can be collapsed to an icon rail; remembered per browser.
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === '1'
+    } catch {
+      return false
+    }
+  })
+  const toggleCollapsed = () =>
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem(SIDEBAR_KEY, c ? '0' : '1')
+      } catch {
+        // ignore
+      }
+      return !c
+    })
 
   const currentTitle = navItems.find((n) => location.pathname.startsWith(n.to))?.label
 
@@ -148,8 +167,18 @@ export default function Shell({
   )
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${collapsed ? ' is-collapsed' : ''}`}>
       <aside className={`sidebar${navOpen ? ' open' : ''}`} aria-label="Điều hướng chính">
+        <button
+          type="button"
+          className="sidebar-collapse"
+          aria-label={collapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
+          aria-expanded={!collapsed}
+          title={collapsed ? 'Mở rộng' : 'Thu gọn'}
+          onClick={toggleCollapsed}
+        >
+          <Icon.chevron aria-hidden="true" />
+        </button>
         <button className="sidebar-close" aria-label="Đóng menu" onClick={() => setNavOpen(false)}>
           <Icon.close aria-hidden="true" />
         </button>
@@ -164,7 +193,7 @@ export default function Shell({
         </div>
 
         <div className="role-label">Đang xem với vai trò</div>
-        <div className="role-switcher" style={{ cursor: 'default' }}>
+        <div className="role-switcher" style={{ cursor: 'default' }} title={`${roleLabel} · ${orgLabel}`}>
           <span className={`role-dot ${roleDot}`}>{roleAvatar}</span>
           <span>
             <strong>{roleLabel}</strong>
@@ -176,7 +205,7 @@ export default function Shell({
           {navItems.map((item) => {
             const NavIcon = Icon[item.icon]
             return (
-              <NavLink key={item.to} to={item.to} onClick={() => setNavOpen(false)}>
+              <NavLink key={item.to} to={item.to} title={item.label} onClick={() => setNavOpen(false)}>
                 {NavIcon && <NavIcon />}
                 <span>{item.label}</span>
                 {item.badge ? <span className="nav-badge">{item.badge}</span> : null}
@@ -208,7 +237,7 @@ export default function Shell({
             <strong>{currentTitle}</strong>
           </div>
           <div className="top-actions">
-            <RealtimePill />
+            {showRealtime && <RealtimePill />}
             <NotificationBell role={notificationRole} targetId={notificationTargetId} />
             {profileTo ? (
               <Link to={profileTo} className="header-profile">

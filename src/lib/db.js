@@ -435,6 +435,45 @@ export function respondToCareRequest(careRequestId, decision, { reason } = {}) {
   return bookingId
 }
 
+// ---------- Session (one visit) ----------
+
+export function findSession(state, sessionId) {
+  for (const booking of state.bookings) {
+    const session = booking.sessions.find((s) => s.id === sessionId)
+    if (session) return { booking, session }
+  }
+  return null
+}
+
+function patchSession(state, bookingId, sessionId, patch) {
+  return {
+    ...state,
+    bookings: state.bookings.map((b) =>
+      b.id === bookingId ? { ...b, sessions: b.sessions.map((s) => (s.id === sessionId ? { ...s, ...patch } : s)) } : b,
+    ),
+  }
+}
+
+export function updateSessionWork(bookingId, sessionId, patch) {
+  setState((state) => patchSession(state, bookingId, sessionId, patch))
+}
+
+export function completeSession(bookingId, sessionId) {
+  setState((state) => {
+    const booking = getBooking(state, bookingId)
+    const session = booking?.sessions.find((s) => s.id === sessionId)
+    if (!session) return state
+    const nurse = getNurse(state, session.nurseId)
+    notify(state, {
+      role: 'patient',
+      targetId: booking.patientId,
+      message: `${nurse?.name || 'Điều dưỡng'} đã hoàn thành buổi chăm sóc ${dayjs(session.date).format('DD/MM')} (${session.start}–${session.end}).`,
+      link: `/patient/bookings/${bookingId}`,
+    })
+    return patchSession(state, bookingId, sessionId, { status: SESSION_STATUS.COMPLETED, completedAt: now() })
+  })
+}
+
 export function reportCannotPerform({ bookingId, sessionId, reason }) {
   setState((state) => {
     const booking = getBooking(state, bookingId)

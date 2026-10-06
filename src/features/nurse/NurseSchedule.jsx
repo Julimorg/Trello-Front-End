@@ -42,7 +42,9 @@ function ShiftList({ shifts, today, onReport }) {
             <div className="shift-row-body">
               <Flex justify="space-between" gap={8} wrap align="flex-start">
                 <div>
-                  <Text strong>{s.patient?.name}</Text>
+                  <Link to={`/hospital/nurse/sessions/${s.id}`} className="shift-row-title">
+                    {s.patient?.name}
+                  </Link>
                   <div>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       {careTypeLabel(s.careRequest?.careType)} · <Link to={`/hospital/nurse/requests?id=${s.careRequest?.id}`}>#{s.careRequest?.id}</Link>
@@ -54,13 +56,18 @@ function ShiftList({ shifts, today, onReport }) {
               <Text type="secondary" style={{ fontSize: 12 }}>
                 <EnvironmentOutlined /> {s.patient?.address}
               </Text>
-              {canReport && (
-                <div>
+              <Space size={14} wrap>
+                <Link to={`/hospital/nurse/sessions/${s.id}`}>
+                  <Button size="small" type="link" style={{ padding: 0 }}>
+                    Xem chi tiết ca →
+                  </Button>
+                </Link>
+                {canReport && (
                   <Button size="small" type="link" danger style={{ padding: 0 }} onClick={() => onReport(s)}>
                     Báo không thể thực hiện
                   </Button>
-                </div>
-              )}
+                )}
+              </Space>
             </div>
           </div>
         )
@@ -91,8 +98,21 @@ function ScheduleHeader({ value, mode, onChange, onModeChange }) {
             style={{ width: 112 }}
           />
         )}
-        <Select aria-label="Chọn năm" value={value.year()} onChange={(y) => onChange(value.year(y))} options={years.map((y) => ({ value: y, label: y }))} style={{ width: 92 }} />
-        <Segmented value={mode} onChange={onModeChange} options={[{ value: 'month', label: 'Tháng' }, { value: 'year', label: 'Năm' }]} />
+        <Select
+          aria-label="Chọn năm"
+          value={value.year()}
+          onChange={(y) => onChange(value.year(y))}
+          options={years.map((y) => ({ value: y, label: y }))}
+          style={{ width: 92 }}
+        />
+        <Segmented
+          value={mode}
+          onChange={onModeChange}
+          options={[
+            { value: 'month', label: 'Tháng' },
+            { value: 'year', label: 'Năm' },
+          ]}
+        />
       </Space>
     </Flex>
   )
@@ -189,7 +209,41 @@ export default function NurseSchedule() {
         description="Toàn bộ ca CareShift trong tháng. Mỗi ngày hiển thị tối đa 3 ca — bấm “more” để xem đủ danh sách ca của ngày đó."
       />
 
-      <Card className="schedule-calendar-card">
+      <Card className="week-summary" title={`Tuần ${weekStart.format('DD/MM')} – ${weekStart.add(6, 'day').format('DD/MM')}`}>
+        <div className="week-summary-body">
+          <Row gutter={8}>
+            <Col span={8}>
+              <Statistic title="Số ca" value={weekShifts.length} />
+            </Col>
+            <Col span={8}>
+              <Statistic title="Giờ làm" value={Math.round((weekMinutes / 60) * 10) / 10} suffix="h" />
+            </Col>
+            <Col span={8}>
+              <Statistic title="Bệnh nhân" value={new Set(weekShifts.map((s) => s.patient?.id)).size} />
+            </Col>
+          </Row>
+          <div className="week-strip">
+            {weekDays.map((d) => {
+              const iso = d.format(ISO)
+              const count = (byDate.get(iso) || []).length
+              return (
+                <button
+                  type="button"
+                  key={iso}
+                  className={`week-strip-day${iso === selectedIso ? ' is-selected' : ''}${iso === today ? ' is-today' : ''}`}
+                  onClick={() => setValue(d)}
+                >
+                  <small>{WEEKDAY_SHORT[d.day()]}</small>
+                  <b>{d.format('DD')}</b>
+                  <span className={count ? 'has-shifts' : ''}>{count ? `${count} ca` : '—'}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </Card>
+
+      <Card className="schedule-calendar-card" style={{ marginTop: 16 }}>
         <Calendar
           value={value}
           mode={mode}
@@ -223,61 +277,29 @@ export default function NurseSchedule() {
         </Flex>
       </Card>
 
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} lg={14}>
-          <Card
-            title={
-              <span>
-                <CalendarOutlined /> {dayTitle(value)}
-                {selectedIso === today && (
-                  <Tag color="cyan" style={{ marginLeft: 8 }}>
-                    Hôm nay
-                  </Tag>
-                )}
-              </span>
-            }
-            extra={<Text type="secondary">{dayShifts.length} ca</Text>}
-          >
-            <ShiftList shifts={dayShifts} today={today} onReport={(s) => {
-                setReason('')
-                setReport(s)
-              }} />
-          </Card>
-        </Col>
-        <Col xs={24} lg={10}>
-          <Card title={`Tuần ${weekStart.format('DD/MM')} – ${weekStart.add(6, 'day').format('DD/MM')}`}>
-            <Row gutter={8}>
-              <Col span={8}>
-                <Statistic title="Số ca" value={weekShifts.length} />
-              </Col>
-              <Col span={8}>
-                <Statistic title="Giờ làm" value={Math.round((weekMinutes / 60) * 10) / 10} suffix="h" />
-              </Col>
-              <Col span={8}>
-                <Statistic title="Bệnh nhân" value={new Set(weekShifts.map((s) => s.patient?.id)).size} />
-              </Col>
-            </Row>
-            <div className="week-strip">
-              {weekDays.map((d) => {
-                const iso = d.format(ISO)
-                const count = (byDate.get(iso) || []).length
-                return (
-                  <button
-                    type="button"
-                    key={iso}
-                    className={`week-strip-day${iso === selectedIso ? ' is-selected' : ''}${iso === today ? ' is-today' : ''}`}
-                    onClick={() => setValue(d)}
-                  >
-                    <small>{WEEKDAY_SHORT[d.day()]}</small>
-                    <b>{d.format('DD')}</b>
-                    <span className={count ? 'has-shifts' : ''}>{count ? `${count} ca` : '—'}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </Card>
-        </Col>
-      </Row>
+      <Card
+        style={{ marginTop: 16 }}
+        title={
+          <span>
+            <CalendarOutlined /> {dayTitle(value)}
+            {selectedIso === today && (
+              <Tag color="cyan" style={{ marginLeft: 8 }}>
+                Hôm nay
+              </Tag>
+            )}
+          </span>
+        }
+        extra={<Text type="secondary">{dayShifts.length} ca</Text>}
+      >
+        <ShiftList
+          shifts={dayShifts}
+          today={today}
+          onReport={(s) => {
+            setReason('')
+            setReport(s)
+          }}
+        />
+      </Card>
 
       <Modal
         open={Boolean(dayModal)}
@@ -317,10 +339,18 @@ export default function NurseSchedule() {
       >
         {report && (
           <Text type="secondary">
-            Ca {report.start}–{report.end} ngày {dayjs(report.date).format('DD/MM/YYYY')} với {report.patient?.name}. Hệ thống sẽ tự tìm điều dưỡng thay thế nếu có.
+            Ca {report.start}–{report.end} ngày {dayjs(report.date).format('DD/MM/YYYY')} với {report.patient?.name}. Hệ thống sẽ tự tìm điều dưỡng thay thế nếu
+            có.
           </Text>
         )}
-        <Input.TextArea rows={3} autoFocus style={{ marginTop: 12 }} placeholder="Lý do (ốm, việc đột xuất…)" value={reason} onChange={(e) => setReason(e.target.value)} />
+        <Input.TextArea
+          rows={3}
+          autoFocus
+          style={{ marginTop: 12 }}
+          placeholder="Lý do (ốm, việc đột xuất…)"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
       </Modal>
 
       {todayActive && <NurseSos bookingId={todayActive.booking.id} sessionId={todayActive.id} nurseId={session.id} />}

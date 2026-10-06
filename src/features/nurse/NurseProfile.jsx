@@ -11,8 +11,6 @@ import {
   MailOutlined,
   PhoneOutlined,
   SafetyCertificateOutlined,
-  StarFilled,
-  ThunderboltOutlined,
 } from '@ant-design/icons'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
@@ -45,7 +43,6 @@ function fallbackDetail(nurse) {
     equipment: [],
     transport: '—',
     maxSessionsPerWeek: 10,
-    responseTimeMinutes: null,
     acceptanceRate: null,
     onTimeRate: null,
     reviews: [],
@@ -349,36 +346,22 @@ export default function NurseProfile() {
               ))}
             </Flex>
           </div>
-          <Flex vertical align="flex-end" gap={2}>
-            <Flex align="center" gap={6}>
-              <StarFilled style={{ color: '#f5a623', fontSize: 22 }} />
-              <Text strong style={{ fontSize: 26 }}>
-                {nurse.rating ?? '—'}
-              </Text>
-            </Flex>
-            <Text type="secondary">{nurse.reviewCount} đánh giá</Text>
-          </Flex>
         </Flex>
         {nurse.bio && <Paragraph style={{ margin: '16px 0 0' }}>{nurse.bio}</Paragraph>}
       </Card>
 
       <Row gutter={[16, 16]} style={{ margin: '16px 0' }}>
-        <Col xs={12} md={6}>
+        <Col xs={12} md={8}>
           <Card size="small">
             <Statistic title="Ca đã hoàn thành" value={nurse.completedCases} prefix={<CheckCircleOutlined />} />
           </Card>
         </Col>
-        <Col xs={12} md={6}>
+        <Col xs={12} md={8}>
           <Card size="small">
             <Statistic title="Ca trong tháng này" value={sessionStats.thisMonth} suffix={<Text type="secondary" style={{ fontSize: 13 }}>· {sessionStats.upcoming} sắp tới</Text>} />
           </Card>
         </Col>
-        <Col xs={12} md={6}>
-          <Card size="small">
-            <Statistic title="Phản hồi trung bình" value={detail.responseTimeMinutes ?? '—'} suffix={detail.responseTimeMinutes ? 'phút' : ''} prefix={<ThunderboltOutlined />} />
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
+        <Col xs={24} md={8}>
           <Card size="small">
             <Flex justify="space-around" align="center">
               <Progress type="circle" size={58} percent={Math.round((detail.acceptanceRate ?? 0) * 100)} strokeColor="#0b6b68" />

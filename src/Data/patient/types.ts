@@ -105,6 +105,10 @@ export interface CareSession {
   nurseId: string
   history?: SessionHistoryEntry[]
   needsManualReassignment?: boolean
+  /** Task ids ticked by the nurse (see Data/nurse/session-data.ts). */
+  checklist?: string[]
+  nurseNote?: string
+  completedAt?: string
 }
 
 export interface Booking {

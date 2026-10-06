@@ -59,7 +59,6 @@ export interface NurseProfileDetail {
   equipment: string[]
   transport: string
   maxSessionsPerWeek: number
-  responseTimeMinutes: number
   acceptanceRate: number
   onTimeRate: number
   reviews: NurseReview[]
