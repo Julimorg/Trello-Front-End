@@ -154,7 +154,8 @@ export default function Shell({
       return !c
     })
 
-  const currentTitle = navItems.find((n) => location.pathname.startsWith(n.to))?.label
+  // `also` lets a menu item own extra paths (e.g. session details belong to the schedule).
+  const currentTitle = navItems.find((n) => [n.to, ...(n.also || [])].some((p) => location.pathname.startsWith(p)))?.label
 
   const profileContent = (
     <>

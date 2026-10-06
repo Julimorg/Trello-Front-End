@@ -30,6 +30,7 @@ const NurseRequests = lazy(() => import('./features/nurse/NurseRequests'))
 const NurseSchedule = lazy(() => import('./features/nurse/NurseSchedule'))
 const NurseProfileSelf = lazy(() => import('./features/nurse/NurseProfile'))
 const NurseSessionDetail = lazy(() => import('./features/nurse/NurseSessionDetail'))
+const NurseRequestDetail = lazy(() => import('./features/nurse/NurseRequestDetail'))
 const SosLog = lazy(() => import('./features/sos/SosLog'))
 const PricingConfig = lazy(() => import('./features/pricing/PricingConfig'))
 
@@ -165,6 +166,14 @@ function App() {
             element={
               <RoleGate roles={['nurse']}>
                 <NurseSchedule />
+              </RoleGate>
+            }
+          />
+          <Route
+            path="nurse/requests/:id"
+            element={
+              <RoleGate roles={['nurse']}>
+                <NurseRequestDetail />
               </RoleGate>
             }
           />

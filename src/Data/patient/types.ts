@@ -86,6 +86,7 @@ export interface CareRequest {
   declinedNurseIds: string[]
   declineReasons?: { nurseId: string; reason: string; at: string }[]
   bookingId: string | null
+  cancelledAt?: string
   lastMatchedAt: string | null
   createdAt: string
 }

@@ -47,7 +47,7 @@ function ShiftList({ shifts, today, onReport }) {
                   </Link>
                   <div>
                     <Text type="secondary" style={{ fontSize: 12 }}>
-                      {careTypeLabel(s.careRequest?.careType)} · <Link to={`/hospital/nurse/requests?id=${s.careRequest?.id}`}>#{s.careRequest?.id}</Link>
+                      {careTypeLabel(s.careRequest?.careType)} · <Link to={`/hospital/nurse/requests/${s.careRequest?.id}`}>#{s.careRequest?.id}</Link>
                     </Text>
                   </div>
                 </div>

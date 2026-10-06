@@ -1656,3 +1656,62 @@ button.link-reset {
 .shift-row-title:hover {
   color: var(--teal);
 }
+.task-item .task-text {
+  flex: 1;
+  min-width: 0;
+}
+.task-item.is-readonly {
+  cursor: default;
+}
+
+/* ---------- Nurse request detail ---------- */
+.nurse-request-title {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+.nurse-request-title:hover {
+  color: var(--teal);
+}
+.request-sessions {
+  display: grid;
+  gap: 8px;
+}
+.request-session-row {
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: inherit;
+}
+.request-session-row:hover {
+  border-color: #a9d8d2;
+  background: #f8fffd;
+  color: inherit;
+}
+.request-session-date b,
+.request-session-date small {
+  display: block;
+}
+.request-session-date small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+.request-session-work {
+  min-width: 0;
+}
+.request-session-work .ant-progress {
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .request-session-row {
+    grid-template-columns: 70px 1fr;
+  }
+  .request-session-row > .ant-tag {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}

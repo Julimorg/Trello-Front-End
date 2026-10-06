@@ -277,7 +277,7 @@ export function cancelCareRequest(careRequestId) {
     ...state,
     careRequests: state.careRequests.map((c) =>
       c.id === careRequestId && c.status !== CARE_REQUEST_STATUS.COMPLETED
-        ? { ...c, status: CARE_REQUEST_STATUS.CANCELLED }
+        ? { ...c, status: CARE_REQUEST_STATUS.CANCELLED, cancelledAt: now() }
         : c,
     ),
   }))

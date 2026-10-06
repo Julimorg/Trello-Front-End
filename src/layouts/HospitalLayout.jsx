@@ -17,7 +17,7 @@ const adminNavItems = [
 const nurseNavItemsBase = [
   { to: '/hospital/nurse/overview', label: 'Tổng quan', icon: 'home' },
   { to: '/hospital/nurse/requests', label: 'Ca chăm sóc mới', icon: 'bell' },
-  { to: '/hospital/nurse/schedule', label: 'Lịch làm việc', icon: 'calendar' },
+  { to: '/hospital/nurse/schedule', label: 'Lịch làm việc', icon: 'calendar', also: ['/hospital/nurse/sessions'] },
   { to: '/hospital/nurse/profile', label: 'Hồ sơ nghề nghiệp', icon: 'shield' },
 ]
 

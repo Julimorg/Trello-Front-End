@@ -133,6 +133,23 @@ export const NURSE_CARE_REQUESTS: CareRequest[] = [
     createdAt: timestampAt(-5, '22:10'),
   }),
 
+  // ---- cancelled by the patient while nurse-hoa was asked ----
+  request({
+    id: 'cr-3009',
+    patientId: 'patient-tuan',
+    careType: 'mobility-support',
+    district: 'Thủ Đức',
+    desiredStartDate: dayOffset(-1),
+    timeSlot: { start: '16:00', end: '17:30' },
+    notes: 'Tập đứng dậy khỏi ghế, đi lại trong nhà.',
+    status: 'cancelled',
+    matchedNurseIds: ['nurse-hoa', 'nurse-ngoc'],
+    selectedNurseId: 'nurse-hoa',
+    selectedAt: timestampAt(-3, '09:12'),
+    cancelledAt: timestampAt(-3, '09:20'),
+    createdAt: timestampAt(-3, '09:00'),
+  }),
+
   // ---- accepted by nurse-hoa (bookings in schedule-data.ts) ----
   request({
     id: 'cr-3101',

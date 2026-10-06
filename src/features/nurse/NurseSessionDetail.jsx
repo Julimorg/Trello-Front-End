@@ -4,13 +4,11 @@ import dayjs from 'dayjs'
 import {
   Alert,
   App,
-  Avatar,
   Button,
   Card,
   Checkbox,
   Col,
   Descriptions,
-  Empty,
   Flex,
   Input,
   Modal,
@@ -31,16 +29,15 @@ import {
   EnvironmentOutlined,
   FileTextOutlined,
   PhoneOutlined,
-  TeamOutlined,
 } from '@ant-design/icons'
 import NurseSos from './NurseSos'
+import PatientInfoCard from './PatientInfoCard'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
 import { completeSession, findSession, getCareRequest, getNurse, getPatient, getPricing, reportCannotPerform, updateSessionWork } from '../../lib/db'
 import { careTypeLabel, formatCurrency, formatDate } from '../../lib/format'
-import { FREQUENCIES, SESSION_STATUS } from '../../lib/constants'
-import { tasksFor } from '../../Data/nurse/session-data'
-import { SESSION_STATUS_META, initials } from './nurse-shared'
+import { CARE_REQUEST_STATUS, SESSION_STATUS } from '../../lib/constants'
+import { SESSION_STATUS_META, frequencyText, sessionWork } from './nurse-shared'
 
 const { Text, Title, Paragraph } = Typography
 const WEEKDAY_LONG = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
@@ -86,18 +83,15 @@ export default function NurseSessionDetail() {
   const today = dayjs().format('YYYY-MM-DD')
   const date = dayjs(session.date)
   const duration = minutesBetween(session.start, session.end)
-  const age = patient?.dateOfBirth ? dayjs().diff(dayjs(patient.dateOfBirth), 'year') : null
-  const family = (patient?.familyContacts || []).filter((c) => c.status === 'Đã liên kết')
 
   const isCompleted = session.status === SESSION_STATUS.COMPLETED
   const isOff = session.status === SESSION_STATUS.CANNOT_PERFORM
-  const isActive = !isCompleted && !isOff
-  const tasks = tasksFor(careRequest?.careType || 'other')
-  // Seeded past visits have no recorded checklist; a completed visit counts as fully done.
-  const done = isCompleted && !session.checklist ? tasks.map((t) => t.id) : session.checklist || []
-  const progress = Math.round((done.filter((id) => tasks.some((t) => t.id === id)).length / tasks.length) * 100)
+  const isCancelled = careRequest?.status === CARE_REQUEST_STATUS.CANCELLED
+  // Completed, cancelled or handed-off visits are view-only: what was / wasn't done.
+  const isActive = !isCompleted && !isOff && !isCancelled
+  const { tasks, done, percent: progress } = sessionWork(session, careRequest?.careType)
   const canComplete = isActive && session.date <= today
-  const canReport = session.status === SESSION_STATUS.CONFIRMED && session.date >= today
+  const canReport = isActive && session.status === SESSION_STATUS.CONFIRMED && session.date >= today
 
   const toggleTask = (id, checked) => {
     updateSessionWork(booking.id, session.id, { checklist: checked ? [...done, id] : done.filter((x) => x !== id) })
@@ -118,7 +112,7 @@ export default function NurseSessionDetail() {
   }
 
   const sessionIndex = booking.sessions.findIndex((s) => s.id === session.id)
-  const frequency = FREQUENCIES.find((f) => f.id === careRequest?.frequency)?.label?.replace(' (chọn thứ)', '')
+  const frequency = careRequest ? frequencyText(careRequest) : null
 
   return (
     <>
@@ -139,7 +133,7 @@ export default function NurseSessionDetail() {
               <Tag color={meta.color}>{meta.label}</Tag>
               {session.date === today && <Tag color="magenta">Hôm nay</Tag>}
               {careRequest && (
-                <Link to={`/hospital/nurse/requests?id=${careRequest.id}`}>
+                <Link to={`/hospital/nurse/requests/${careRequest.id}`}>
                   <Tag icon={<FileTextOutlined />}>#{careRequest.id}</Tag>
                 </Link>
               )}
@@ -203,8 +197,23 @@ export default function NurseSessionDetail() {
             description={session.history?.slice(-1)[0]?.reason ? `Lý do: ${session.history.slice(-1)[0].reason}` : undefined}
           />
         )}
-        {isCompleted && session.completedAt && (
-          <Alert style={{ marginTop: 14 }} type="success" showIcon title={`Đã hoàn thành lúc ${dayjs(session.completedAt).format('HH:mm DD/MM/YYYY')}`} />
+        {isCompleted && (
+          <Alert
+            style={{ marginTop: 14 }}
+            type="success"
+            showIcon
+            title={session.completedAt ? `Đã hoàn thành lúc ${dayjs(session.completedAt).format('HH:mm DD/MM/YYYY')}` : 'Buổi chăm sóc đã hoàn thành'}
+            description="Chế độ xem lại — công việc và ghi chú không thể chỉnh sửa."
+          />
+        )}
+        {isCancelled && !isCompleted && (
+          <Alert
+            style={{ marginTop: 14 }}
+            type="warning"
+            showIcon
+            title="Bệnh nhân đã hủy yêu cầu chăm sóc này"
+            description="Chế độ xem lại — công việc và ghi chú không thể chỉnh sửa."
+          />
         )}
       </Card>
 
@@ -221,12 +230,13 @@ export default function NurseSessionDetail() {
             <Progress percent={progress} strokeColor="#0b6b68" style={{ marginBottom: 12 }} />
             <div className="task-list">
               {tasks.map((t) => (
-                <label key={t.id} className={`task-item${done.includes(t.id) ? ' is-done' : ''}`}>
+                <label key={t.id} className={`task-item${done.includes(t.id) ? ' is-done' : ''}${isActive ? '' : ' is-readonly'}`}>
                   <Checkbox checked={done.includes(t.id)} disabled={!isActive} onChange={(e) => toggleTask(t.id, e.target.checked)} />
-                  <span>
+                  <span className="task-text">
                     <b>{t.label}</b>
                     {t.hint && <small>{t.hint}</small>}
                   </span>
+                  {!isActive && <Tag color={done.includes(t.id) ? 'green' : 'default'}>{done.includes(t.id) ? 'Đã làm' : 'Chưa làm'}</Tag>}
                 </label>
               ))}
             </div>
@@ -245,9 +255,11 @@ export default function NurseSessionDetail() {
                 <Paragraph style={{ margin: 0 }} type={session.nurseNote ? undefined : 'secondary'}>
                   {session.nurseNote || 'Chưa có ghi chú.'}
                 </Paragraph>
-                <Button size="small" onClick={() => setNoteDraft(session.nurseNote || '')}>
-                  {session.nurseNote ? 'Sửa' : 'Thêm ghi chú'}
-                </Button>
+                {isActive && (
+                  <Button size="small" onClick={() => setNoteDraft(session.nurseNote || '')}>
+                    {session.nurseNote ? 'Sửa' : 'Thêm ghi chú'}
+                  </Button>
+                )}
               </Flex>
             ) : (
               <div style={{ marginTop: 6 }}>
@@ -300,76 +312,7 @@ export default function NurseSessionDetail() {
         </Col>
 
         <Col xs={24} lg={9}>
-          <Card title="Thông tin bệnh nhân">
-            <Flex gap={12} align="center" style={{ marginBottom: 14 }}>
-              <Avatar size={52} style={{ background: '#e7f5f2', color: '#0b6b68', fontWeight: 800 }}>
-                {initials(patient?.name)}
-              </Avatar>
-              <div>
-                <Text strong style={{ fontSize: 16 }}>
-                  {patient?.name}
-                </Text>
-                <div>
-                  <Text type="secondary">
-                    {patient?.gender}
-                    {age !== null ? ` · ${age} tuổi` : ''}
-                  </Text>
-                </div>
-              </div>
-            </Flex>
-            <Descriptions
-              size="small"
-              column={1}
-              items={[
-                { key: 'dob', label: 'Ngày sinh', children: formatDate(patient?.dateOfBirth) || '—' },
-                { key: 'phone', label: 'Điện thoại', children: patient?.phone },
-                { key: 'district', label: 'Khu vực', children: patient?.district },
-                { key: 'blood', label: 'Nhóm máu', children: patient?.bloodType || '—' },
-                {
-                  key: 'allergy',
-                  label: 'Dị ứng',
-                  children:
-                    patient?.allergies && patient.allergies !== 'Không' ? <Tag color="red">{patient.allergies}</Tag> : <Text type="secondary">Không</Text>,
-                },
-                { key: 'cond', label: 'Bệnh nền', children: patient?.conditions || '—' },
-                { key: 'bhyt', label: 'BHYT', children: <Text code>{patient?.insuranceNumber || '—'}</Text> },
-              ]}
-            />
-          </Card>
-
-          <Card
-            title={
-              <span>
-                <TeamOutlined /> Người thân liên hệ
-              </span>
-            }
-            style={{ marginTop: 16 }}
-          >
-            {family.length === 0 ? (
-              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Chưa có người thân liên kết" />
-            ) : (
-              family.map((c) => (
-                <Flex key={c.id} justify="space-between" align="center" className="cert-row" gap={8}>
-                  <div>
-                    <Text strong>{c.name}</Text>
-                    {c.primary && (
-                      <Tag color="green" style={{ marginLeft: 6 }}>
-                        Ưu tiên
-                      </Tag>
-                    )}
-                    <div>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        {c.relation} · {c.phone}
-                      </Text>
-                    </div>
-                  </div>
-                  <a href={`tel:${c.phone.replace(/[^\d+]/g, '')}`} aria-label={`Gọi ${c.name}`}>
-                    <Button shape="circle" icon={<PhoneOutlined />} />
-                  </a>
-                </Flex>
-              ))
-            )}
-          </Card>
+          <PatientInfoCard patient={patient} />
 
           <Card title="Liệu trình" style={{ marginTop: 16 }}>
             <Descriptions
