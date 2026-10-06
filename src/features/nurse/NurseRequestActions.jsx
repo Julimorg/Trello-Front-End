@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import { App, Button, Flex, Input, Modal, Popconfirm, Radio, Space, Tag, Typography } from 'antd'
 import { CheckOutlined, ClockCircleOutlined, CloseOutlined } from '@ant-design/icons'
 import { respondToCareRequest } from '../../lib/db'
+import { useDb } from '../../lib/store'
 import { NURSE_RESPONSE_WINDOW_MINUTES } from '../../Data/nurse/requests-data'
 import { DECLINE_REASONS } from './nurse-shared'
 
@@ -55,8 +56,9 @@ export default function NurseRequestActions({ careRequest, patientName }) {
   const { message } = App.useApp()
   const [declineOpen, setDeclineOpen] = useState(false)
   const now = useMinuteClock()
+  const windowMinutes = useDb().settings?.responseWindowMinutes || NURSE_RESPONSE_WINDOW_MINUTES
   const askedAt = dayjs(careRequest.selectedAt || careRequest.createdAt)
-  const minutesLeft = Math.min(NURSE_RESPONSE_WINDOW_MINUTES, Math.ceil((askedAt.valueOf() + NURSE_RESPONSE_WINDOW_MINUTES * 60000 - now) / 60000))
+  const minutesLeft = Math.min(windowMinutes, Math.ceil((askedAt.valueOf() + windowMinutes * 60000 - now) / 60000))
 
   const accept = () => {
     respondToCareRequest(careRequest.id, 'accept')

@@ -139,6 +139,14 @@ function requestSummary(state, careRequest) {
   return `${patient?.name || 'Bệnh nhân'} · ${careTypeLabel(careRequest.careType)} tại ${careRequest.district}`
 }
 
+// Platform-admin audit trail ("Nhật ký hoạt động").
+const ADMIN_ACTOR = 'Linh Phạm'
+function audit(state, { action, targetType, targetId, targetName, detail, actor = ADMIN_ACTOR }) {
+  state.auditLogs = [...(state.auditLogs || []), { id: genId('au'), at: now(), actor, action, targetType, targetId, targetName, detail }]
+}
+
+const STATUS_WORD = { active: 'Hoạt động', suspended: 'Tạm ngưng', locked: 'Khóa' }
+
 export function markNotificationsRead(role, targetId) {
   setState((state) => {
     const hasUnread = (state.notifications || []).some((n) => n.role === role && n.targetId === targetId && !n.read)
@@ -163,9 +171,17 @@ function nurseAvailabilityOverlaps(nurse, weekdays, timeSlot) {
   })
 }
 
+// A nurse can be offered new care only when licensed by their hospital and neither the
+// nurse account nor the partner hospital is suspended / locked by the platform.
+export function canTakeNewCare(state, nurse) {
+  if (nurse.authStatus !== NURSE_AUTH_STATUS.AUTHORIZED) return false
+  if ((nurse.accountStatus || 'active') !== 'active') return false
+  return (getHospital(state, nurse.hospitalId)?.status || 'active') === 'active'
+}
+
 function runMatchingLogic(state, careRequest) {
   const candidates = state.nurses.filter((nurse) => {
-    if (nurse.authStatus !== NURSE_AUTH_STATUS.AUTHORIZED) return false
+    if (!canTakeNewCare(state, nurse)) return false
     if (!nurse.authorizedCareTypes.includes(careRequest.careType)) return false
     if (!nurse.serviceAreas.includes(careRequest.district)) return false
     if (!nurseAvailabilityOverlaps(nurse, careRequest.weekdays, careRequest.timeSlot)) return false
@@ -177,7 +193,7 @@ function runMatchingLogic(state, careRequest) {
     return (b.rating || 0) - (a.rating || 0)
   })
 
-  return ranked.slice(0, HARD_FILTER_MATCH_LIMIT).map((n) => n.id)
+  return ranked.slice(0, state.settings?.matchLimit || HARD_FILTER_MATCH_LIMIT).map((n) => n.id)
 }
 
 // Ranked fallbacks for a request that has no full match (or whose matches all declined).
@@ -188,7 +204,7 @@ const ALTERNATIVE_LIMIT = 6
 export function getAlternativeNurses(state, careRequest, limit = ALTERNATIVE_LIMIT) {
   const excluded = new Set([...(careRequest.declinedNurseIds || []), careRequest.selectedNurseId].filter(Boolean))
   const scored = state.nurses
-    .filter((n) => n.authStatus === NURSE_AUTH_STATUS.AUTHORIZED && !excluded.has(n.id))
+    .filter((n) => canTakeNewCare(state, n) && !excluded.has(n.id))
     .map((nurse) => {
       const typeOk = nurse.authorizedCareTypes.includes(careRequest.careType)
       const areaOk = nurse.serviceAreas.includes(careRequest.district)
@@ -775,25 +791,107 @@ export function setNurseAuthStatus(nurseId, status, authorizedCareTypes) {
 
 export function addHospital(data) {
   const id = genId('hosp')
-  setState((state) => ({
-    ...state,
-    hospitals: [
-      ...state.hospitals,
-      { id, name: data.name, address: data.address, district: data.district, phone: data.phone, status: 'active', createdAt: now() },
-    ],
-  }))
+  setState((state) => {
+    const hospital = { branches: [], staff: [], status: 'active', ...data, id, createdAt: now() }
+    audit(state, { action: 'Thêm bệnh viện đối tác', targetType: 'hospital', targetId: id, targetName: hospital.name, detail: hospital.contract?.number })
+    return { ...state, hospitals: [...state.hospitals, hospital] }
+  })
   return id
 }
 
-export function updateHospital(hospitalId, patch) {
-  setState((state) => ({
-    ...state,
-    hospitals: state.hospitals.map((h) => (h.id === hospitalId ? { ...h, ...patch } : h)),
-  }))
+export function updateHospital(hospitalId, patch, { auditAction = 'Cập nhật thông tin' } = {}) {
+  setState((state) => {
+    const hospital = getHospital(state, hospitalId)
+    if (!hospital) return state
+    audit(state, { action: auditAction, targetType: 'hospital', targetId: hospitalId, targetName: hospital.name, detail: Object.keys(patch).join(', ') })
+    return { ...state, hospitals: state.hospitals.map((h) => (h.id === hospitalId ? { ...h, ...patch } : h)) }
+  })
 }
 
-export function setHospitalStatus(hospitalId, status) {
-  updateHospital(hospitalId, { status })
+// Hoạt động / Tạm ngưng (no new care) / Khóa (no sign-in) for a partner hospital.
+export function setHospitalStatus(hospitalId, status, reason = '') {
+  setState((state) => {
+    const hospital = getHospital(state, hospitalId)
+    if (!hospital) return state
+    audit(state, { action: `Đổi trạng thái → ${STATUS_WORD[status]}`, targetType: 'hospital', targetId: hospitalId, targetName: hospital.name, detail: reason })
+    notify(state, { role: 'hospital', targetId: hospitalId, message: `CareShift đã chuyển trạng thái bệnh viện sang “${STATUS_WORD[status]}”.${reason ? ` Lý do: ${reason}` : ''}` })
+    return {
+      ...state,
+      hospitals: state.hospitals.map((h) => (h.id === hospitalId ? { ...h, status, statusReason: reason, statusChangedAt: now() } : h)),
+    }
+  })
+}
+
+export function setStaffStatus(hospitalId, staffId, status) {
+  setState((state) => {
+    const hospital = getHospital(state, hospitalId)
+    const member = hospital?.staff?.find((m) => m.id === staffId)
+    if (!member) return state
+    audit(state, { action: `Đổi trạng thái → ${STATUS_WORD[status]}`, targetType: 'staff', targetId: staffId, targetName: `${member.name} (${hospital.name})` })
+    return {
+      ...state,
+      hospitals: state.hospitals.map((h) => (h.id === hospitalId ? { ...h, staff: h.staff.map((m) => (m.id === staffId ? { ...m, status } : m)) } : h)),
+    }
+  })
+}
+
+export function setNurseAccountStatus(nurseId, status, reason = '') {
+  setState((state) => {
+    const nurse = getNurse(state, nurseId)
+    if (!nurse) return state
+    audit(state, { action: `Đổi trạng thái tài khoản → ${STATUS_WORD[status]}`, targetType: 'nurse', targetId: nurseId, targetName: nurse.name, detail: reason })
+    notify(state, { role: 'nurse', targetId: nurseId, message: `Tài khoản của bạn đã chuyển sang “${STATUS_WORD[status]}”.${reason ? ` Lý do: ${reason}` : ''}` })
+    return { ...state, nurses: state.nurses.map((n) => (n.id === nurseId ? { ...n, accountStatus: status, accountStatusReason: reason } : n)) }
+  })
+}
+
+export function setPatientAccountStatus(patientId, status, reason = '') {
+  setState((state) => {
+    const patient = getPatient(state, patientId)
+    if (!patient) return state
+    audit(state, { action: `Đổi trạng thái → ${STATUS_WORD[status]}`, targetType: 'patient', targetId: patientId, targetName: patient.name, detail: reason })
+    notify(state, { role: 'patient', targetId: patientId, message: `Tài khoản của bạn đã chuyển sang “${STATUS_WORD[status]}”.${reason ? ` Lý do: ${reason}` : ''}` })
+    return {
+      ...state,
+      patients: state.patients.map((p) => (p.id === patientId ? { ...p, account: { ...p.account, status, statusReason: reason } } : p)),
+    }
+  })
+}
+
+// Admin edit of a patient's profile (recorded in the audit log, unlike the patient's own edits).
+export function adminUpdatePatient(patientId, patch) {
+  setState((state) => {
+    const patient = getPatient(state, patientId)
+    if (!patient) return state
+    audit(state, { action: 'Cập nhật thông tin', targetType: 'patient', targetId: patientId, targetName: patient.name, detail: Object.keys(patch).join(', ') })
+    return { ...state, patients: state.patients.map((p) => (p.id === patientId ? { ...p, ...patch } : p)) }
+  })
+}
+
+// Sends one notification per recipient in the audience; returns the recipient count.
+export function sendBroadcast({ title, message, audience, hospitalId = null }) {
+  let recipients = 0
+  setState((state) => {
+    const targets = []
+    const hospitalsInScope = state.hospitals.filter((h) => !hospitalId || h.id === hospitalId)
+    if (audience === 'all' || audience === 'patients') state.patients.forEach((p) => targets.push({ role: 'patient', targetId: p.id }))
+    if (audience === 'all' || audience === 'nurses')
+      state.nurses.filter((n) => !hospitalId || n.hospitalId === hospitalId).forEach((n) => targets.push({ role: 'nurse', targetId: n.id }))
+    if (audience === 'all' || audience === 'hospitals') hospitalsInScope.forEach((h) => targets.push({ role: 'hospital', targetId: h.id }))
+    targets.forEach((t) => notify(state, { ...t, message: `📢 ${title}: ${message}` }))
+    recipients = targets.length
+    const broadcast = { id: genId('bc'), title, message, audience, hospitalId, sentAt: now(), sentBy: ADMIN_ACTOR, recipients }
+    audit(state, { action: 'Gửi thông báo hệ thống', targetType: 'broadcast', targetId: broadcast.id, targetName: title, detail: `${recipients} người nhận` })
+    return { ...state, broadcasts: [...(state.broadcasts || []), broadcast] }
+  })
+  return recipients
+}
+
+export function updateSettings(patch) {
+  setState((state) => {
+    audit(state, { action: 'Cập nhật cấu hình', targetType: 'settings', targetId: null, targetName: 'Cấu hình hệ thống', detail: Object.keys(patch).join(', ') })
+    return { ...state, settings: { ...state.settings, ...patch } }
+  })
 }
 
 export function addPatient(data) {
@@ -946,8 +1044,12 @@ export function acceptFamilyInvite(code, { name, phone, relation }) {
 // ---------- Compliance reports (platform admin) ----------
 
 export function updateReport(reportId, patch) {
-  setState((state) => ({
-    ...state,
-    reports: (state.reports || []).map((r) => (r.id === reportId ? { ...r, ...patch, updatedAt: now() } : r)),
-  }))
+  setState((state) => {
+    const report = (state.reports || []).find((r) => r.id === reportId)
+    if (!report) return state
+    if (patch.status && patch.status !== report.status) {
+      audit(state, { action: `Báo cáo → ${{ open: 'Mới', investigating: 'Đang xem xét', resolved: 'Đã xử lý', dismissed: 'Bác bỏ' }[patch.status]}`, targetType: 'report', targetId: reportId, targetName: report.title, detail: patch.resolution })
+    }
+    return { ...state, reports: state.reports.map((r) => (r.id === reportId ? { ...r, ...patch, updatedAt: now() } : r)) }
+  })
 }

@@ -34,13 +34,25 @@ export default function LoginPage() {
     platformAdmin: '/admin/overview',
   }
 
+  // Platform status: locked accounts (or nurses of a locked hospital) cannot sign in.
   const options = useMemo(() => {
-    if (tab === 'patient') return state.patients.map((p) => ({ id: p.id, primary: p.name, secondary: p.district }))
-    if (tab === 'hospitalAdmin') return state.hospitals.map((h) => ({ id: h.id, primary: h.name, secondary: h.district }))
+    const platformBadge = (status) =>
+      status === 'locked' ? { label: 'Đã khóa', tone: 'danger' } : status === 'suspended' ? { label: 'Tạm ngưng', tone: 'pending' } : null
+    if (tab === 'patient')
+      return state.patients.map((p) => ({ id: p.id, primary: p.name, secondary: p.district, badge: platformBadge(p.account?.status), locked: p.account?.status === 'locked' }))
+    if (tab === 'hospitalAdmin')
+      return state.hospitals.map((h) => ({ id: h.id, primary: h.name, secondary: h.district, badge: platformBadge(h.status), locked: h.status === 'locked' }))
     if (tab === 'nurse')
       return state.nurses.map((n) => {
         const hospital = state.hospitals.find((h) => h.id === n.hospitalId)
-        return { id: n.id, primary: n.name, secondary: `${hospital?.name || ''} · ${n.rank}`, badge: NURSE_AUTH_STATUS_LABEL[n.authStatus] }
+        const locked = n.accountStatus === 'locked' || hospital?.status === 'locked'
+        return {
+          id: n.id,
+          primary: n.name,
+          secondary: `${hospital?.name || ''} · ${n.rank}`,
+          badge: platformBadge(locked ? 'locked' : n.accountStatus) || NURSE_AUTH_STATUS_LABEL[n.authStatus],
+          locked,
+        }
       })
     return []
   }, [tab, state])
@@ -89,7 +101,14 @@ export default function LoginPage() {
         ) : (
           <div className="persona-list">
             {options.map((o) => (
-              <button key={o.id} type="button" className={`persona-item${selectedId === o.id ? ' selected' : ''}`} onClick={() => setSelectedId(o.id)}>
+              <button
+                key={o.id}
+                type="button"
+                className={`persona-item${selectedId === o.id ? ' selected' : ''}`}
+                disabled={o.locked}
+                title={o.locked ? 'Tài khoản đã bị khóa bởi CareShift' : undefined}
+                onClick={() => setSelectedId(o.id)}
+              >
                 <span className="person-avatar">{initials(o.primary)}</span>
                 <span className="persona-meta">
                   <b>{o.primary}</b>

@@ -56,7 +56,6 @@ export default function HospitalLayout() {
       profileTo={isNurse ? '/hospital/nurse/profile' : undefined}
       notificationRole={isNurse ? 'nurse' : 'hospital'}
       notificationTargetId={isNurse ? session.id : hospital?.id}
-      showRealtime={!isNurse}
     />
   )
 

@@ -36,9 +36,11 @@ const SosLog = lazy(() => import('./features/hospitalAdmin/SosLog'))
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'))
 const PlatformDashboard = lazy(() => import('./features/platformAdmin/PlatformDashboard'))
 const HospitalsTable = lazy(() => import('./features/platformAdmin/HospitalsTable'))
-const HospitalForm = lazy(() => import('./features/platformAdmin/HospitalForm'))
 const HospitalAccountDetail = lazy(() => import('./features/platformAdmin/HospitalAccountDetail'))
 const AccountsTable = lazy(() => import('./features/platformAdmin/AccountsTable'))
+const PatientAccountDetail = lazy(() => import('./features/platformAdmin/PatientAccountDetail'))
+const Broadcasts = lazy(() => import('./features/platformAdmin/Broadcasts'))
+const AuditLog = lazy(() => import('./features/platformAdmin/AuditLog'))
 const Compliance = lazy(() => import('./features/platformAdmin/Compliance'))
 const Settings = lazy(() => import('./features/platformAdmin/Settings'))
 
@@ -197,10 +199,12 @@ function App() {
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<PlatformDashboard />} />
           <Route path="hospitals" element={<HospitalsTable />} />
-          <Route path="hospitals/new" element={<HospitalForm />} />
           <Route path="hospitals/:id" element={<HospitalAccountDetail />} />
           <Route path="accounts" element={<AccountsTable />} />
+          <Route path="accounts/:id" element={<PatientAccountDetail />} />
           <Route path="compliance" element={<Compliance />} />
+          <Route path="broadcasts" element={<Broadcasts />} />
+          <Route path="audit" element={<AuditLog />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 

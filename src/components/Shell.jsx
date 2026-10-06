@@ -2,7 +2,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Icon } from '../lib/icons'
 import { useAuth } from '../auth/AuthContext'
-import { onRemotePatch, useDb, useRealtimeStatus } from '../lib/store'
+import { onRemotePatch, useDb } from '../lib/store'
 import { useToast } from './ToastProvider'
 import { listNotificationsFor, markNotificationsRead } from '../lib/db'
 import { formatDateTime } from '../lib/format'
@@ -103,21 +103,6 @@ function NotificationBell({ role, targetId }) {
 }
 
 const SIDEBAR_KEY = 'careshift_sidebar_collapsed'
-const REALTIME_LABEL = { online: 'Realtime', connecting: 'Đang kết nối', offline: 'Ngoại tuyến' }
-
-function RealtimePill() {
-  const { status, clients } = useRealtimeStatus()
-  return (
-    <span
-      className={`realtime-pill is-${status}`}
-      title={status === 'online' ? `Đồng bộ trực tiếp · ${clients} thiết bị đang mở` : 'Chưa kết nối máy chủ realtime — dữ liệu chỉ lưu trên trình duyệt này'}
-    >
-      <i aria-hidden="true" />
-      <span>{REALTIME_LABEL[status]}</span>
-    </span>
-  )
-}
-
 export default function Shell({
   roleDot,
   roleAvatar,
@@ -131,9 +116,9 @@ export default function Shell({
   notificationRole,
   notificationTargetId,
   profileTo,
-  showRealtime = false,
 }) {
-  const { logout } = useAuth()
+  const { logout, session } = useAuth()
+  const settings = useDb().settings
   const location = useLocation()
   const [navOpen, setNavOpen] = useState(false)
   // Desktop sidebar can be collapsed to an icon rail; remembered per browser.
@@ -238,7 +223,6 @@ export default function Shell({
             <strong>{currentTitle}</strong>
           </div>
           <div className="top-actions">
-            {showRealtime && <RealtimePill />}
             <NotificationBell role={notificationRole} targetId={notificationTargetId} />
             {profileTo ? (
               <Link to={profileTo} className="header-profile">
@@ -252,6 +236,13 @@ export default function Shell({
             </button>
           </div>
         </header>
+
+        {settings?.maintenanceMode && session?.role !== 'platformAdmin' && (
+          <div className="maintenance-banner" role="status">
+            <Icon.info aria-hidden="true" />
+            <span>{settings.maintenanceMessage}</span>
+          </div>
+        )}
 
         <section className="app-content" aria-live="polite">
           <Suspense fallback={<div className="route-loading" aria-busy="true" />}>

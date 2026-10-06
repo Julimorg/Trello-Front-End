@@ -120,19 +120,19 @@ export const SOS_TYPE_LABEL = {
   [SOS_TYPES.NOTIFY_FAMILY]: 'Báo người thân',
 }
 
+// Partner hospitals and user accounts share the same three platform-level states.
 export const HOSPITAL_STATUS = {
   ACTIVE: 'active',
   SUSPENDED: 'suspended',
+  LOCKED: 'locked',
 }
 
-export const HOSPITAL_STATUS_LABEL = {
-  [HOSPITAL_STATUS.ACTIVE]: { label: 'Hoạt động', tone: 'success' },
-  [HOSPITAL_STATUS.SUSPENDED]: { label: 'Cần rà soát', tone: 'pending' },
-}
+export const ACCOUNT_STATUS = HOSPITAL_STATUS
 
-export const ACCOUNT_STATUS_LABEL = {
-  active: { label: 'Hoạt động', tone: 'success' },
-  suspended: { label: 'Tạm khóa', tone: 'pending' },
+export const PLATFORM_STATUS_META = {
+  active: { label: 'Hoạt động', color: 'green', hint: 'Hoạt động bình thường' },
+  suspended: { label: 'Tạm ngưng', color: 'orange', hint: 'Vẫn đăng nhập được nhưng không nhận / tạo ca mới' },
+  locked: { label: 'Khóa', color: 'red', hint: 'Không thể đăng nhập' },
 }
 
 export const MATCH_RETRY_WINDOW_MS = 60 * 60 * 1000 // 1 hour

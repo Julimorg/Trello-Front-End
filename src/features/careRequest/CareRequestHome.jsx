@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
+import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import Pagination from '@mui/material/Pagination'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -11,7 +12,7 @@ import CareRequestWizardModal from './CareRequestWizardModal'
 import CareRequestBody from './CareRequestBody'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { getNurse, listCareRequestsByPatient } from '../../lib/db'
+import { getNurse, getPatient, listCareRequestsByPatient } from '../../lib/db'
 import { careTypeLabel, formatDate } from '../../lib/format'
 import { CARE_REQUEST_STATUS, CARE_REQUEST_STATUS_LABEL } from '../../lib/constants'
 import { HISTORY_PAGE_SIZE } from '../../Data/patient/care-request-data'
@@ -23,6 +24,9 @@ const IN_FLIGHT = [CARE_REQUEST_STATUS.MATCHING, CARE_REQUEST_STATUS.MATCHED, CA
 export default function CareRequestHome() {
   const { session } = useAuth()
   const state = useDb()
+  // A suspended account keeps SOS and existing care, but cannot open new requests.
+  const account = getPatient(state, session.id)?.account
+  const suspended = account?.status === 'suspended'
   const location = useLocation()
   const navigate = useNavigate()
   const [wizardOpen, setWizardOpen] = useState(false)
@@ -33,11 +37,11 @@ export default function CareRequestHome() {
 
   // The dashboard's "Tạo yêu cầu chăm sóc" button routes here and asks for the wizard.
   useEffect(() => {
-    if (location.state?.openWizard) {
+    if (location.state?.openWizard && !suspended) {
       setWizardOpen(true)
       navigate(location.pathname, { replace: true, state: null })
     }
-  }, [location.state, location.pathname, navigate])
+  }, [location.state, location.pathname, navigate, suspended])
 
   const requests = listCareRequestsByPatient(state, session.id)
   const active = requests.find((r) => IN_FLIGHT.includes(r.status))
@@ -73,11 +77,17 @@ export default function CareRequestHome() {
         title="Yêu cầu chăm sóc"
         description="Mô tả nhu cầu một lần để CareShift tìm điều dưỡng phù hợp nhất."
         action={
-          <Button variant="contained" startIcon={<Icon.plus />} onClick={() => setWizardOpen(true)}>
+          <Button variant="contained" startIcon={<Icon.plus />} disabled={suspended} onClick={() => setWizardOpen(true)}>
             Tạo yêu cầu
           </Button>
         }
       />
+
+      {suspended && (
+        <Alert severity="warning" sx={{ mb: 2, borderRadius: '14px' }}>
+          Tài khoản của bạn đang bị tạm ngưng nên chưa thể tạo yêu cầu mới.{account.statusReason ? ` Lý do: ${account.statusReason}` : ''} Các lịch đã đặt và nút SOS vẫn hoạt động.
+        </Alert>
+      )}
 
       <section className="panel">
         {active ? (

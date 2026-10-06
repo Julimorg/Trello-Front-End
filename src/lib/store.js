@@ -3,7 +3,7 @@ import { seedState } from './seed'
 import { applyPatch, computePatch, isEmptyPatch } from './sync-patch'
 
 // Bump when the seed shape changes so existing browsers pick up the new data.
-const STORAGE_KEY = 'careshift_db_v6'
+const STORAGE_KEY = 'careshift_db_v7'
 const REALTIME_PATH = '/__careshift_rt'
 const listeners = new Set()
 const remoteListeners = new Set()

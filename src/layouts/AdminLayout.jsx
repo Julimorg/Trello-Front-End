@@ -6,11 +6,12 @@ const navItems = [
   { to: '/admin/hospitals', label: 'Bệnh viện đối tác', icon: 'building' },
   { to: '/admin/accounts', label: 'Tài khoản người dùng', icon: 'users' },
   { to: '/admin/compliance', label: 'Tuân thủ & chính sách', icon: 'shield' },
+  { to: '/admin/broadcasts', label: 'Thông báo hệ thống', icon: 'bell' },
+  { to: '/admin/audit', label: 'Nhật ký hoạt động', icon: 'file' },
   { to: '/admin/settings', label: 'Cấu hình hệ thống', icon: 'settings' },
 ]
 
 export default function AdminLayout() {
-  // Ant Design is available to platform admin pages (Compliance uses it; the rest move over next).
   return (
     <AntdThemeProvider>
       <Shell
@@ -23,7 +24,6 @@ export default function AdminLayout() {
         profileName="Linh Phạm"
         profileMeta="Platform Administrator"
         profileInitials="LP"
-        showRealtime
       />
     </AntdThemeProvider>
   )
