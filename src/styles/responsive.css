@@ -68,6 +68,19 @@
 
 /* ---------- Phone ---------- */
 @media (max-width: 780px) {
+  /* Notification menu: pinned under the topbar across the screen instead of hanging off the bell */
+  .notif-menu {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: 72px;
+    width: auto;
+    max-height: calc(100dvh - 92px);
+  }
+  .notif-item span {
+    font-size: 0.86rem;
+  }
+
   .topbar {
     height: 64px;
   }
