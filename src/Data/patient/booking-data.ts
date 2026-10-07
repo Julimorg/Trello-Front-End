@@ -1,4 +1,5 @@
 import { dayOffset, timestampAt } from './date-utils'
+import { SESSION_OBSERVATIONS } from './care-progress-data'
 import type { Booking, CareSession, SessionStatus } from './types'
 
 // Data for "Lịch chăm sóc" (/patient/bookings calendar and /patient/bookings/:id).
@@ -14,7 +15,9 @@ const session = (
   extra: Partial<CareSession> = {},
 ): CareSession => {
   const status: SessionStatus = offset < 0 ? 'completed' : 'confirmed'
-  return { id: `${bookingId}-s${index}`, date: dayOffset(offset), start, end, status, nurseId, ...extra }
+  const id = `${bookingId}-s${index}`
+  const observation = SESSION_OBSERVATIONS[id]
+  return { id, date: dayOffset(offset), start, end, status, nurseId, ...(observation ? { observation } : {}), ...extra }
 }
 
 export const BOOKINGS: Booking[] = [

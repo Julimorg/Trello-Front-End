@@ -31,6 +31,7 @@ import {
   PhoneOutlined,
 } from '@ant-design/icons'
 import PatientInfoCard from './PatientInfoCard'
+import ObservationCard from './ObservationCard'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
 import { completeSession, findSession, getCareRequest, getNurse, getPatient, reportCannotPerform, updateSessionWork } from '../../lib/db'
@@ -238,6 +239,8 @@ export default function NurseSessionDetail() {
               ))}
             </div>
           </Card>
+
+          <ObservationCard key={session.id} booking={booking} session={session} editable={isActive} />
 
           <Card title="Ghi chú" style={{ marginTop: 16 }}>
             <Text type="secondary" style={{ fontSize: 12 }}>

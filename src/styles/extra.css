@@ -1837,3 +1837,502 @@ button.link-reset {
 .ant-card .attention-list {
   padding: 0;
 }
+
+/* ---------- Patient: bookings list + detail ---------- */
+.day-session-rich {
+  align-items: start;
+}
+.session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.session-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.session-meta svg,
+.booking-card-facts svg,
+.fact > svg {
+  width: 15px;
+  height: 15px;
+  color: var(--teal);
+  flex: 0 0 auto;
+}
+.session-note {
+  margin-top: 6px !important;
+  font-style: italic;
+}
+.session-link {
+  margin-top: 4px !important;
+}
+
+.booking-card {
+  display: block;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 14px;
+  color: inherit;
+  text-decoration: none;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.booking-card:hover {
+  border-color: #a9d8d2;
+  box-shadow: var(--shadow);
+}
+.booking-card-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+}
+.booking-card-title h3 {
+  margin: 0 0 2px;
+  font-size: 0.98rem;
+}
+.booking-card-title p {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+.booking-card-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px 18px;
+  margin: 14px 0;
+  padding: 12px 0;
+  border-top: 1px solid #edf2f2;
+  border-bottom: 1px solid #edf2f2;
+  font-size: 0.76rem;
+}
+.booking-card-facts span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+.booking-card-facts em,
+.fact em {
+  display: block;
+  flex-basis: 100%;
+  font-style: normal;
+  font-size: 0.68rem;
+  color: var(--muted);
+  padding-left: 21px;
+}
+.booking-card-progress small {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.booking-overview {
+  display: grid;
+  gap: 20px;
+}
+.booking-overview-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.booking-overview-head small,
+.booking-overview-head b {
+  display: block;
+}
+.booking-overview-head small {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.booking-overview-head b {
+  font-size: 1.15rem;
+}
+.booking-overview-head strong {
+  font-size: 1.6rem;
+  color: var(--teal);
+  letter-spacing: -0.03em;
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px 24px;
+}
+.fact {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.fact > span {
+  min-width: 0;
+}
+.fact small {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.fact b {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+.fact em {
+  padding-left: 0;
+  margin-top: 2px;
+  font-weight: 400;
+}
+.fact a {
+  color: var(--teal);
+  text-decoration: none;
+}
+.booking-tabs {
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.visit {
+  border-bottom: 1px solid #edf2f2;
+}
+.visit:last-child {
+  border-bottom: 0;
+}
+.visit-list {
+  padding: 4px 18px 8px;
+}
+.visit-row {
+  display: grid;
+  grid-template-columns: 62px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+}
+.visit.is-today .day-session-time {
+  background: var(--teal);
+  color: #fff;
+}
+.visit-main h3 {
+  margin: 0 0 3px;
+  font-size: 0.88rem;
+}
+.visit-main p {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+.visit-main a {
+  color: var(--teal);
+  font-weight: 700;
+  text-decoration: none;
+}
+.visit-main .visit-done {
+  margin-top: 4px;
+  color: var(--green);
+  font-weight: 650;
+}
+.visit-main .visit-done.is-upcoming {
+  color: var(--blue);
+}
+.visit-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  background: #f7fafa;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 0 0 14px 76px;
+}
+.visit-detail h4 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+}
+.mini-tasks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.76rem;
+}
+.mini-tasks li {
+  display: flex;
+  gap: 8px;
+  color: var(--muted);
+}
+.mini-tasks li.is-done {
+  color: var(--ink);
+}
+.mini-tasks li.is-done > span:first-child {
+  color: var(--green);
+  font-weight: 800;
+}
+.mini-tasks small {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.plan-wide {
+  grid-column: 1 / -1;
+}
+.plan-lead {
+  margin: 0 0 12px;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+.plan-note {
+  background: var(--teal-soft);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.plan-note small {
+  color: var(--teal);
+  font-weight: 700;
+  font-size: 0.68rem;
+}
+.plan-note p {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+}
+.plan-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+.plan-list.is-goal li::marker {
+  color: var(--green);
+}
+.plan-list.is-warning {
+  color: #8a2a30;
+}
+.plan-list.is-warning li::marker {
+  color: var(--red);
+}
+.nurse-full-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.nurse-full-head .nurse-avatar {
+  width: 72px;
+  height: 72px;
+  margin: 0;
+  font-size: 1.2rem;
+  flex: 0 0 auto;
+}
+.nurse-full-head h2 {
+  margin: 0 0 2px;
+  font-size: 1.15rem;
+}
+.nurse-full-head p {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.nurse-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.credential-list {
+  display: grid;
+  gap: 8px;
+}
+.credential-list .credential {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+}
+.cred-state {
+  font-style: normal;
+  font-size: 0.68rem;
+  font-weight: 750;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  white-space: nowrap;
+}
+.cred-state.is-expiring {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+.cred-state.is-expired {
+  background: var(--red-soft);
+  color: var(--red);
+}
+.hospital-block b {
+  font-size: 0.84rem;
+}
+.hospital-block p {
+  margin-top: 2px;
+}
+
+.progress-verdict {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 24px;
+}
+.progress-verdict-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+.progress-verdict-latest small {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.progress-verdict-latest p {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  background: #f7fafa;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.trend-pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 750;
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-right: 6px;
+}
+.vital-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+.vital-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+}
+.vital-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+.vital-card-value {
+  margin: 6px 0 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.vital-card-value b {
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+}
+.vital-card-value small {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.spark {
+  display: block;
+  width: 100%;
+  height: 54px;
+}
+.vital-card-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.observation-list {
+  padding: 4px 18px 8px;
+}
+.observation {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #edf2f2;
+}
+.observation:last-child {
+  border-bottom: 0;
+}
+.observation-date {
+  text-align: center;
+  background: var(--teal-soft);
+  color: var(--teal);
+  border-radius: 12px;
+  padding: 8px 4px;
+  align-self: start;
+}
+.observation-date b,
+.observation-date small {
+  display: block;
+}
+.observation-date small {
+  font-size: 0.64rem;
+}
+.observation-summary {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+}
+.observation-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.observation-chips span {
+  font-size: 0.68rem;
+  background: #f0f5f5;
+  border-radius: 999px;
+  padding: 3px 9px;
+  color: #3d565c;
+}
+
+@media (max-width: 1024px) {
+  .plan-grid,
+  .progress-verdict {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 780px) {
+  .visit-row {
+    grid-template-columns: 56px 1fr;
+  }
+  .visit-row .day-session-side {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+  }
+  .visit-detail {
+    grid-template-columns: 1fr;
+    margin-left: 0;
+  }
+  .booking-card-head {
+    grid-template-columns: auto 1fr;
+  }
+  .booking-card-head > .status {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .nurse-full-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

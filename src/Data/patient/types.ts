@@ -108,6 +108,28 @@ export interface SessionHistoryEntry {
   reportedAt: string
 }
 
+/** Vital signs the nurse records during a visit. */
+export interface Vitals {
+  /** Blood pressure "systolic/diastolic" in mmHg, e.g. "135/85". */
+  bp?: string
+  pulse?: number
+  temp?: number
+  spo2?: number
+  /** Capillary blood glucose in mmol/L. */
+  glucose?: number
+}
+
+/** What the nurse measured and observed in one visit — drives the patient's "Tiến triển" view. */
+export interface SessionObservation {
+  vitals?: Vitals
+  /** Pain level, 0 (none) – 10 (worst). */
+  pain?: number
+  /** Care-specific measurements, e.g. { label: 'Quãng đường đi', value: '15 m' }. */
+  extras?: { label: string; value: string }[]
+  /** Nurse's account of how the patient is doing. */
+  summary: string
+}
+
 export interface CareSession {
   id: string
   date: string
@@ -121,6 +143,7 @@ export interface CareSession {
   checklist?: string[]
   nurseNote?: string
   completedAt?: string
+  observation?: SessionObservation
 }
 
 export interface Booking {

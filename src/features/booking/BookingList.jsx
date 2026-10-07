@@ -10,8 +10,9 @@ import EmptyState from '../../components/EmptyState'
 import StatusBadge from '../../components/StatusBadge'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { computeBookingStatus, getCareRequest, getNurse, listBookingsByPatient } from '../../lib/db'
+import { computeBookingStatus, getCareRequest, getHospital, getNurse, listBookingsByPatient } from '../../lib/db'
 import { careTypeLabel, formatDate } from '../../lib/format'
+import { bookingSummary, formatDuration, frequencyText, minutesBetween, relativeDay, visitWork, weekdayLong } from './booking-shared'
 import { BOOKING_STATUS_LABEL, SESSION_STATUS, SESSION_STATUS_LABEL } from '../../lib/constants'
 import { useStaggerIn } from '../../patient/anime'
 import { Icon } from '../../lib/icons'
@@ -123,16 +124,42 @@ export default function BookingList() {
             <div className="day-session-list" ref={listRef}>
               {daySessions.map((s) => {
                 const nurse = getNurse(state, s.nurseId)
+                const hospital = nurse ? getHospital(state, nurse.hospitalId) : null
+                const careType = s.careRequest?.careType
+                const index = s.booking.sessions.findIndex((x) => x.id === s.id)
+                const work = visitWork(s, careType)
+                const finished = s.status === SESSION_STATUS.COMPLETED
                 return (
-                  <div className="day-session" key={s.id}>
+                  <div className="day-session day-session-rich" key={s.id}>
                     <div className="day-session-time">
                       <b>{s.start}</b>
                       <small>{s.end}</small>
                     </div>
                     <div>
-                      <h3>{s.careRequest ? careTypeLabel(s.careRequest.careType) : 'Buổi chăm sóc'}</h3>
+                      <h3>{careType ? careTypeLabel(careType) : 'Buổi chăm sóc'}</h3>
                       <p>
-                        {nurse ? <Link to={`/patient/nurses/${nurse.id}`}>{nurse.name}</Link> : '—'} · {s.careRequest?.district} ·{' '}
+                        {nurse ? <Link to={`/patient/nurses/${nurse.id}`}>{nurse.name}</Link> : '—'}
+                        {hospital ? ` · ${hospital.name}` : ''}
+                      </p>
+                      <div className="session-meta">
+                        <span>
+                          <Icon.clock /> {formatDuration(minutesBetween(s.start, s.end))}
+                        </span>
+                        <span>
+                          <Icon.calendar /> Buổi {index + 1}/{s.booking.sessions.length}
+                          {s.booking.sessions.length > 1 && s.careRequest ? ` · ${frequencyText(s.careRequest)}` : ''}
+                        </span>
+                        <span>
+                          <Icon.pin /> {s.careRequest?.district}
+                        </span>
+                        {finished && (
+                          <span>
+                            <Icon.check /> {work.done.length}/{work.tasks.length} đầu việc
+                          </span>
+                        )}
+                      </div>
+                      {s.careRequest?.notes && <p className="session-note">“{s.careRequest.notes}”</p>}
+                      <p className="session-link">
                         <Link to={`/patient/request/${s.booking.careRequestId}`}>#{s.booking.careRequestId}</Link>
                       </p>
                     </div>
@@ -158,25 +185,54 @@ export default function BookingList() {
       ) : (
         bookings.map((b) => {
           const nurse = getNurse(state, b.nurseId)
+          const hospital = nurse ? getHospital(state, nurse.hospitalId) : null
           const request = getCareRequest(state, b.careRequestId)
-          const first = b.sessions[0]
-          const last = b.sessions[b.sessions.length - 1]
+          const sum = bookingSummary(b, today)
+          const status = computeBookingStatus(b)
           return (
-            <Link key={b.id} to={`/patient/bookings/${b.id}`} className="shift-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div className="shift-date">
-                <small>{first?.date ? `THÁNG ${dayjs(first.date).format('MM')}` : ''}</small>
-                <b>{first?.date ? dayjs(first.date).format('DD') : '—'}</b>
+            <Link key={b.id} to={`/patient/bookings/${b.id}`} className="booking-card">
+              <div className="booking-card-head">
+                <div className="shift-date">
+                  <small>{sum.first?.date ? `THÁNG ${dayjs(sum.first.date).format('MM')}` : ''}</small>
+                  <b>{sum.first?.date ? dayjs(sum.first.date).format('DD') : '—'}</b>
+                </div>
+                <div className="booking-card-title">
+                  <h3>{request ? careTypeLabel(request.careType) : 'Lịch chăm sóc'}</h3>
+                  <p>
+                    {nurse?.name}
+                    {hospital ? ` · ${hospital.name}` : ''}
+                  </p>
+                </div>
+                <StatusBadge status={status} labelMap={BOOKING_STATUS_LABEL} />
               </div>
-              <div>
-                <h3>
-                  {request ? careTypeLabel(request.careType) : 'Lịch chăm sóc'} · {nurse?.name}
-                </h3>
-                <p>
-                  {first?.start}–{first?.end} · {b.sessions.length} buổi · {formatDate(first?.date)}
-                  {last && last.date !== first?.date ? ` → ${formatDate(last.date)}` : ''}
-                </p>
+              <div className="booking-card-facts">
+                <span>
+                  <Icon.calendar /> {formatDate(sum.first?.date)}
+                  {sum.last && sum.last.date !== sum.first?.date ? ` → ${formatDate(sum.last.date)}` : ''}
+                  <em>{sum.spanDays} ngày</em>
+                </span>
+                <span>
+                  <Icon.clock /> {sum.first?.start}–{sum.first?.end}
+                  <em>{formatDuration(sum.perSessionMinutes)}/buổi</em>
+                </span>
+                <span>
+                  <Icon.refresh /> {request ? frequencyText(request) : '—'}
+                  <em>{sum.total} buổi · tổng {formatDuration(sum.totalMinutes)}</em>
+                </span>
+                <span>
+                  <Icon.pin /> {request?.district}
+                </span>
               </div>
-              <StatusBadge status={computeBookingStatus(b)} labelMap={BOOKING_STATUS_LABEL} />
+              <div className="booking-card-progress">
+                <div className="progress-line">
+                  <span style={{ width: `${sum.percent}%` }} />
+                </div>
+                <small>
+                  {sum.done}/{sum.total} buổi hoàn thành
+                  {sum.next ? ` · Tiếp theo: ${weekdayLong(sum.next.date)} ${dayjs(sum.next.date).format('DD/MM')} lúc ${sum.next.start} (${relativeDay(sum.next.date, today).toLowerCase()})` : ''}
+                  {sum.needsNurse > 0 ? ` · ${sum.needsNurse} buổi cần điều dưỡng thay thế` : ''}
+                </small>
+              </div>
             </Link>
           )
         })
