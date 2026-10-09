@@ -1053,3 +1053,94 @@ export function updateReport(reportId, patch) {
     return { ...state, reports: state.reports.map((r) => (r.id === reportId ? { ...r, ...patch, updatedAt: now() } : r)) }
   })
 }
+
+// ---------- Platform Admin: operations center ----------
+
+// One-click nudge from the operations center: notifies a user and records it in the audit log.
+export function opsNotify({ role, targetId, message, link, action, targetType, auditTargetId, targetName, detail }) {
+  setState((state) => {
+    notify(state, { role, targetId, message, link })
+    audit(state, { action, targetType, targetId: auditTargetId, targetName, detail })
+    return state
+  })
+}
+
+// ---------- Support tickets ----------
+
+const TICKET_ROLE_LINK = { patient: '/patient/profile', nurse: '/hospital/nurse/profile', hospital: '/hospital/admin/overview' }
+
+// A patient / nurse / hospital admin asks for help ("Liên hệ hỗ trợ").
+export function createTicket({ requesterRole, requesterId, requesterName, subject, category, message, priority = 'normal' }) {
+  const id = `tk-${Date.now().toString(36).slice(-5)}`
+  setState((state) => ({
+    ...state,
+    tickets: [
+      ...(state.tickets || []),
+      {
+        id,
+        subject,
+        category,
+        priority,
+        status: 'open',
+        requesterRole,
+        requesterId,
+        requesterName,
+        assignee: null,
+        createdAt: now(),
+        updatedAt: now(),
+        messages: [{ id: genId('m'), from: 'requester', author: requesterName, text: message, at: now() }],
+      },
+    ],
+  }))
+  setState((state) => {
+    notify(state, { role: 'admin', targetId: 'platform', message: `Hỗ trợ mới từ ${requesterName}: ${subject}`, link: `/admin/support?ticket=${id}` })
+    return state
+  })
+  return id
+}
+
+const getTicket = (state, id) => (state.tickets || []).find((t) => t.id === id)
+
+// from: 'admin' (support agent) or 'requester'. An admin reply moves an open ticket to "Chờ phản hồi" and
+// notifies the person; a requester reply reopens a waiting / resolved ticket.
+export function replyTicket(ticketId, { from, author, text }) {
+  setState((state) => {
+    const ticket = getTicket(state, ticketId)
+    if (!ticket) return state
+    const status = from === 'admin' ? (ticket.status === 'resolved' ? 'resolved' : 'waiting') : ticket.status === 'waiting' || ticket.status === 'resolved' ? 'in_progress' : ticket.status
+    if (from === 'requester') notify(state, { role: 'admin', targetId: 'platform', message: `${author} phản hồi yêu cầu hỗ trợ “${ticket.subject}”.`, link: `/admin/support?ticket=${ticketId}` })
+    if (from === 'admin') {
+      notify(state, { role: ticket.requesterRole, targetId: ticket.requesterId, message: `Hỗ trợ CareShift đã trả lời yêu cầu “${ticket.subject}”.`, link: TICKET_ROLE_LINK[ticket.requesterRole] })
+      audit(state, { action: 'Trả lời hỗ trợ', targetType: 'ticket', targetId: ticketId, targetName: ticket.subject, detail: ticket.requesterName })
+    }
+    return {
+      ...state,
+      tickets: state.tickets.map((t) =>
+        t.id === ticketId ? { ...t, status, assignee: t.assignee || (from === 'admin' ? author : null), updatedAt: now(), messages: [...t.messages, { id: genId('m'), from, author, text, at: now() }] } : t,
+      ),
+    }
+  })
+}
+
+export function updateTicket(ticketId, patch) {
+  setState((state) => {
+    const ticket = getTicket(state, ticketId)
+    if (!ticket) return state
+    if (patch.status && patch.status !== ticket.status) {
+      const label = { open: 'Mới', in_progress: 'Đang xử lý', waiting: 'Chờ phản hồi', resolved: 'Đã giải quyết' }[patch.status]
+      audit(state, { action: `Hỗ trợ → ${label}`, targetType: 'ticket', targetId: ticketId, targetName: ticket.subject })
+      if (patch.status === 'resolved') notify(state, { role: ticket.requesterRole, targetId: ticket.requesterId, message: `Yêu cầu hỗ trợ “${ticket.subject}” đã được giải quyết.`, link: TICKET_ROLE_LINK[ticket.requesterRole] })
+    }
+    if (patch.assignee !== undefined && patch.assignee !== ticket.assignee) audit(state, { action: 'Phân công hỗ trợ', targetType: 'ticket', targetId: ticketId, targetName: ticket.subject, detail: patch.assignee || 'Bỏ phân công' })
+    return { ...state, tickets: state.tickets.map((t) => (t.id === ticketId ? { ...t, ...patch, updatedAt: now() } : t)) }
+  })
+}
+
+// ---------- Data & backup ----------
+
+// Records a data operation (backup / restore) in the audit log. For a restore, returns the next state to load.
+export function withDataAudit(state, { action, detail }) {
+  const copy = { ...state }
+  audit(copy, { action, targetType: 'data', targetId: null, targetName: 'Dữ liệu hệ thống', detail })
+  return copy
+}

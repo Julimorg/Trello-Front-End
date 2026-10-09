@@ -11,6 +11,7 @@ import { NURSE_NOTIFICATIONS } from '../Data/nurse/notification-data'
 import { HOSPITAL_SOS_EVENTS } from '../Data/hospital/sos-log-data'
 import { COMPLIANCE_REPORTS } from '../Data/admin/compliance-data'
 import { PARTNER_HOSPITALS } from '../Data/admin/partner-data'
+import { SUPPORT_TICKETS } from '../Data/admin/support-data'
 import { PATIENT_ACCOUNTS } from '../Data/admin/account-data'
 import { AUDIT_LOGS } from '../Data/admin/audit-data'
 import { BROADCASTS } from '../Data/admin/broadcast-data'
@@ -38,6 +39,7 @@ export function seedState() {
     auditLogs: clone(AUDIT_LOGS),
     broadcasts: clone(BROADCASTS),
     settings: clone(DEFAULT_SETTINGS),
+    tickets: clone(SUPPORT_TICKETS),
     notifications: clone([...NOTIFICATIONS, ...NURSE_NOTIFICATIONS]),
   }
 }

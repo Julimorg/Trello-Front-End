@@ -21,4 +21,8 @@ export const AUDIT_TARGET_LABEL: Record<AuditLogEntry['targetType'], string> = {
   broadcast: 'Thông báo',
   settings: 'Cấu hình',
   staff: 'Nhân sự bệnh viện',
+  request: 'Yêu cầu chăm sóc',
+  sos: 'Cảnh báo SOS',
+  ticket: 'Hỗ trợ',
+  data: 'Dữ liệu',
 }

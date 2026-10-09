@@ -11,6 +11,7 @@ import { useDb } from '../../lib/store'
 import { getPatient, updatePatient } from '../../lib/db'
 import { DISTRICTS } from '../../lib/constants'
 import { BLOOD_TYPES } from '../../Data/patient/profile-data'
+import PatientSupport from './PatientSupport'
 
 const FIELDS = ['name', 'phone', 'email', 'address', 'district', 'dateOfBirth', 'gender', 'bloodType', 'allergies', 'conditions', 'insuranceNumber']
 
@@ -102,6 +103,7 @@ export default function PatientProfile() {
           <TextField label="Bệnh nền / tình trạng hiện tại" value={form.conditions} onChange={(e) => update({ conditions: e.target.value })} />
         </div>
       </section>
+      <PatientSupport patient={patient} />
     </>
   )
 }

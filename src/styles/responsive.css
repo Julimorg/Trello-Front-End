@@ -253,3 +253,9 @@
     min-height: 40px;
   }
 }
+
+/* Long admin menus scroll inside the sidebar instead of being cut off */
+.sidebar {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}

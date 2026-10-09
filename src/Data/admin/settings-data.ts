@@ -2,7 +2,8 @@ import type { SystemSettings } from './types'
 
 // Data for "Cấu hình hệ thống" (/admin/settings). matchLimit → Nurse Matching,
 // responseWindowMinutes → nurse response countdown, sosEscalationMinutes → overdue SOS on the
-// admin dashboard, contractWarningDays → "sắp hết hạn" contracts, maintenance → banner for users.
+// admin dashboard, contractWarningDays → "sắp hết hạn" contracts, maintenance → banner for users,
+// supportSlaHours → support inbox SLA, openDistricts / disabledCareTypes → what patients can request.
 
 export const DEFAULT_SETTINGS: SystemSettings = {
   matchLimit: 5,
@@ -11,4 +12,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   contractWarningDays: 60,
   maintenanceMode: false,
   maintenanceMessage: 'CareShift đang bảo trì, vui lòng quay lại sau ít phút.',
+  supportSlaHours: 4,
+  openDistricts: ['Quận 1', 'Quận 3', 'Quận 5', 'Quận 7', 'Bình Thạnh', 'Phú Nhuận', 'Thủ Đức', 'Gò Vấp'],
+  disabledCareTypes: [],
 }

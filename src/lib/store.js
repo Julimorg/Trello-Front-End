@@ -3,7 +3,7 @@ import { seedState } from './seed'
 import { applyPatch, computePatch, isEmptyPatch } from './sync-patch'
 
 // Bump when the seed shape changes so existing browsers pick up the new data.
-const STORAGE_KEY = 'careshift_db_v8'
+const STORAGE_KEY = 'careshift_db_v9'
 const REALTIME_PATH = '/__careshift_rt'
 const listeners = new Set()
 const remoteListeners = new Set()
@@ -57,6 +57,16 @@ export function resetState() {
   emit()
   realtime.send({ type: 'reset', schema: STORAGE_KEY, state })
 }
+
+// Replaces the whole database (backup restore) and pushes it to every connected device.
+export function restoreState(next) {
+  state = next
+  persist()
+  emit()
+  realtime.send({ type: 'reset', schema: STORAGE_KEY, state })
+}
+
+export const STORAGE_SCHEMA = STORAGE_KEY
 
 export function useDb() {
   return useSyncExternalStore(subscribe, getState)

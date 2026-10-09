@@ -43,6 +43,11 @@ const Broadcasts = lazy(() => import('./features/platformAdmin/Broadcasts'))
 const AuditLog = lazy(() => import('./features/platformAdmin/AuditLog'))
 const Compliance = lazy(() => import('./features/platformAdmin/Compliance'))
 const Settings = lazy(() => import('./features/platformAdmin/Settings'))
+const OperationsCenter = lazy(() => import('./features/platformAdmin/OperationsCenter'))
+const Analytics = lazy(() => import('./features/platformAdmin/Analytics'))
+const NursesDirectory = lazy(() => import('./features/platformAdmin/NursesDirectory'))
+const Support = lazy(() => import('./features/platformAdmin/Support'))
+const DataBackup = lazy(() => import('./features/platformAdmin/DataBackup'))
 
 function App() {
   return (
@@ -198,6 +203,11 @@ function App() {
         >
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<PlatformDashboard />} />
+          <Route path="operations" element={<OperationsCenter />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="nurses" element={<NursesDirectory />} />
+          <Route path="support" element={<Support />} />
+          <Route path="data" element={<DataBackup />} />
           <Route path="hospitals" element={<HospitalsTable />} />
           <Route path="hospitals/:id" element={<HospitalAccountDetail />} />
           <Route path="accounts" element={<AccountsTable />} />

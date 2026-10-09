@@ -49,12 +49,18 @@ function WizardContent({ open, onClose, patientId, createdBy, onCreated }) {
   const toast = useToast()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState(initialForm)
-  const patientDistrict = getPatient(useDb(), patientId)?.district
+  const db = useDb()
+  const patientDistrict = getPatient(db, patientId)?.district
+  // Rollout area and services the platform admin currently offers (Cấu hình hệ thống).
+  const openDistricts = db.settings?.openDistricts || DISTRICTS
+  const disabledCare = db.settings?.disabledCareTypes || []
+  const careOptions = CARE_TYPES.filter((c) => !disabledCare.includes(c.id))
 
   useEffect(() => {
     if (!open) return
     // Default the care location to the patient's own district when there is no saved draft.
-    const base = DISTRICTS.includes(patientDistrict) ? { ...initialForm, district: patientDistrict } : initialForm
+    const fallback = openDistricts.includes(initialForm.district) ? initialForm : { ...initialForm, district: openDistricts[0] || initialForm.district }
+    const base = openDistricts.includes(patientDistrict) ? { ...initialForm, district: patientDistrict } : fallback
     try {
       const raw = localStorage.getItem(draftKey(patientId))
       setForm(raw ? { ...base, ...JSON.parse(raw) } : base)
@@ -62,6 +68,7 @@ function WizardContent({ open, onClose, patientId, createdBy, onCreated }) {
       setForm(base)
     }
     setStep(0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, patientId, patientDistrict])
 
   const update = (patch) => setForm((f) => ({ ...f, ...patch }))
@@ -129,7 +136,7 @@ function WizardContent({ open, onClose, patientId, createdBy, onCreated }) {
               Loại chăm sóc <em>*</em>
             </span>
             <div className="care-options">
-              {CARE_TYPES.map((c) => (
+              {careOptions.map((c) => (
                 <button key={c.id} type="button" className={form.careType === c.id ? 'selected' : ''} onClick={() => update({ careType: c.id })}>
                   <span>{CARE_OPTION_META[c.id]?.glyph}</span>
                   <b>{c.label}</b>
@@ -151,8 +158,9 @@ function WizardContent({ open, onClose, patientId, createdBy, onCreated }) {
             )}
             <TextField select fullWidth required label="Khu vực chăm sóc" value={form.district} onChange={(e) => update({ district: e.target.value })}>
               {DISTRICTS.map((d) => (
-                <MenuItem key={d} value={d}>
+                <MenuItem key={d} value={d} disabled={!openDistricts.includes(d)}>
                   {d}
+                  {!openDistricts.includes(d) ? ' — CareShift chưa phục vụ khu vực này' : ''}
                 </MenuItem>
               ))}
             </TextField>

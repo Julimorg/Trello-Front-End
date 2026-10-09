@@ -78,7 +78,7 @@ export interface AuditLogEntry {
   at: string
   actor: string
   action: string
-  targetType: 'hospital' | 'nurse' | 'patient' | 'report' | 'broadcast' | 'settings' | 'staff'
+  targetType: 'hospital' | 'nurse' | 'patient' | 'report' | 'broadcast' | 'settings' | 'staff' | 'request' | 'sos' | 'ticket' | 'data'
   targetId: string | null
   targetName: string
   detail?: string
@@ -102,4 +102,37 @@ export interface SystemSettings {
   contractWarningDays: number
   maintenanceMode: boolean
   maintenanceMessage: string
+  /** Hours within which a support ticket should get its first reply. */
+  supportSlaHours: number
+  /** Districts patients can currently request care in (rollout area). */
+  openDistricts: string[]
+  /** Care types temporarily not offered ('other' is always available). */
+  disabledCareTypes: string[]
+}
+
+export type TicketStatus = 'open' | 'in_progress' | 'waiting' | 'resolved'
+export type TicketPriority = 'low' | 'normal' | 'high' | 'urgent'
+
+export interface TicketMessage {
+  id: string
+  from: 'requester' | 'admin'
+  author: string
+  text: string
+  at: string
+}
+
+/** A support request raised by a patient, nurse or hospital admin ("Hỗ trợ khách hàng"). */
+export interface SupportTicket {
+  id: string
+  subject: string
+  category: string
+  priority: TicketPriority
+  status: TicketStatus
+  requesterRole: 'patient' | 'nurse' | 'hospital'
+  requesterId: string
+  requesterName: string
+  assignee: string | null
+  createdAt: string
+  updatedAt: string
+  messages: TicketMessage[]
 }

@@ -37,7 +37,7 @@ export default function PlatformDashboard() {
   const attention = useMemo(() => {
     const items = []
     const overdueSos = (state.sosEvents || []).filter((e) => (e.status || 'open') === 'open' && dayjs().diff(dayjs(e.createdAt), 'minute') >= settings.sosEscalationMinutes)
-    if (overdueSos.length) items.push({ key: 'sos', level: 'error', title: `${overdueSos.length} cảnh báo SOS chưa xử lý quá ${settings.sosEscalationMinutes} phút`, hint: 'Liên hệ bệnh viện phụ trách ngay', to: '/admin/hospitals' })
+    if (overdueSos.length) items.push({ key: 'sos', level: 'error', title: `${overdueSos.length} cảnh báo SOS chưa xử lý quá ${settings.sosEscalationMinutes} phút`, hint: 'Liên hệ bệnh viện phụ trách ngay', to: '/admin/operations' })
     const reports = (state.reports || []).filter((r) => r.status === 'open')
     const highReports = reports.filter((r) => r.severity === 'high')
     if (reports.length) items.push({ key: 'reports', level: highReports.length ? 'error' : 'warning', title: `${reports.length} báo cáo vi phạm mới${highReports.length ? ` (${highReports.length} mức cao)` : ''}`, hint: 'Cần xem xét và phản hồi', to: '/admin/compliance' })
@@ -48,14 +48,20 @@ export default function PlatformDashboard() {
       if (h.status === 'suspended') items.push({ key: `s-${h.id}`, level: 'warning', title: `${h.name} đang tạm ngưng`, hint: h.statusReason, to: `/admin/hospitals/${h.id}` })
     })
     const expiredCerts = state.nurses.filter((n) => n.certificates.some((c) => certificateStatus(c).key === 'expired'))
-    if (expiredCerts.length) items.push({ key: 'certs', level: 'warning', title: `${expiredCerts.length} điều dưỡng có chứng chỉ hết hạn`, hint: expiredCerts.map((n) => n.name).join(', '), to: '/admin/hospitals' })
+    if (expiredCerts.length) items.push({ key: 'certs', level: 'warning', title: `${expiredCerts.length} điều dưỡng có chứng chỉ hết hạn`, hint: expiredCerts.map((n) => n.name).join(', '), to: '/admin/nurses' })
+    const sla = settings.supportSlaHours * 3600000
+    const lateTickets = (state.tickets || []).filter((t) => t.status !== 'resolved' && !t.messages.some((m) => m.from === 'admin') && Date.now() - new Date(t.createdAt).getTime() > sla)
+    const newTickets = (state.tickets || []).filter((t) => t.status === 'open')
+    if (newTickets.length) items.push({ key: 'tickets', level: lateTickets.length ? 'error' : 'warning', title: `${newTickets.length} yêu cầu hỗ trợ mới${lateTickets.length ? ` (${lateTickets.length} quá hạn trả lời)` : ''}`, hint: 'Trả lời để giữ trải nghiệm người dùng', to: '/admin/support' })
+    const noNurseRequests = state.careRequests.filter((c) => c.status === 'no_match')
+    if (noNurseRequests.length) items.push({ key: 'nomatch', level: 'warning', title: `${noNurseRequests.length} yêu cầu đang chờ bệnh nhân chọn điều dưỡng thay thế`, hint: 'Mở Trung tâm vận hành để nhắc', to: '/admin/operations' })
     const unverified = state.patients.filter((p) => !p.account?.verified)
     if (unverified.length) items.push({ key: 'kyc', level: 'info', title: `${unverified.length} bệnh nhân chưa xác minh danh tính`, hint: 'Nên hoàn tất xác minh trước khi nhận ca', to: '/admin/accounts' })
     const restricted = state.patients.filter((p) => (p.account?.status || 'active') !== 'active')
     if (restricted.length) items.push({ key: 'restricted', level: 'info', title: `${restricted.length} tài khoản bệnh nhân đang bị hạn chế`, hint: restricted.map((p) => p.name).join(', '), to: '/admin/accounts' })
     const rank = { error: 0, warning: 1, info: 2 }
     return items.sort((a, b) => rank[a.level] - rank[b.level])
-  }, [state, settings.sosEscalationMinutes, settings.contractWarningDays])
+  }, [state, settings.sosEscalationMinutes, settings.contractWarningDays, settings.supportSlaHours])
 
   const perHospital = state.hospitals.map((h) => {
     const nurses = state.nurses.filter((n) => n.hospitalId === h.id)
