@@ -266,3 +266,32 @@
     display: none;
   }
 }
+
+/* Segmented tab rows with many options (nurse "Ca chăm sóc mới", hospital SOS log) scroll sideways on
+   phones instead of squeezing every label into a sliver. !important beats antd's generated CSS. */
+@media (max-width: 780px) {
+  .ant-segmented {
+    max-width: 100%;
+    overflow-x: auto !important;
+    scrollbar-width: none;
+  }
+  .ant-segmented::-webkit-scrollbar {
+    display: none;
+  }
+  .ant-segmented .ant-segmented-group {
+    width: max-content !important;
+    min-width: 100%;
+  }
+  .ant-segmented .ant-segmented-item {
+    flex: 0 0 auto !important;
+  }
+  .ant-segmented .ant-segmented-item-label {
+    white-space: nowrap;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    padding-inline: 14px !important;
+  }
+  .nurse-toolbar .ant-btn {
+    flex: 1 1 100%;
+  }
+}
