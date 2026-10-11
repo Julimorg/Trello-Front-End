@@ -99,7 +99,7 @@ export default function FamilyQrDialog({ open, onClose, patientId }) {
           <div>
             <span className="eyebrow">Liên kết bằng mã QR</span>
             <h2 id="familyQrTitle">Mã QR liên kết tài khoản</h2>
-            <p className="detail-text">Người thân quét mã bằng camera điện thoại hoặc ứng dụng CareShift để liên kết với tài khoản của bạn.</p>
+            <p className="detail-text">Người thân quét mã bằng camera điện thoại để liên kết với tài khoản của bạn.</p>
           </div>
           <IconButton aria-label="Đóng" onClick={onClose} sx={{ border: '1px solid var(--line)', borderRadius: '10px' }}>
             <Icon.close />
@@ -153,7 +153,7 @@ export default function FamilyQrDialog({ open, onClose, patientId }) {
 
               <div>
                 <ol className="qr-steps">
-                  <li>Người thân mở camera hoặc ứng dụng CareShift và quét mã.</li>
+                  <li>Người thân mở camera điện thoại và quét mã.</li>
                   <li>Họ nhập tên, số điện thoại và mối quan hệ với bạn.</li>
                   <li>Tài khoản được liên kết ngay. Bạn sẽ nhận được thông báo.</li>
                 </ol>

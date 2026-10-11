@@ -97,3 +97,11 @@ export const TREND_META = {
 }
 
 export const inRange = (metric, value) => !metric.normal || (value >= metric.normal[0] && value <= metric.normal[1])
+
+// What the patient sees for one visit. Hand-offs between nurses are not surfaced to the patient.
+export function visitBadge(session, today = dayjs().format('YYYY-MM-DD')) {
+  if (isDone(session, today)) return { label: 'Hoàn tất', tone: 'neutral' }
+  if (session.status === SESSION_STATUS.CANNOT_PERFORM) return { label: 'Đang cập nhật', tone: 'pending' }
+  if (session.date === today) return { label: 'Hôm nay', tone: 'info' }
+  return { label: 'Đã xác nhận', tone: 'success' }
+}

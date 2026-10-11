@@ -1,4 +1,4 @@
-import type { FamilyContact, FamilyInvite } from './types'
+import type { FamilyContact, FamilyInvite, FamilyRequest } from './types'
 import { timestampAt } from './date-utils'
 
 // Data for "Người thân liên kết" (/patient/family) and the SOS "Báo người thân" list.
@@ -55,6 +55,16 @@ export const FAMILY_CONTACTS: Record<string, FamilyContact[]> = {
       permissions: ['Nhận cảnh báo SOS', 'Xem lịch chăm sóc'],
     },
     {
+      id: 'fc-thu-3',
+      name: 'Nguyễn Văn An',
+      phone: 'an.nguyen@example.com',
+      relation: 'Anh / Chị / Em',
+      status: 'Chờ xác nhận',
+      primary: false,
+      permissions: ['Nhận cảnh báo SOS', 'Xem lịch chăm sóc'],
+      linkedPatientId: 'patient-an',
+    },
+    {
       id: 'fc-thu-2',
       name: 'Trần Thị Mai',
       phone: '092-345-2222',
@@ -87,5 +97,20 @@ export const FAMILY_INVITES: FamilyInvite[] = [
     expiresAt: timestampAt(-40, '19:12'),
     usedAt: timestampAt(-40, '19:05'),
     contactId: 'fc-an-3',
+  },
+]
+
+// Invites between two CareShift accounts. Sending one (adding a relative whose email / phone belongs to
+// another account) shows up in the recipient's "Người thân liên kết" page; accepting links both sides.
+export const FAMILY_REQUESTS: FamilyRequest[] = [
+  {
+    id: 'fr-thu-an',
+    fromPatientId: 'patient-thu',
+    toPatientId: 'patient-an',
+    contactId: 'fc-thu-3',
+    relation: 'Anh / Chị / Em',
+    permissions: ['Nhận cảnh báo SOS', 'Xem lịch chăm sóc'],
+    status: 'pending',
+    createdAt: timestampAt(-1, '16:20'),
   },
 ]

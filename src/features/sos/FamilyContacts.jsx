@@ -9,7 +9,8 @@ import PatientConfirmDialog from '../../patient/PatientConfirmDialog'
 import { useAuth } from '../../auth/AuthContext'
 import { useToast } from '../../components/ToastProvider'
 import { useDb } from '../../lib/store'
-import { getPatient, getPrimaryFamilyContact, setPrimaryFamilyContact } from '../../lib/db'
+import { getPatient, getPrimaryFamilyContact, removeFamilyContact, respondFamilyRequest, resendFamilyInvite, setPrimaryFamilyContact } from '../../lib/db'
+import { formatDate } from '../../lib/format'
 import { useStaggerIn } from '../../patient/anime'
 import { Icon } from '../../lib/icons'
 
@@ -40,10 +41,14 @@ export default function FamilyContacts() {
     setConfirmOpen(true)
   }
   const gridRef = useRef(null)
+  const [removing, setRemoving] = useState(null)
 
   useStaggerIn(gridRef, '.family-card', [patient?.familyContacts.length])
 
   if (!patient) return null
+
+  // Invites other CareShift accounts have sent to this account.
+  const incoming = (state.familyRequests || []).filter((r) => r.toPatientId === session.id && r.status === 'pending')
 
   // Primary contact first, then linked, then pending invites.
   const contacts = [...patient.familyContacts].sort(
@@ -87,6 +92,61 @@ export default function FamilyContacts() {
           </div>
         }
       />
+
+      {incoming.length > 0 && (
+        <section className="panel family-incoming">
+          <div className="panel-head">
+            <div>
+              <h2>Lời mời liên kết đến bạn ({incoming.length})</h2>
+              <p>Người dùng CareShift khác muốn thêm bạn là người thân</p>
+            </div>
+          </div>
+          <div className="family-incoming-list">
+            {incoming.map((r) => {
+              const from = getPatient(state, r.fromPatientId)
+              return (
+                <div className="family-incoming-item" key={r.id}>
+                  <span className="family-avatar">{initials(from?.name)}</span>
+                  <div className="family-incoming-main">
+                    <b>{from?.name}</b>
+                    <small>
+                      Muốn liên kết với bạn · gửi {formatDate(r.createdAt)}
+                    </small>
+                    <div className="family-permissions">
+                      {r.permissions.map((p) => (
+                        <span key={p}>{p}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="family-incoming-actions">
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => {
+                        respondFamilyRequest(r.id, true)
+                        toast('Đã liên kết người thân', `${from?.name} đã được thêm vào danh sách người thân của bạn.`)
+                      }}
+                    >
+                      Chấp nhận
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      color="error"
+                      onClick={() => {
+                        respondFamilyRequest(r.id, false)
+                        toast('Đã từ chối lời mời', `${from?.name} sẽ nhận được thông báo.`)
+                      }}
+                    >
+                      Từ chối
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       <div className={`family-primary-strip${primary?.status === LINKED ? '' : ' is-warning'}`}>
         <Icon.shield aria-hidden="true" />
@@ -134,6 +194,11 @@ export default function FamilyContacts() {
                   <span key={p}>{p}</span>
                 ))}
                 {(c.permissions || []).length === 0 && <span>Chưa cấp quyền nào</span>}
+                {c.linkedPatientId && (
+                  <span className="family-via-qr">
+                    <Icon.user /> Tài khoản CareShift
+                  </span>
+                )}
                 {c.inviteCode && (
                   <span className="family-via-qr">
                     <Icon.qr /> Liên kết qua mã QR
@@ -157,12 +222,22 @@ export default function FamilyContacts() {
                   </>
                 ) : (
                   <>
-                    <small>Đang chờ người thân xác nhận</small>
-                    <Button variant="outlined" size="small" onClick={() => toast('Đã gửi lại lời mời', `Đang chờ ${c.name} xác nhận.`)}>
+                    <small>{c.linkedPatientId ? `Đang chờ ${c.name} chấp nhận trong tài khoản của họ` : 'Đang chờ người thân xác nhận'}</small>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        if (c.linkedPatientId) resendFamilyInvite(session.id, c.id)
+                        toast('Đã gửi lại lời mời', `Đang chờ ${c.name} xác nhận.`)
+                      }}
+                    >
                       Gửi lại lời mời
                     </Button>
                   </>
                 )}
+                <Button size="small" color="inherit" className="family-remove" onClick={() => setRemoving(c)}>
+                  {c.status === LINKED ? 'Hủy liên kết' : 'Hủy lời mời'}
+                </Button>
               </div>
             </article>
           ))}
@@ -176,6 +251,19 @@ export default function FamilyContacts() {
         </span>
       </div>
 
+      <PatientConfirmDialog
+        open={Boolean(removing)}
+        title={removing?.status === LINKED ? 'Hủy liên kết người thân?' : 'Hủy lời mời?'}
+        description={removing ? `${removing.name} sẽ không còn nhận cảnh báo SOS${removing.linkedPatientId && removing.status === LINKED ? ' và bạn cũng bị gỡ khỏi danh sách người thân của họ' : ''}.` : ''}
+        confirmLabel="Xác nhận"
+        confirmColor="error"
+        onConfirm={() => {
+          removeFamilyContact(session.id, removing.id)
+          toast('Đã gỡ người thân', removing.name)
+          setRemoving(null)
+        }}
+        onClose={() => setRemoving(null)}
+      />
       <FamilyLinkModal open={linkOpen} onClose={() => setLinkOpen(false)} patientId={session.id} currentPrimary={primary} />
       <FamilyQrDialog open={qrOpen} onClose={() => setQrOpen(false)} patientId={session.id} />
       <PatientConfirmDialog

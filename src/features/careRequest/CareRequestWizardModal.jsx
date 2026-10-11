@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
+import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
 import Chip from '@mui/material/Chip'
@@ -16,7 +17,7 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker'
 import PatientThemeProvider from '../../patient/PatientThemeProvider'
 import { useToast } from '../../components/ToastProvider'
 import { useDb } from '../../lib/store'
-import { createCareRequest, getPatient } from '../../lib/db'
+import { createCareRequest, getPatient, getPatientConflicts } from '../../lib/db'
 import { CARE_TYPES, DISTRICTS, FREQUENCIES, WEEKDAYS } from '../../lib/constants'
 import { careTypeLabel, weekdayLabel } from '../../lib/format'
 import { CARE_OPTION_META } from '../../Data/patient/care-request-data'
@@ -85,8 +86,13 @@ function WizardContent({ open, onClose, patientId, createdBy, onCreated }) {
   const timeValid = form.timeStart && form.timeEnd && form.timeEnd > form.timeStart
   const step1Valid = Boolean(form.careType && form.district && (form.careType !== 'other' || form.otherNote.trim()))
   const step2Filled = Boolean(form.desiredStartDate && timeValid && form.frequency && (form.frequency !== 'weekly' || form.weekdays.length > 0))
-  const step2Valid = step2Filled && form.consent
-  const canNext = step === 0 ? step1Valid : step === 1 ? step2Valid : true
+  // Same time already booked for this patient ("trùng ca") — a second nurse cannot be sent at the same time.
+  const conflicts = useMemo(
+    () => (step2Filled ? getPatientConflicts(db, patientId, { desiredStartDate: form.desiredStartDate, frequency: form.frequency, weekdays: form.frequency === 'weekly' ? form.weekdays : [], timeSlot: { start: form.timeStart, end: form.timeEnd } }) : []),
+    [db, patientId, step2Filled, form.desiredStartDate, form.frequency, form.weekdays, form.timeStart, form.timeEnd],
+  )
+  const step2Valid = step2Filled && form.consent && conflicts.length === 0
+  const canNext = step === 0 ? step1Valid : step === 1 ? step2Valid : conflicts.length === 0
 
   const submit = () => {
     const id = createCareRequest({
@@ -234,6 +240,20 @@ function WizardContent({ open, onClose, patientId, createdBy, onCreated }) {
               value={form.notes}
               onChange={(e) => update({ notes: e.target.value })}
             />
+            {conflicts.length > 0 && (
+              <Alert severity="warning" className="field-full" sx={{ borderRadius: '12px' }}>
+                Bạn đã có lịch chăm sóc trùng giờ:
+                <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+                  {conflicts.slice(0, 3).map(({ session, booking }) => (
+                    <li key={session.id}>
+                      {dayjs(session.date).format('DD/MM/YYYY')} · {session.start}–{session.end} ({booking.id})
+                    </li>
+                  ))}
+                  {conflicts.length > 3 && <li>và {conflicts.length - 3} buổi khác</li>}
+                </ul>
+                Hãy chọn ngày hoặc khung giờ khác.
+              </Alert>
+            )}
             <FormControlLabel
               className="field-full wizard-consent"
               control={<Checkbox checked={form.consent} onChange={(e) => update({ consent: e.target.checked })} />}
@@ -274,7 +294,7 @@ function WizardContent({ open, onClose, patientId, createdBy, onCreated }) {
       <div className="modal-actions wizard-actions">
         {step === 1 && !step2Valid && (
           <small className="wizard-hint">
-            {step2Filled ? 'Vui lòng đánh dấu đồng ý chia sẻ thông tin để tiếp tục.' : 'Vui lòng điền đủ ngày, giờ và tần suất để tiếp tục.'}
+            {conflicts.length > 0 ? 'Khung giờ này trùng với lịch chăm sóc đã có.' : step2Filled ? 'Vui lòng đánh dấu đồng ý chia sẻ thông tin để tiếp tục.' : 'Vui lòng điền đủ ngày, giờ và tần suất để tiếp tục.'}
           </small>
         )}
         <Button variant="outlined" sx={{ visibility: step === 0 ? 'hidden' : 'visible' }} onClick={() => setStep(step - 1)}>

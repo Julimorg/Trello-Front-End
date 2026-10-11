@@ -13,7 +13,9 @@ import { useDb } from '../../lib/store'
 import { getNurse, getPrimaryFamilyContact, listBookingsByPatient, listCareRequestsByPatient } from '../../lib/db'
 import { careTypeLabel, formatDate } from '../../lib/format'
 import { CARE_REQUEST_STATUS, CARE_REQUEST_STATUS_LABEL, SESSION_STATUS } from '../../lib/constants'
-import { DASHBOARD_HERO, DASHBOARD_METRICS, DASHBOARD_QUICK_LINKS, DASHBOARD_RECENT_LIMIT } from '../../Data/patient/dashboard-data'
+import { DASHBOARD_HERO, DASHBOARD_METRICS, DASHBOARD_QUICK_LINKS, DASHBOARD_RECENT_DAYS, DASHBOARD_RECENT_LIMIT, DASHBOARD_UPCOMING_DAYS } from '../../Data/patient/dashboard-data'
+import { relativeDay, weekdayLong } from '../booking/booking-shared'
+import dayjs from 'dayjs'
 import { Icon } from '../../lib/icons'
 
 const IN_FLIGHT = [CARE_REQUEST_STATUS.MATCHING, CARE_REQUEST_STATUS.MATCHED, CARE_REQUEST_STATUS.NURSE_PENDING]
@@ -28,28 +30,30 @@ export default function PatientOverview() {
   const requests = listCareRequestsByPatient(state, session.id)
   const bookings = listBookingsByPatient(state, session.id)
   const primary = getPrimaryFamilyContact(state, session.id)
-  const recent = requests.slice(0, DASHBOARD_RECENT_LIMIT)
+  // "Gần nhất": created today or in the previous few days. "Sắp tới": visits in the next month.
+  const recentSince = dayjs().subtract(DASHBOARD_RECENT_DAYS, 'day').startOf('day')
+  const recent = requests.filter((r) => !dayjs(r.createdAt).isBefore(recentSince)).slice(0, DASHBOARD_RECENT_LIMIT)
 
   const stats = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10)
-    const sessions = bookings.flatMap((b) => b.sessions)
-    const upcoming = sessions.filter((s) => s.date >= today && s.status !== SESSION_STATUS.CANNOT_PERFORM).sort((a, b) => a.date.localeCompare(b.date))
+    const today = dayjs().format('YYYY-MM-DD')
+    const horizon = dayjs().add(DASHBOARD_UPCOMING_DAYS, 'day').format('YYYY-MM-DD')
+    const upcoming = bookings
+      .flatMap((b) => b.sessions.map((s) => ({ ...s, booking: b })))
+      .filter((s) => s.date >= today && s.date <= horizon && s.status !== SESSION_STATUS.CANNOT_PERFORM && s.status !== SESSION_STATUS.COMPLETED)
+      .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
     return {
       values: {
         activeRequests: requests.filter((r) => IN_FLIGHT.includes(r.status)).length,
         upcomingSessions: upcoming.length,
-        trustedNurses: new Set(requests.flatMap((r) => r.matchedNurseIds)).size,
-        completedSessions: sessions.filter((s) => s.status === SESSION_STATUS.COMPLETED).length,
       },
+      upcoming,
       nextSession: upcoming[0],
     }
   }, [requests, bookings])
 
   const hints = {
     activeRequests: stats.values.activeRequests ? 'Đang chờ xử lý' : 'Chưa có yêu cầu mới',
-    upcomingSessions: stats.nextSession ? `Gần nhất: ${formatDate(stats.nextSession.date)} lúc ${stats.nextSession.start}` : 'Chưa có lịch được xác nhận',
-    trustedNurses: 'Đã được bệnh viện xác minh',
-    completedSessions: 'Tổng số buổi chăm sóc',
+    upcomingSessions: stats.nextSession ? `Gần nhất: ${relativeDay(stats.nextSession.date).toLowerCase()}, ${formatDate(stats.nextSession.date)} lúc ${stats.nextSession.start}` : `Không có buổi nào trong ${DASHBOARD_UPCOMING_DAYS} ngày tới`,
   }
 
   useStaggerIn(metricsRef, '.metric', [])
@@ -80,11 +84,12 @@ export default function PatientOverview() {
       </div>
 
       <div className="dashboard-grid">
+        <div style={{ display: 'grid', gap: 20, alignContent: 'start', minWidth: 0 }}>
         <section className="panel">
           <div className="panel-head">
             <div>
               <h2>Yêu cầu chăm sóc gần nhất</h2>
-              <p>{DASHBOARD_RECENT_LIMIT} yêu cầu mới nhất, cập nhật theo thời gian thực</p>
+              <p>Tạo hôm nay và {DASHBOARD_RECENT_DAYS} ngày trước · tối đa {DASHBOARD_RECENT_LIMIT} yêu cầu</p>
             </div>
             <div className="panel-head-actions">
               <Link to="/patient/request" className="text-button">
@@ -96,7 +101,7 @@ export default function PatientOverview() {
             </div>
           </div>
           {recent.length === 0 ? (
-            <EmptyState icon={<Icon.plus />} title="Bắt đầu yêu cầu chăm sóc" description="Chỉ mất khoảng 2 phút để mô tả nhu cầu và nhận danh sách điều dưỡng phù hợp." />
+            <EmptyState icon={<Icon.plus />} title={`Không có yêu cầu nào trong ${DASHBOARD_RECENT_DAYS} ngày qua`} description="Tạo yêu cầu mới hoặc xem toàn bộ lịch sử ở mục Yêu cầu chăm sóc." />
           ) : (
             <div className="recent-list" ref={recentRef}>
               {recent.map((r) => {
@@ -127,6 +132,40 @@ export default function PatientOverview() {
             </div>
           )}
         </section>
+
+        <section className="panel">
+          <div className="panel-head">
+            <div>
+              <h2>Lịch sắp tới</h2>
+              <p>Các buổi chăm sóc trong {DASHBOARD_UPCOMING_DAYS} ngày tới</p>
+            </div>
+            <Link to="/patient/bookings" className="text-button">
+              Mở lịch
+            </Link>
+          </div>
+          {stats.upcoming.length === 0 ? (
+            <EmptyState icon={<Icon.calendar />} title="Chưa có buổi chăm sóc sắp tới" description={`Không có buổi nào trong ${DASHBOARD_UPCOMING_DAYS} ngày tới.`} />
+          ) : (
+            <div className="day-session-list">
+              {stats.upcoming.slice(0, 5).map((s) => (
+                <Link key={s.id} to={`/patient/bookings/${s.booking.id}`} className="day-session" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div className="day-session-time">
+                    <b>{dayjs(s.date).format('DD/MM')}</b>
+                    <small>{relativeDay(s.date)}</small>
+                  </div>
+                  <div>
+                    <h3>{careTypeLabel(requests.find((r) => r.id === s.booking.careRequestId)?.careType)}</h3>
+                    <p>
+                      {weekdayLong(s.date)} · {s.start}–{s.end} · {getNurse(state, s.nurseId)?.name}
+                    </p>
+                  </div>
+                  <StatusBadge status={s.status} labelMap={{ confirmed: { label: 'Đã xác nhận', tone: 'success' } }} />
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+        </div>
 
         <section className="panel">
           <div className="panel-head">

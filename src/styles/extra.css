@@ -2472,3 +2472,243 @@ button.link-reset {
   gap: 8px;
   align-items: flex-end;
 }
+
+/* ---------- Trusted nurses ---------- */
+.trusted-tag {
+  display: inline-block;
+  margin-left: 8px;
+  vertical-align: middle;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+}
+.nurse-card-note {
+  margin: 0;
+  padding: 0 18px 12px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.nurse-card-extra {
+  padding: 0 18px 12px;
+}
+.nurse-card-extra .MuiButton-root {
+  width: 100%;
+}
+.detail-stats {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) !important;
+}
+.trust-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 26px 0 12px;
+}
+.trust-section-head h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.trust-section-head p {
+  margin: 2px 0 0;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+/* Filter controls: no focus outline / ring after clicking (patient portal) */
+.toolbar .MuiButtonBase-root:focus,
+.toolbar .MuiButtonBase-root:focus-visible,
+.history-filter .MuiButtonBase-root:focus,
+.history-filter .MuiButtonBase-root:focus-visible,
+.status-filter .MuiButtonBase-root:focus,
+.status-filter .MuiButtonBase-root:focus-visible,
+.week-nav button:focus,
+.week-nav button:focus-visible {
+  outline: none !important;
+  box-shadow: none;
+}
+.toolbar .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline,
+.history-filter .Mui-focused .MuiPickersOutlinedInput-notchedOutline {
+  border-width: 1px;
+}
+.metric-grid:has(> .metric:nth-child(2):last-child) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* ---------- Family: incoming link requests ---------- */
+.family-incoming {
+  margin-bottom: 16px;
+  border-color: #a9d8d2;
+}
+.family-incoming-list {
+  padding: 4px 20px 8px;
+}
+.family-incoming-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #edf2f2;
+}
+.family-incoming-item:last-child {
+  border-bottom: 0;
+}
+.family-incoming-main b,
+.family-incoming-main small {
+  display: block;
+}
+.family-incoming-main small {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.family-incoming-actions {
+  display: flex;
+  gap: 8px;
+}
+.family-remove {
+  margin-left: auto;
+}
+@media (max-width: 780px) {
+  .family-incoming-item {
+    grid-template-columns: auto 1fr;
+  }
+  .family-incoming-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---------- Patient schedule: week range + day strip ---------- */
+.week-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.week-range .MuiFormControl-root {
+  width: 190px;
+}
+.week-nav {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: stretch;
+  margin-bottom: 22px;
+}
+.week-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 0 16px;
+  min-height: 48px;
+  align-self: center;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.week-nav-btn span {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.week-nav-btn:hover {
+  border-color: #a9d8d2;
+  background: #f8fffd;
+}
+.week-strip-box {
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  scrollbar-width: thin;
+}
+.day-circle {
+  position: relative;
+  flex: 0 0 auto;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 1.5px solid #c9d6d8;
+  background: #fff;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  line-height: 1.15;
+  cursor: pointer;
+  color: var(--ink);
+}
+.day-circle .day-circle-label {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+.day-circle small {
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+.day-circle.has-visits {
+  border-color: #7bbcb4;
+}
+.day-circle.is-today {
+  box-shadow: 0 0 0 3px rgba(11, 107, 104, 0.14);
+}
+.day-circle.is-picked {
+  background: #d9ecd9;
+  border-color: #78b27a;
+}
+.day-circle-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--teal);
+  color: #fff;
+  font-size: 0.64rem;
+  font-style: normal;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+.week-list-head {
+  margin: 4px 0 14px;
+}
+.week-list-head small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+@media (max-width: 780px) {
+  .week-range .MuiFormControl-root {
+    width: calc(50% - 6px);
+  }
+  .week-nav {
+    grid-template-columns: 1fr 1fr;
+  }
+  .week-nav .week-strip-box {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    gap: 10px;
+    padding: 14px;
+  }
+  .week-nav .week-nav-btn {
+    grid-row: 2;
+    justify-content: center;
+  }
+  .day-circle {
+    width: 54px;
+    height: 54px;
+  }
+}
+.nurse-card-top .verified {
+  display: flex;
+}

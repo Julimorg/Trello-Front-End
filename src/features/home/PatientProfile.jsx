@@ -13,7 +13,7 @@ import { DISTRICTS } from '../../lib/constants'
 import { BLOOD_TYPES } from '../../Data/patient/profile-data'
 import PatientSupport from './PatientSupport'
 
-const FIELDS = ['name', 'phone', 'email', 'address', 'district', 'dateOfBirth', 'gender', 'bloodType', 'allergies', 'conditions', 'insuranceNumber']
+const FIELDS = ['name', 'phone', 'email', 'address', 'district', 'dateOfBirth', 'gender', 'bloodType', 'allergies', 'conditions']
 
 function pick(patient) {
   return Object.fromEntries(FIELDS.map((f) => [f, patient?.[f] ?? '']))
@@ -98,9 +98,8 @@ export default function PatientProfile() {
               </MenuItem>
             ))}
           </TextField>
-          <TextField label="Số thẻ BHYT" value={form.insuranceNumber} onChange={(e) => update({ insuranceNumber: e.target.value })} />
           <TextField label="Dị ứng" value={form.allergies} onChange={(e) => update({ allergies: e.target.value })} />
-          <TextField label="Bệnh nền / tình trạng hiện tại" value={form.conditions} onChange={(e) => update({ conditions: e.target.value })} />
+          <TextField label="Bệnh nền" value={form.conditions} onChange={(e) => update({ conditions: e.target.value })} />
         </div>
       </section>
       <PatientSupport patient={patient} />

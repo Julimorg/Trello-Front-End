@@ -4,7 +4,8 @@ import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import IconButton from '@mui/material/IconButton'
 import { useDb } from '../../lib/store'
-import { getHospital } from '../../lib/db'
+import { useAuth } from '../../auth/AuthContext'
+import { getHospital, isTrustedNurse } from '../../lib/db'
 import { careTypeLabel } from '../../lib/format'
 import { Icon } from '../../lib/icons'
 
@@ -17,8 +18,10 @@ function initials(name) {
     .toUpperCase()
 }
 
-export default function NurseProfileCard({ nurse, matchScore, onSelect, selectLabel = 'Chọn', profileHref, reasons }) {
+export default function NurseProfileCard({ nurse, matchScore, onSelect, selectLabel = 'Chọn', profileHref, reasons, note, children }) {
   const state = useDb()
+  const { session } = useAuth()
+  const trusted = session?.role === 'patient' && isTrustedNurse(state, session.id, nurse.id)
   const [open, setOpen] = useState(false)
   const hospital = getHospital(state, nurse.hospitalId)
 
@@ -28,7 +31,10 @@ export default function NurseProfileCard({ nurse, matchScore, onSelect, selectLa
         <div className="nurse-card-top">
           {matchScore && <span className="match-score">Phù hợp {matchScore}</span>}
           <div className="nurse-avatar">{initials(nurse.name)}</div>
-          <h3>{nurse.name}</h3>
+          <h3>
+            {nurse.name}
+            {trusted && <span className="trusted-tag">Đáng tin cậy</span>}
+          </h3>
           <span className="specialty">{nurse.specialties.map(careTypeLabel).join(', ')}</span>
           <span className="verified">
             <Icon.shield /> Đã xác minh bởi {hospital?.name}
@@ -44,8 +50,8 @@ export default function NurseProfileCard({ nurse, matchScore, onSelect, selectLa
           <span>
             <Icon.check /> {nurse.completedCases ?? 0} ca hoàn thành
           </span>
-          <span>★ {nurse.rating ?? '—'}</span>
         </div>
+        {note && <p className="nurse-card-note">{note}</p>}
         {reasons && (
           <ul className="fit-reasons">
             {reasons.map((r) => (
@@ -55,6 +61,7 @@ export default function NurseProfileCard({ nurse, matchScore, onSelect, selectLa
             ))}
           </ul>
         )}
+        {children && <div className="nurse-card-extra">{children}</div>}
         <div className="nurse-card-actions" style={onSelect ? undefined : { gridTemplateColumns: '1fr' }}>
           {profileHref ? (
             <Button variant="outlined" component={Link} to={profileHref}>
@@ -99,10 +106,6 @@ export default function NurseProfileCard({ nurse, matchScore, onSelect, selectLa
             <div className="detail-stat">
               <b>{nurse.completedCases ?? 0}</b>
               <small>Ca hoàn thành</small>
-            </div>
-            <div className="detail-stat">
-              <b>★ {nurse.rating ?? '—'}</b>
-              <small>Đánh giá</small>
             </div>
           </div>
           <div className="detail-section">

@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
+import MenuItem from '@mui/material/MenuItem'
+import TextField from '@mui/material/TextField'
 import Pagination from '@mui/material/Pagination'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import PageHead from '../../components/PageHead'
@@ -32,6 +34,7 @@ export default function CareRequestHome() {
   const [wizardOpen, setWizardOpen] = useState(false)
   const [from, setFrom] = useState(null)
   const [to, setTo] = useState(null)
+  const [status, setStatus] = useState('all')
   const [page, setPage] = useState(1)
   const historyRef = useRef(null)
 
@@ -51,22 +54,24 @@ export default function CareRequestHome() {
       requests
         .filter((r) => r.id !== active?.id)
         .filter((r) => {
+          if (status !== 'all' && r.status !== status) return false
           const d = dayjs(r.desiredStartDate)
           if (from && d.isBefore(from, 'day')) return false
           if (to && d.isAfter(to, 'day')) return false
           return true
         }),
-    [requests, active?.id, from, to],
+    [requests, active?.id, from, to, status],
   )
   const pageCount = Math.max(1, Math.ceil(history.length / HISTORY_PAGE_SIZE))
   const currentPage = Math.min(page, pageCount)
   const pageItems = history.slice((currentPage - 1) * HISTORY_PAGE_SIZE, currentPage * HISTORY_PAGE_SIZE)
 
-  useStaggerIn(historyRef, '.history-item', [currentPage, from?.valueOf(), to?.valueOf(), history.length])
+  useStaggerIn(historyRef, '.history-item', [currentPage, from?.valueOf(), to?.valueOf(), status, history.length])
 
   const resetFilter = () => {
     setFrom(null)
     setTo(null)
+    setStatus('all')
     setPage(1)
   }
 
@@ -109,10 +114,29 @@ export default function CareRequestHome() {
             Lịch sử yêu cầu
           </h2>
           <small>
-            {history.length} yêu cầu{from || to ? ' trong khoảng đã chọn' : ''}
+            {history.length} yêu cầu{from || to || status !== 'all' ? ' khớp bộ lọc' : ''}
           </small>
         </div>
         <div className="history-filter">
+          <TextField
+            select
+            size="small"
+            label="Trạng thái"
+            className="status-filter"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value)
+              setPage(1)
+            }}
+            sx={{ minWidth: 200 }}
+          >
+            <MenuItem value="all">Tất cả trạng thái</MenuItem>
+            {Object.entries(CARE_REQUEST_STATUS_LABEL).map(([value, meta]) => (
+              <MenuItem key={value} value={value}>
+                {meta.label}
+              </MenuItem>
+            ))}
+          </TextField>
           <DatePicker
             label="Từ ngày"
             value={from}
@@ -133,7 +157,7 @@ export default function CareRequestHome() {
             }}
             slotProps={{ textField: { size: 'small' }, field: { clearable: true } }}
           />
-          <Button variant="outlined" size="small" disabled={!from && !to} onClick={resetFilter}>
+          <Button variant="outlined" size="small" disabled={!from && !to && status === 'all'} onClick={resetFilter}>
             Xóa lọc
           </Button>
         </div>
@@ -141,7 +165,7 @@ export default function CareRequestHome() {
 
       {history.length === 0 ? (
         <section className="panel">
-          <EmptyState icon={<Icon.calendar />} title="Không có yêu cầu nào trong khoảng ngày này" description="Thử chọn khoảng ngày khác hoặc xóa bộ lọc." />
+          <EmptyState icon={<Icon.calendar />} title="Không có yêu cầu nào khớp bộ lọc" description="Thử chọn trạng thái hoặc khoảng ngày khác, hoặc xóa bộ lọc." />
         </section>
       ) : (
         <div className="stack-gap-12" ref={historyRef}>

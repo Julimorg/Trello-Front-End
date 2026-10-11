@@ -1,172 +1,174 @@
 import { useMemo, useRef, useState } from 'react'
 import Button from '@mui/material/Button'
-import FormControlLabel from '@mui/material/FormControlLabel'
 import InputAdornment from '@mui/material/InputAdornment'
 import MenuItem from '@mui/material/MenuItem'
-import Pagination from '@mui/material/Pagination'
-import Switch from '@mui/material/Switch'
 import TextField from '@mui/material/TextField'
 import PageHead from '../../components/PageHead'
 import EmptyState from '../../components/EmptyState'
 import NurseProfileCard from './NurseProfileCard'
+import TrustNurseButton from './TrustNurseButton'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { getHospital, getNurse, listBookingsByPatient, listCareRequestsByPatient } from '../../lib/db'
-import { careTypeLabel } from '../../lib/format'
+import { getHospital, listServedNurses } from '../../lib/db'
+import { careTypeLabel, formatDate } from '../../lib/format'
 import { CARE_TYPES } from '../../lib/constants'
-import { NURSE_PAGE_SIZE, NURSE_SORT_OPTIONS } from '../../Data/patient/nurse-data'
+import { NURSE_SORT_OPTIONS } from '../../Data/patient/nurse-data'
 import { useStaggerIn } from '../../patient/anime'
 import { Icon } from '../../lib/icons'
 
-const RATING_FILTERS = [
-  { id: 0, label: 'Mọi đánh giá' },
-  { id: 4.5, label: 'Từ 4.5 ★' },
-  { id: 4.7, label: 'Từ 4.7 ★' },
-]
-
 const SORTERS = {
-  rating: (a, b) => (b.rating ?? 0) - (a.rating ?? 0),
-  experience: (a, b) => b.experienceYears - a.experienceYears,
-  cases: (a, b) => (b.completedCases ?? 0) - (a.completedCases ?? 0),
-  name: (a, b) => a.name.split(' ').pop().localeCompare(b.name.split(' ').pop(), 'vi'),
+  recent: (a, b) => b.lastDate.localeCompare(a.lastDate),
+  experience: (a, b) => b.nurse.experienceYears - a.nurse.experienceYears,
+  cases: (a, b) => (b.nurse.completedCases ?? 0) - (a.nurse.completedCases ?? 0),
+  name: (a, b) => a.nurse.name.split(' ').pop().localeCompare(b.nurse.name.split(' ').pop(), 'vi'),
 }
 
-const initialFilters = { search: '', specialty: 'all', hospital: 'all', minRating: 0, servedOnly: false, sort: 'rating' }
+const initialFilters = { search: '', specialty: 'all', hospital: 'all', sort: 'recent' }
 
+// "Điều dưỡng tin cậy": nurses who have already cared for the patient. The patient can mark the ones they trust.
 export default function PatientNurses() {
   const { session } = useAuth()
   const state = useDb()
   const [filters, setFilters] = useState(initialFilters)
-  const [page, setPage] = useState(1)
-  const gridRef = useRef(null)
+  const trustedRef = useRef(null)
+  const servedRef = useRef(null)
 
-  const requests = listCareRequestsByPatient(state, session.id)
-  const servedIds = useMemo(
-    () => new Set(listBookingsByPatient(state, session.id).flatMap((b) => b.sessions.map((s) => s.nurseId))),
-    [state, session.id],
-  )
-  const trusted = useMemo(
-    () => [...new Set(requests.flatMap((r) => r.matchedNurseIds))].map((id) => getNurse(state, id)).filter(Boolean),
-    [requests, state],
-  )
-  const hospitals = useMemo(() => [...new Set(trusted.map((n) => n.hospitalId))].map((id) => getHospital(state, id)).filter(Boolean), [trusted, state])
+  const served = useMemo(() => listServedNurses(state, session.id), [state, session.id])
+  const hospitals = useMemo(() => [...new Set(served.map((e) => e.nurse.hospitalId))].map((id) => getHospital(state, id)).filter(Boolean), [served, state])
 
   const filtered = useMemo(() => {
     const q = filters.search.trim().toLowerCase()
-    return trusted
-      .filter((n) => {
+    return served
+      .filter((e) => {
+        const n = e.nurse
         if (q) {
           const haystack = [n.name, getHospital(state, n.hospitalId)?.name, ...n.specialties.map(careTypeLabel), ...n.serviceAreas].join(' ').toLowerCase()
           if (!haystack.includes(q)) return false
         }
         if (filters.specialty !== 'all' && !n.specialties.includes(filters.specialty)) return false
         if (filters.hospital !== 'all' && n.hospitalId !== filters.hospital) return false
-        if (filters.minRating && (n.rating ?? 0) < filters.minRating) return false
-        if (filters.servedOnly && !servedIds.has(n.id)) return false
         return true
       })
       .sort(SORTERS[filters.sort])
-  }, [trusted, filters, servedIds, state])
+  }, [served, filters, state])
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / NURSE_PAGE_SIZE))
-  const currentPage = Math.min(page, pageCount)
-  const pageItems = filtered.slice((currentPage - 1) * NURSE_PAGE_SIZE, currentPage * NURSE_PAGE_SIZE)
+  const trusted = filtered.filter((e) => e.trusted)
+  const others = filtered.filter((e) => !e.trusted)
 
-  useStaggerIn(gridRef, '.nurse-card', [currentPage, filtered.map((n) => n.id).join()])
+  useStaggerIn(trustedRef, '.nurse-card', [trusted.map((e) => e.nurseId).join()])
+  useStaggerIn(servedRef, '.nurse-card', [others.map((e) => e.nurseId).join()])
 
-  const update = (patch) => {
-    setFilters((f) => ({ ...f, ...patch }))
-    setPage(1)
-  }
+  const update = (patch) => setFilters((f) => ({ ...f, ...patch }))
   const isFiltered = JSON.stringify(filters) !== JSON.stringify(initialFilters)
+
+  const renderCard = (e) => (
+    <NurseProfileCard
+      key={e.nurseId}
+      nurse={e.nurse}
+      profileHref={`/patient/nurses/${e.nurseId}`}
+      note={`Đã chăm sóc bạn ${e.sessions} buổi · gần nhất ${formatDate(e.lastDate)}`}
+    >
+      <TrustNurseButton nurse={e.nurse} size="small" />
+    </NurseProfileCard>
+  )
 
   return (
     <>
       <PageHead
         eyebrow="Verified profiles"
         title="Điều dưỡng tin cậy"
-        description="Các điều dưỡng đã được đề xuất cho bạn qua những yêu cầu chăm sóc trước đây — tất cả đều được bệnh viện xác minh."
+        description="Những điều dưỡng đã từng chăm sóc bạn. Chọn người bạn tin tưởng — họ sẽ được ưu tiên gợi ý ở các yêu cầu sau."
       />
 
-      <div className="toolbar">
-        <TextField
-          className="toolbar-search"
-          size="small"
-          placeholder="Tìm theo tên, bệnh viện, chuyên môn, khu vực"
-          value={filters.search}
-          onChange={(e) => update({ search: e.target.value })}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Icon.search style={{ width: 17, color: '#83979b' }} />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
-        <TextField select size="small" label="Chuyên môn" value={filters.specialty} onChange={(e) => update({ specialty: e.target.value })}>
-          <MenuItem value="all">Tất cả chuyên môn</MenuItem>
-          {CARE_TYPES.filter((c) => c.id !== 'other').map((c) => (
-            <MenuItem key={c.id} value={c.id}>
-              {c.label}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField select size="small" label="Bệnh viện" value={filters.hospital} onChange={(e) => update({ hospital: e.target.value })}>
-          <MenuItem value="all">Tất cả bệnh viện</MenuItem>
-          {hospitals.map((h) => (
-            <MenuItem key={h.id} value={h.id}>
-              {h.name}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField select size="small" label="Đánh giá" value={filters.minRating} onChange={(e) => update({ minRating: Number(e.target.value) })}>
-          {RATING_FILTERS.map((r) => (
-            <MenuItem key={r.id} value={r.id}>
-              {r.label}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField select size="small" label="Sắp xếp" value={filters.sort} onChange={(e) => update({ sort: e.target.value })}>
-          {NURSE_SORT_OPTIONS.map((o) => (
-            <MenuItem key={o.id} value={o.id}>
-              {o.label}
-            </MenuItem>
-          ))}
-        </TextField>
-        <FormControlLabel
-          control={<Switch checked={filters.servedOnly} onChange={(e) => update({ servedOnly: e.target.checked })} />}
-          label="Đã từng chăm sóc tôi"
-          slotProps={{ typography: { sx: { fontSize: '.8rem', fontWeight: 600 } } }}
-        />
-        {isFiltered && (
-          <Button size="small" onClick={() => update(initialFilters)}>
-            Đặt lại
-          </Button>
-        )}
-      </div>
-
-      <p className="result-count">
-        Hiển thị {pageItems.length} / {filtered.length} điều dưỡng
-      </p>
-
-      {filtered.length === 0 ? (
+      {served.length === 0 ? (
         <section className="panel">
-          <EmptyState icon={<Icon.user />} title="Không có điều dưỡng phù hợp bộ lọc" description="Thử bỏ bớt điều kiện lọc hoặc tìm với từ khóa khác." />
+          <EmptyState icon={<Icon.user />} title="Chưa có điều dưỡng nào từng chăm sóc bạn" description="Sau khi hoàn thành buổi chăm sóc đầu tiên, điều dưỡng sẽ xuất hiện ở đây để bạn chọn là người đáng tin cậy." />
         </section>
       ) : (
-        <div className="match-grid" ref={gridRef}>
-          {pageItems.map((n) => (
-            <NurseProfileCard key={n.id} nurse={n} profileHref={`/patient/nurses/${n.id}`} />
-          ))}
-        </div>
-      )}
+        <>
+          <div className="toolbar">
+            <TextField
+              className="toolbar-search"
+              size="small"
+              placeholder="Tìm theo tên, bệnh viện, chuyên môn, khu vực"
+              value={filters.search}
+              onChange={(e) => update({ search: e.target.value })}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Icon.search style={{ width: 17, color: '#83979b' }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+            <TextField select size="small" label="Chuyên môn" value={filters.specialty} onChange={(e) => update({ specialty: e.target.value })}>
+              <MenuItem value="all">Tất cả chuyên môn</MenuItem>
+              {CARE_TYPES.filter((c) => c.id !== 'other').map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.label}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField select size="small" label="Bệnh viện" value={filters.hospital} onChange={(e) => update({ hospital: e.target.value })}>
+              <MenuItem value="all">Tất cả bệnh viện</MenuItem>
+              {hospitals.map((h) => (
+                <MenuItem key={h.id} value={h.id}>
+                  {h.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField select size="small" label="Sắp xếp" value={filters.sort} onChange={(e) => update({ sort: e.target.value })}>
+              {NURSE_SORT_OPTIONS.map((o) => (
+                <MenuItem key={o.id} value={o.id}>
+                  {o.label}
+                </MenuItem>
+              ))}
+            </TextField>
+            {isFiltered && (
+              <Button size="small" onClick={() => setFilters(initialFilters)}>
+                Đặt lại
+              </Button>
+            )}
+          </div>
 
-      {pageCount > 1 && (
-        <div className="pagination-row">
-          <Pagination count={pageCount} page={currentPage} onChange={(_, p) => setPage(p)} color="primary" shape="rounded" />
-        </div>
+          {filtered.length === 0 ? (
+            <section className="panel">
+              <EmptyState icon={<Icon.user />} title="Không có điều dưỡng phù hợp bộ lọc" description="Thử bỏ bớt điều kiện lọc hoặc tìm với từ khóa khác." />
+            </section>
+          ) : (
+            <>
+              <div className="trust-section-head">
+                <div>
+                  <h2>Đáng tin cậy ({trusted.length})</h2>
+                  <p>Được ưu tiên khi gợi ý điều dưỡng cho yêu cầu mới</p>
+                </div>
+              </div>
+              {trusted.length === 0 ? (
+                <p className="detail-text">Bạn chưa chọn điều dưỡng nào. Bấm “Chọn thành điều dưỡng đáng tin cậy” ở người bạn muốn.</p>
+              ) : (
+                <div className="match-grid" ref={trustedRef}>
+                  {trusted.map(renderCard)}
+                </div>
+              )}
+
+              <div className="trust-section-head">
+                <div>
+                  <h2>Đã từng chăm sóc bạn ({others.length})</h2>
+                  <p>Điều dưỡng đã hoàn thành ít nhất một buổi chăm sóc cho bạn</p>
+                </div>
+              </div>
+              {others.length === 0 ? (
+                <p className="detail-text">Tất cả điều dưỡng từng chăm sóc bạn đều đã được chọn là đáng tin cậy.</p>
+              ) : (
+                <div className="match-grid" ref={servedRef}>
+                  {others.map(renderCard)}
+                </div>
+              )}
+            </>
+          )}
+        </>
       )}
     </>
   )

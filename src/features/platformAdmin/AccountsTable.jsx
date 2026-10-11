@@ -67,7 +67,7 @@ export default function AccountsTable() {
       if (activity === 'sos' && !p.openSos) return false
       if (activity === 'reported' && !p.reportCount) return false
       if (activity === 'idle' && p.idleDays <= 7) return false
-      return !q || normalize(`${p.name} ${p.id} ${p.phone} ${p.email} ${p.insuranceNumber} ${p.address}`).includes(q)
+      return !q || normalize(`${p.name} ${p.id} ${p.phone} ${p.email} ${p.address}`).includes(q)
     })
   }, [all, search, status, district, verified, activity])
 
@@ -213,7 +213,6 @@ export default function AccountsTable() {
         { title: 'Email', value: (p) => p.email },
         { title: 'Khu vực', value: (p) => p.district },
         { title: 'Địa chỉ', value: (p) => p.address },
-        { title: 'BHYT', value: (p) => p.insuranceNumber },
         { title: 'Xác minh', value: (p) => (p.account?.verified ? p.account.verifiedBy : 'Chưa') },
         { title: 'Yêu cầu', value: (p) => p.requestCount },
         { title: 'Người thân', value: (p) => p.familyCount },
@@ -261,7 +260,7 @@ export default function AccountsTable() {
       </Row>
       <Card className="nurse-toolbar" size="small" style={{ marginBottom: 16 }}>
         <Flex gap={10} wrap>
-          <Input allowClear prefix={<SearchOutlined />} placeholder="Tìm tên, mã, SĐT, email, số BHYT, địa chỉ" value={search} onChange={(e) => setSearch(e.target.value)} style={{ flex: '1 1 280px' }} />
+          <Input allowClear prefix={<SearchOutlined />} placeholder="Tìm tên, mã, SĐT, email, địa chỉ" value={search} onChange={(e) => setSearch(e.target.value)} style={{ flex: '1 1 280px' }} />
           <Select allowClear placeholder="Trạng thái" value={status} onChange={setStatus} options={Object.entries(PLATFORM_STATUS_META).map(([value, m]) => ({ value, label: m.label }))} style={{ flex: '0 1 140px' }} />
           <Select allowClear placeholder="Khu vực" value={district} onChange={setDistrict} options={DISTRICTS.map((d) => ({ value: d, label: d }))} style={{ flex: '0 1 140px' }} />
           <Select

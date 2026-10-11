@@ -1,8 +1,8 @@
 import { NURSES } from '../Data/patient/nurse-data'
 import { CARE_REQUESTS } from '../Data/patient/care-request-data'
 import { BOOKINGS } from '../Data/patient/booking-data'
-import { FAMILY_CONTACTS, FAMILY_INVITES } from '../Data/patient/family-data'
-import { PATIENT_PROFILES } from '../Data/patient/profile-data'
+import { FAMILY_CONTACTS, FAMILY_INVITES, FAMILY_REQUESTS } from '../Data/patient/family-data'
+import { PATIENT_PROFILES, TRUSTED_NURSES } from '../Data/patient/profile-data'
 import { SOS_EVENTS } from '../Data/patient/sos-data'
 import { NOTIFICATIONS } from '../Data/patient/notification-data'
 import { NURSE_CARE_REQUESTS } from '../Data/nurse/requests-data'
@@ -29,11 +29,13 @@ export function seedState() {
     patients: PATIENT_PROFILES.map((p) => ({
       ...clone(p),
       familyContacts: clone(FAMILY_CONTACTS[p.id] || []),
+      trustedNurseIds: [...(TRUSTED_NURSES[p.id] || [])],
       account: clone(PATIENT_ACCOUNTS[p.id] || DEFAULT_PATIENT_ACCOUNT),
     })),
     careRequests: clone([...CARE_REQUESTS, ...NURSE_CARE_REQUESTS]),
     bookings: clone([...BOOKINGS, ...NURSE_BOOKINGS]),
     familyInvites: clone(FAMILY_INVITES),
+    familyRequests: clone(FAMILY_REQUESTS),
     sosEvents: clone([...SOS_EVENTS, ...HOSPITAL_SOS_EVENTS]),
     reports: clone(COMPLIANCE_REPORTS),
     auditLogs: clone(AUDIT_LOGS),

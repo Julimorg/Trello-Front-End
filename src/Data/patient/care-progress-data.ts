@@ -70,7 +70,7 @@ export const SESSION_OBSERVATIONS: Record<string, SessionObservation> = {
 
   // bk-2001 — post-surgery, 4 visits: pain and temperature falling
   'bk-2001-s1': obs('Vết mổ hơi sưng, khô, không dịch. Bệnh nhân còn đau khi đứng dậy.', { vitals: { bp: '135/85', pulse: 88, temp: 37.4, spo2: 97 }, pain: 6 }),
-  'bk-2001-s2': obs('Điều dưỡng thay thế: vết mổ khô, giảm sưng. Đã thay băng và hướng dẫn đi lại nhẹ.', { vitals: { bp: '132/84', pulse: 84, temp: 37.1, spo2: 98 }, pain: 4 }),
+  'bk-2001-s2': obs('vết mổ khô, giảm sưng. Đã thay băng và hướng dẫn đi lại nhẹ.', { vitals: { bp: '132/84', pulse: 84, temp: 37.1, spo2: 98 }, pain: 4 }),
   'bk-2001-s3': obs('Vết mổ liền tốt, không còn sưng. Bệnh nhân tự đi lại trong nhà được.', { vitals: { bp: '130/82', pulse: 80, temp: 36.8, spo2: 98 }, pain: 3 }),
   'bk-2001-s4': obs('Vết mổ liền, da khô sạch. Kết thúc liệu trình, hẹn tái khám theo lịch bác sĩ.', { vitals: { bp: '128/80', pulse: 76, temp: 36.7, spo2: 98 }, pain: 1 }),
 
@@ -86,7 +86,7 @@ export const SESSION_OBSERVATIONS: Record<string, SessionObservation> = {
   // bk-2004 — elderly care in the evenings
   'bk-2004-s1': obs('Hỗ trợ vệ sinh, bữa tối và thuốc. Bệnh nhân ăn được nửa khẩu phần, hơi mệt.', { vitals: { bp: '138/86', pulse: 80, temp: 36.7, spo2: 97 }, extras: [{ label: 'Lượng nước uống', value: '800 ml' }] }),
   'bk-2004-s2': obs('Ăn hết khẩu phần, tinh thần tốt. Đã nhắc và hỗ trợ uống thuốc đúng giờ.', { vitals: { bp: '134/84', pulse: 78, temp: 36.6, spo2: 98 }, extras: [{ label: 'Lượng nước uống', value: '1.100 ml' }] }),
-  'bk-2004-s3': obs('Điều dưỡng thay thế: sinh hoạt ổn, da lưng không đỏ. Bệnh nhân ngủ sớm sau uống thuốc.', { vitals: { bp: '132/82', pulse: 76, temp: 36.6, spo2: 98 }, extras: [{ label: 'Lượng nước uống', value: '1.200 ml' }] }),
+  'bk-2004-s3': obs('sinh hoạt ổn, da lưng không đỏ. Bệnh nhân ngủ sớm sau uống thuốc.', { vitals: { bp: '132/82', pulse: 76, temp: 36.6, spo2: 98 }, extras: [{ label: 'Lượng nước uống', value: '1.200 ml' }] }),
   'bk-2004-s4': obs('Bệnh nhân tự ngồi dậy dễ hơn, ăn uống tốt, thuốc dùng đều.', { vitals: { bp: '130/80', pulse: 74, temp: 36.6, spo2: 98 }, extras: [{ label: 'Lượng nước uống', value: '1.300 ml' }] }),
 
   // bk-2006 — mobility after knee replacement

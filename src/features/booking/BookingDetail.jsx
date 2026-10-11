@@ -15,11 +15,12 @@ import CareProgress from './CareProgress'
 import { useToast } from '../../components/ToastProvider'
 import { useDb } from '../../lib/store'
 import { computeBookingStatus, getBooking, getCareRequest, getHospital, getNurse, getPatient, requestReschedule } from '../../lib/db'
-import { careTypeLabel, formatDate, formatDateTime } from '../../lib/format'
-import { BOOKING_STATUS_LABEL, SESSION_STATUS, SESSION_STATUS_LABEL } from '../../lib/constants'
+import { careTypeLabel, formatDate } from '../../lib/format'
+import { BOOKING_STATUS_LABEL, SESSION_STATUS } from '../../lib/constants'
 import { CARE_PLANS } from '../../Data/patient/care-progress-data'
 import { certificateStatus } from '../hospitalAdmin/admin-shared'
-import { bookingSummary, formatDuration, frequencyText, isDone, minutesBetween, relativeDay, visitWork, weekdayLong } from './booking-shared'
+import TrustNurseButton from '../nurseMatching/TrustNurseButton'
+import { bookingSummary, formatDuration, frequencyText, isDone, minutesBetween, relativeDay, visitBadge, visitWork, weekdayLong } from './booking-shared'
 import { useStaggerIn } from '../../patient/anime'
 import { Icon } from '../../lib/icons'
 
@@ -52,7 +53,7 @@ function Fact({ icon, label, children }) {
 }
 
 // One visit, expandable: what was done, the nurse's note and measurements.
-function SessionRow({ session, index, total, careType, nurse, today, onReschedule, state }) {
+function SessionRow({ session, index, total, careType, nurse, today, onReschedule }) {
   const [open, setOpen] = useState(false)
   const work = visitWork(session, careType)
   const done = isDone(session, today)
@@ -73,7 +74,6 @@ function SessionRow({ session, index, total, careType, nurse, today, onReschedul
             {weekdayLong(session.date)} · {formatDuration(minutesBetween(session.start, session.end))}
             {' · '}
             {nurse ? <Link to={`/patient/nurses/${nurse.id}`}>{nurse.name}</Link> : '—'}
-            {session.status === SESSION_STATUS.CANNOT_PERFORM && ' · Đang tìm điều dưỡng thay thế'}
           </p>
           {done && (
             <p className="visit-done">
@@ -83,7 +83,7 @@ function SessionRow({ session, index, total, careType, nurse, today, onReschedul
           {!done && session.status !== SESSION_STATUS.CANNOT_PERFORM && session.date >= today && <p className="visit-done is-upcoming">{relativeDay(session.date, today)}</p>}
         </div>
         <div className="day-session-side">
-          <StatusBadge status={session.status} labelMap={SESSION_STATUS_LABEL} />
+          <StatusBadge label={visitBadge(session, today).label} tone={visitBadge(session, today).tone} />
           {session.date >= today && !done && (
             <Button size="small" onClick={() => onReschedule(session)}>
               Đổi lịch
@@ -127,11 +127,6 @@ function SessionRow({ session, index, total, careType, nurse, today, onReschedul
                 ))}
               </div>
             )}
-            {session.history?.length > 0 && (
-              <p className="detail-text" style={{ marginTop: 10 }}>
-                Đổi điều dưỡng: {getNurse(state, session.history[0].nurseId)?.name} báo không thể thực hiện — {session.history[0].reason}
-              </p>
-            )}
           </div>
         </div>
       </Collapse>
@@ -170,7 +165,6 @@ export default function BookingDetail() {
   const careType = careRequest?.careType
   const plan = CARE_PLANS[careType] || CARE_PLANS.other
   const status = computeBookingStatus(booking)
-  const substitutes = [...new Set(sessions.map((s) => s.nurseId))].filter((nid) => nid !== booking.nurseId).map((nid) => getNurse(state, nid)).filter(Boolean)
   const allTasks = visitWork(sessions[0] || {}, careType).tasks
   const doneSessions = sessions.filter((s) => isDone(s, today))
   const taskTotals = doneSessions.reduce(
@@ -210,7 +204,6 @@ export default function BookingDetail() {
               : summary.done === summary.total
                 ? 'Đã hoàn thành toàn bộ liệu trình.'
                 : 'Chưa có buổi sắp tới được xác nhận.'}
-            {summary.needsNurse > 0 && ` · ${summary.needsNurse} buổi đang tìm điều dưỡng thay thế`}
           </p>
         </div>
         <div className="facts">
@@ -261,30 +254,11 @@ export default function BookingDetail() {
             </div>
             <div className="visit-list" ref={listRef}>
               {sessions.map((s, i) => (
-                <SessionRow key={s.id} session={s} index={i} total={sessions.length} careType={careType} nurse={getNurse(state, s.nurseId)} today={today} state={state} onReschedule={(x) => { setRescheduleSession(x); setNote('') }} />
+                <SessionRow key={s.id} session={s} index={i} total={sessions.length} careType={careType} nurse={getNurse(state, s.nurseId)} today={today} onReschedule={(x) => { setRescheduleSession(x); setNote('') }} />
               ))}
             </div>
           </section>
 
-          {sessions.some((s) => s.history?.length) && (
-            <section className="panel panel-body" style={{ marginBottom: 20 }}>
-              <h3 className="detail-heading" style={{ marginTop: 0 }}>
-                Lịch sử thay đổi
-              </h3>
-              <div className="stack-gap-8">
-                {sessions
-                  .filter((s) => s.history?.length)
-                  .flatMap((s) =>
-                    s.history.map((h, i) => (
-                      <p key={`${s.id}-${i}`} className="detail-text">
-                        {formatDate(s.date)}: {getNurse(state, h.nurseId)?.name} báo không thể thực hiện — lý do: {h.reason}
-                        {h.reportedAt ? ` (${formatDateTime(h.reportedAt)})` : ''}
-                      </p>
-                    )),
-                  )}
-              </div>
-            </section>
-          )}
         </>
       )}
 
@@ -350,9 +324,6 @@ export default function BookingDetail() {
               <Fact icon="shield" label="Dị ứng">
                 {patient?.allergies || 'Không'}
               </Fact>
-              <Fact icon="file" label="Số BHYT">
-                {patient?.insuranceNumber || '—'}
-              </Fact>
             </div>
           </section>
         </div>
@@ -377,6 +348,7 @@ export default function BookingDetail() {
             <p className="detail-text" style={{ marginTop: 14 }}>
               {nurse.bio}
             </p>
+            {!summary.done && <p className="detail-text">Sau khi hoàn thành buổi chăm sóc đầu tiên, bạn có thể chọn điều dưỡng này là người đáng tin cậy.</p>}
             <h3 className="detail-heading">Chuyên môn</h3>
             <div className="chip-row">
               {nurse.specialties.map((sp) => (
@@ -390,6 +362,7 @@ export default function BookingDetail() {
               ))}
             </div>
             <div className="nurse-actions">
+              <TrustNurseButton nurse={nurse} />
               <Button variant="outlined" component={Link} to={`/patient/nurses/${nurse.id}`}>
                 Xem hồ sơ đầy đủ
               </Button>
@@ -432,18 +405,6 @@ export default function BookingDetail() {
               </div>
             ) : (
               <p className="detail-text">—</p>
-            )}
-            {substitutes.length > 0 && (
-              <>
-                <h3 className="detail-heading">Điều dưỡng thay thế trong liệu trình</h3>
-                <div className="stack-gap-8">
-                  {substitutes.map((sub) => (
-                    <p key={sub.id} className="detail-text">
-                      <Link to={`/patient/nurses/${sub.id}`}>{sub.name}</Link> · {sub.rank} · {sessions.filter((s) => s.nurseId === sub.id).length} buổi
-                    </p>
-                  ))}
-                </div>
-              </>
             )}
           </section>
         </div>

@@ -66,8 +66,6 @@ export interface Nurse {
   authorizedCareTypes: CareTypeId[]
   certificates: Certificate[]
   availability: AvailabilitySlot[]
-  rating: number | null
-  reviewCount: number
   completedCases: number
   bio: string
 }
@@ -167,6 +165,23 @@ export interface FamilyContact {
   permissions: string[]
   /** Set when the relative linked by scanning the patient's QR invite. */
   inviteCode?: string
+  /** Set when the contact's email / phone matched another CareShift account (see FamilyRequest). */
+  linkedPatientId?: string
+}
+
+/** An invite sent to another CareShift account to become a linked relative. */
+export interface FamilyRequest {
+  id: string
+  fromPatientId: string
+  toPatientId: string
+  /** The sender's FamilyContact that represents the recipient. */
+  contactId: string
+  /** How the recipient is related to the sender, as chosen by the sender. */
+  relation: string
+  permissions: string[]
+  status: 'pending' | 'accepted' | 'declined'
+  createdAt: string
+  respondedAt?: string
 }
 
 /** QR / link invite a patient shares so a relative can link their CareShift account. */
@@ -194,7 +209,6 @@ export interface PatientProfile {
   bloodType: string
   allergies: string
   conditions: string
-  insuranceNumber: string
 }
 
 export interface SosEvent {

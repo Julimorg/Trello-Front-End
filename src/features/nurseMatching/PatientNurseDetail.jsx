@@ -11,6 +11,7 @@ import { getHospital, getNurse, listBookingsByPatient, listCareRequestsByPatient
 import { careTypeLabel, formatDate, weekdayLabel } from '../../lib/format'
 import { CARE_REQUEST_STATUS_LABEL, SESSION_STATUS_LABEL } from '../../lib/constants'
 import { useStaggerIn } from '../../patient/anime'
+import TrustNurseButton from './TrustNurseButton'
 import { Icon } from '../../lib/icons'
 
 function initials(name) {
@@ -53,9 +54,12 @@ export default function PatientNurseDetail() {
         title={nurse.name}
         description={`${nurse.rank} · ${hospital?.name}`}
         action={
-          <Button variant="outlined" startIcon={<span aria-hidden="true">←</span>} onClick={() => navigate(-1)}>
-            Quay lại
-          </Button>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <TrustNurseButton nurse={nurse} />
+            <Button variant="outlined" startIcon={<span aria-hidden="true">←</span>} onClick={() => navigate(-1)}>
+              Quay lại
+            </Button>
+          </div>
         }
       />
 
@@ -82,10 +86,6 @@ export default function PatientNurseDetail() {
               <div className="detail-stat">
                 <b>{nurse.completedCases}</b>
                 <small>Ca hoàn thành</small>
-              </div>
-              <div className="detail-stat">
-                <b>★ {nurse.rating ?? '—'}</b>
-                <small>{nurse.reviewCount} đánh giá</small>
               </div>
             </div>
             <p className="detail-text">{nurse.bio}</p>

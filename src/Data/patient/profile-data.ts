@@ -16,7 +16,6 @@ export const PATIENT_PROFILES: PatientProfile[] = [
     bloodType: 'O+',
     allergies: 'Penicillin',
     conditions: 'Tăng huyết áp, sau phẫu thuật ruột thừa',
-    insuranceNumber: 'HC4790123456789',
   },
   {
     id: 'patient-thu',
@@ -30,7 +29,6 @@ export const PATIENT_PROFILES: PatientProfile[] = [
     bloodType: 'A+',
     allergies: 'Không',
     conditions: 'Tiểu đường type 2',
-    insuranceNumber: 'HC4790987654321',
   },
   // Patients served by nurse Trần Thị Hoa (see Data/nurse/*): Bình Thạnh & Thủ Đức.
   {
@@ -45,7 +43,6 @@ export const PATIENT_PROFILES: PatientProfile[] = [
     bloodType: 'B+',
     allergies: 'Không',
     conditions: 'Thoái hóa khớp gối, suy giảm trí nhớ nhẹ',
-    insuranceNumber: 'HT2790111222333',
   },
   {
     id: 'patient-hanh',
@@ -59,7 +56,6 @@ export const PATIENT_PROFILES: PatientProfile[] = [
     bloodType: 'O+',
     allergies: 'Aspirin',
     conditions: 'Phục hồi sau tai biến, yếu nửa người trái',
-    insuranceNumber: 'HT2790111222444',
   },
   {
     id: 'patient-dung',
@@ -73,7 +69,6 @@ export const PATIENT_PROFILES: PatientProfile[] = [
     bloodType: 'A-',
     allergies: 'Hải sản',
     conditions: 'Tăng huyết áp, loãng xương',
-    insuranceNumber: 'HT2790111222555',
   },
   {
     id: 'patient-khanh',
@@ -87,7 +82,6 @@ export const PATIENT_PROFILES: PatientProfile[] = [
     bloodType: 'AB+',
     allergies: 'Không',
     conditions: 'Gãy xương đùi, đang tập vật lý trị liệu',
-    insuranceNumber: 'HT2790111222666',
   },
   {
     id: 'patient-tuan',
@@ -101,8 +95,13 @@ export const PATIENT_PROFILES: PatientProfile[] = [
     bloodType: 'O-',
     allergies: 'Không',
     conditions: 'Parkinson giai đoạn đầu',
-    insuranceNumber: 'HT2790111222777',
   },
 ]
 
 export const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+
+/** Nurses each patient has marked "đáng tin cậy" — must be nurses who have cared for them (see booking-data.ts). */
+export const TRUSTED_NURSES: Record<string, string[]> = {
+  'patient-an': ['nurse-mai', 'nurse-thao'],
+  'patient-lien': ['nurse-hoa'],
+}

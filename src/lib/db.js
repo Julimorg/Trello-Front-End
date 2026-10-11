@@ -19,6 +19,31 @@ export const getHospital = (state, id) => state.hospitals.find((h) => h.id === i
 export const getNurse = (state, id) => state.nurses.find((n) => n.id === id)
 export const getPatient = (state, id) => state.patients.find((p) => p.id === id)
 
+// A visit counts as done once it is completed, or handed to a substitute and already in the past.
+const isVisitDone = (s, today = dayjs().format('YYYY-MM-DD')) => s.status === SESSION_STATUS.COMPLETED || (s.status === SESSION_STATUS.REASSIGNED && s.date <= today)
+
+// Nurses who have already cared for this patient (at least one finished visit), most recent first.
+export function listServedNurses(state, patientId) {
+  const byNurse = {}
+  state.bookings
+    .filter((b) => b.patientId === patientId)
+    .forEach((b) =>
+      b.sessions.filter((s) => isVisitDone(s)).forEach((s) => {
+        const entry = byNurse[s.nurseId] || { nurseId: s.nurseId, sessions: 0, lastDate: '' }
+        entry.sessions += 1
+        if (s.date > entry.lastDate) entry.lastDate = s.date
+        byNurse[s.nurseId] = entry
+      }),
+    )
+  const trusted = new Set(getPatient(state, patientId)?.trustedNurseIds || [])
+  return Object.values(byNurse)
+    .map((e) => ({ ...e, nurse: getNurse(state, e.nurseId), trusted: trusted.has(e.nurseId) }))
+    .filter((e) => e.nurse)
+    .sort((a, b) => b.lastDate.localeCompare(a.lastDate))
+}
+
+export const isTrustedNurse = (state, patientId, nurseId) => (getPatient(state, patientId)?.trustedNurseIds || []).includes(nurseId)
+
 // The single contact marked primary (it may still be awaiting confirmation), or null when none is set.
 export const getPrimaryFamilyContact = (state, patientId) =>
   (getPatient(state, patientId)?.familyContacts || []).find((c) => c.primary) || null
@@ -185,12 +210,16 @@ function runMatchingLogic(state, careRequest) {
     if (!nurse.authorizedCareTypes.includes(careRequest.careType)) return false
     if (!nurse.serviceAreas.includes(careRequest.district)) return false
     if (!nurseAvailabilityOverlaps(nurse, careRequest.weekdays, careRequest.timeSlot)) return false
+    // A nurse already booked for part of this course cannot take it.
+    if (findScheduleConflicts(state, { nurseId: nurse.id }, careRequest).length) return false
     return true
   })
 
+  // Nurses the patient already trusts come first, then the most experienced.
+  const trustedIds = new Set(getPatient(state, careRequest.patientId)?.trustedNurseIds || [])
   const ranked = [...candidates].sort((a, b) => {
-    if (b.experienceYears !== a.experienceYears) return b.experienceYears - a.experienceYears
-    return (b.rating || 0) - (a.rating || 0)
+    if (trustedIds.has(a.id) !== trustedIds.has(b.id)) return trustedIds.has(a.id) ? -1 : 1
+    return b.experienceYears - a.experienceYears
   })
 
   return ranked.slice(0, state.settings?.matchLimit || HARD_FILTER_MATCH_LIMIT).map((n) => n.id)
@@ -203,13 +232,14 @@ const ALTERNATIVE_LIMIT = 6
 
 export function getAlternativeNurses(state, careRequest, limit = ALTERNATIVE_LIMIT) {
   const excluded = new Set([...(careRequest.declinedNurseIds || []), careRequest.selectedNurseId].filter(Boolean))
+  const trustedIds = new Set(getPatient(state, careRequest.patientId)?.trustedNurseIds || [])
   const scored = state.nurses
-    .filter((n) => canTakeNewCare(state, n) && !excluded.has(n.id))
+    .filter((n) => canTakeNewCare(state, n) && !excluded.has(n.id) && findScheduleConflicts(state, { nurseId: n.id }, careRequest).length === 0)
     .map((nurse) => {
       const typeOk = nurse.authorizedCareTypes.includes(careRequest.careType)
       const areaOk = nurse.serviceAreas.includes(careRequest.district)
       const timeOk = nurseAvailabilityOverlaps(nurse, careRequest.weekdays, careRequest.timeSlot)
-      const score = Math.round((typeOk ? 40 : 0) + (areaOk ? 25 : 0) + (timeOk ? 20 : 0) + ((nurse.rating || 4) / 5) * 15)
+      const score = Math.round((typeOk ? 40 : 0) + (areaOk ? 25 : 0) + (timeOk ? 20 : 0) + (trustedIds.has(nurse.id) ? 15 : 10))
       return {
         nurse,
         typeOk,
@@ -330,6 +360,36 @@ function buildSessionDates({ startDate, frequency, weekdays, count }) {
   return dates
 }
 
+// ---------- schedule conflicts ("trùng ca") ----------
+
+// "HH:mm" strings compare correctly as text.
+const timesOverlap = (a, b) => a.start < b.end && b.start < a.end
+
+// Dates a request would produce, same rule used when a nurse accepts it.
+export const proposedDates = (request) =>
+  request.desiredStartDate
+    ? buildSessionDates({ startDate: request.desiredStartDate, frequency: request.frequency, weekdays: request.weekdays, count: RECURRING_SESSION_COUNT })
+    : []
+
+// Live sessions (not reported as impossible) that overlap the proposed dates / time slot.
+// `owner` is { patientId } or { nurseId }.
+export function findScheduleConflicts(state, owner, request) {
+  const dates = new Set(proposedDates(request))
+  if (!dates.size || !request.timeSlot) return []
+  const conflicts = []
+  state.bookings.forEach((b) => {
+    if (owner.patientId && b.patientId !== owner.patientId) return
+    b.sessions.forEach((s) => {
+      if (owner.nurseId && s.nurseId !== owner.nurseId) return
+      if (s.status === SESSION_STATUS.CANNOT_PERFORM) return
+      if (dates.has(s.date) && timesOverlap(s, request.timeSlot)) conflicts.push({ session: s, booking: b })
+    })
+  })
+  return conflicts
+}
+
+export const getPatientConflicts = (state, patientId, request) => findScheduleConflicts(state, { patientId }, request)
+
 export function selectNurseForCareRequest(careRequestId, nurseId) {
   setState((state) => {
     const careRequest = getCareRequest(state, careRequestId)
@@ -366,6 +426,7 @@ export function selectNurseForCareRequest(careRequestId, nurseId) {
 
 export function respondToCareRequest(careRequestId, decision, { reason } = {}) {
   let bookingId = null
+  let conflict = null
   setState((state) => {
     const careRequest = getCareRequest(state, careRequestId)
     if (!careRequest || !careRequest.selectedNurseId) return state
@@ -373,6 +434,12 @@ export function respondToCareRequest(careRequestId, decision, { reason } = {}) {
     const nurse = getNurse(state, nurseId)
 
     if (decision === 'accept') {
+      // The nurse may have taken another case for the same time since this request was sent.
+      const clash = findScheduleConflicts(state, { nurseId }, careRequest)
+      if (clash.length) {
+        conflict = clash[0]
+        return state
+      }
       bookingId = genId('bk')
       const dates = buildSessionDates({
         startDate: careRequest.desiredStartDate,
@@ -457,7 +524,7 @@ export function respondToCareRequest(careRequestId, decision, { reason } = {}) {
       ),
     }
   })
-  return bookingId
+  return { bookingId, conflict }
 }
 
 // ---------- Session (one visit) ----------
@@ -630,6 +697,11 @@ export function triggerSOS({ bookingId, sessionId, patientId, nurseId, triggered
         link: `/hospital/admin/sos-log?id=${eventId}`,
       })
     }
+    // Relatives who have their own CareShift account get the alert in their app too.
+    const owner = ownerPatientId ? getPatient(state, ownerPatientId) : null
+    ;(owner?.familyContacts || [])
+      .filter((c) => contactIds.includes(c.id) && c.linkedPatientId && c.status === 'Đã liên kết')
+      .forEach((c) => notify(state, { role: 'patient', targetId: c.linkedPatientId, message: `Cảnh báo SOS từ người thân ${owner.name}. Hãy liên hệ ngay.`, link: FAMILY_LINK }))
     if (ownerPatientId) {
       notify(state, {
         role: 'patient',
@@ -696,8 +768,6 @@ export function addNurse(hospitalId, data) {
         authorizedCareTypes: [],
         certificates: [],
         availability: [],
-        rating: null,
-        reviewCount: 0,
         completedCases: 0,
         bio: '',
       },
@@ -903,6 +973,22 @@ export function addPatient(data) {
   return id
 }
 
+// Marks / unmarks a nurse who has cared for the patient as "điều dưỡng đáng tin cậy".
+export function setTrustedNurse(patientId, nurseId, trusted) {
+  setState((state) => {
+    const patient = getPatient(state, patientId)
+    const nurse = getNurse(state, nurseId)
+    if (!patient || !nurse) return state
+    const current = patient.trustedNurseIds || []
+    if (current.includes(nurseId) === trusted) return state
+    if (trusted) notify(state, { role: 'nurse', targetId: nurseId, message: `${patient.name} đã chọn bạn là điều dưỡng đáng tin cậy.` })
+    return {
+      ...state,
+      patients: state.patients.map((p) => (p.id === patientId ? { ...p, trustedNurseIds: trusted ? [...current, nurseId] : current.filter((id) => id !== nurseId) } : p)),
+    }
+  })
+}
+
 export function updatePatient(patientId, patch) {
   setState((state) => ({
     ...state,
@@ -916,29 +1002,104 @@ const withContact = (contacts, contact) => [
   contact,
 ]
 
+const digitsOf = (value) => String(value || '').replace(/\D/g, '')
+
+// The other CareShift account an email / phone belongs to, if any.
+export function findPatientByContact(state, value, excludeId) {
+  const v = String(value || '').trim().toLowerCase()
+  if (!v) return null
+  const d = digitsOf(v)
+  return (
+    state.patients.find((p) => p.id !== excludeId && ((p.email || '').toLowerCase() === v || (d.length >= 8 && digitsOf(p.phone) === d))) || null
+  )
+}
+
+// What the recipient is to the sender is the opposite of what the sender is to them.
+const INVERSE_RELATION = { 'Con': 'Cha / Mẹ', 'Con trai': 'Cha / Mẹ', 'Con gái': 'Cha / Mẹ', 'Cha / Mẹ': 'Con', 'Người giám hộ': 'Khác' }
+const inverseRelation = (relation) => INVERSE_RELATION[relation] || relation
+
+const FAMILY_LINK = '/patient/family'
+
+// Adds a relative. When the email / phone belongs to another CareShift account the invite is delivered to
+// that account (notification + "Lời mời liên kết" on their family page) and the contact stays pending.
 export function addFamilyContact(patientId, contact) {
   const id = genId('fc')
-  setState((state) => ({
-    ...state,
-    patients: state.patients.map((p) =>
-      p.id === patientId
-        ? {
-            ...p,
-            familyContacts: withContact(p.familyContacts, {
-              id,
-              status: 'Chờ xác nhận',
-              primary: false,
-              permissions: [],
-              ...contact,
-            }),
-          }
-        : p,
-    ),
-  }))
+  setState((state) => {
+    const owner = getPatient(state, patientId)
+    const target = findPatientByContact(state, contact.phone, patientId)
+    const linkedTo = target && !(owner?.familyContacts || []).some((c) => c.linkedPatientId === target.id) ? target : null
+    const entry = { id, status: 'Chờ xác nhận', primary: false, permissions: [], ...contact, ...(linkedTo ? { linkedPatientId: linkedTo.id } : {}) }
+    const next = {
+      ...state,
+      patients: state.patients.map((p) => (p.id === patientId ? { ...p, familyContacts: withContact(p.familyContacts, entry) } : p)),
+    }
+    if (linkedTo) {
+      next.familyRequests = [
+        ...(state.familyRequests || []),
+        { id: genId('fr'), fromPatientId: patientId, toPatientId: linkedTo.id, contactId: id, relation: entry.relation, permissions: entry.permissions, status: 'pending', createdAt: now() },
+      ]
+      notify(next, { role: 'patient', targetId: linkedTo.id, message: `${owner?.name} muốn liên kết với bạn là người thân (${inverseRelation(entry.relation)}). Mở để chấp nhận hoặc từ chối.`, link: FAMILY_LINK })
+    }
+    return next
+  })
   return id
 }
 
-// Pass null to remove the primary contact entirely.
+// Sends the invite notification again for a pending contact that belongs to another account.
+export function resendFamilyInvite(patientId, contactId) {
+  let sent = false
+  setState((state) => {
+    const owner = getPatient(state, patientId)
+    const request = (state.familyRequests || []).find((r) => r.fromPatientId === patientId && r.contactId === contactId && r.status === 'pending')
+    if (!request) return state
+    sent = true
+    notify(state, { role: 'patient', targetId: request.toPatientId, message: `Nhắc: ${owner?.name} đang chờ bạn xác nhận liên kết người thân.`, link: FAMILY_LINK })
+    return state
+  })
+  return sent
+}
+
+// The recipient answers an invite. Accepting links both accounts (each becomes the other's relative).
+export function respondFamilyRequest(requestId, accept) {
+  setState((state) => {
+    const request = (state.familyRequests || []).find((r) => r.id === requestId)
+    if (!request || request.status !== 'pending') return state
+    const from = getPatient(state, request.fromPatientId)
+    const to = getPatient(state, request.toPatientId)
+    if (!from || !to) return state
+    const respondedAt = now()
+    let patients = state.patients
+    if (accept) {
+      patients = patients.map((p) => {
+        if (p.id === from.id) return { ...p, familyContacts: p.familyContacts.map((c) => (c.id === request.contactId ? { ...c, status: 'Đã liên kết', name: to.name } : c)) }
+        if (p.id === to.id && !p.familyContacts.some((c) => c.linkedPatientId === from.id)) {
+          return {
+            ...p,
+            familyContacts: [
+              ...p.familyContacts,
+              { id: genId('fc'), name: from.name, phone: from.email || from.phone, relation: inverseRelation(request.relation), status: 'Đã liên kết', primary: false, permissions: [...request.permissions], linkedPatientId: from.id },
+            ],
+          }
+        }
+        return p
+      })
+    } else {
+      patients = patients.map((p) => (p.id === from.id ? { ...p, familyContacts: p.familyContacts.filter((c) => c.id !== request.contactId) } : p))
+    }
+    notify(state, {
+      role: 'patient',
+      targetId: from.id,
+      message: accept ? `${to.name} đã chấp nhận liên kết người thân với bạn.` : `${to.name} đã từ chối lời mời liên kết.`,
+      link: FAMILY_LINK,
+    })
+    return {
+      ...state,
+      patients,
+      familyRequests: state.familyRequests.map((r) => (r.id === requestId ? { ...r, status: accept ? 'accepted' : 'declined', respondedAt } : r)),
+    }
+  })
+}
+
 export function setPrimaryFamilyContact(patientId, contactId) {
   setState((state) => ({
     ...state,
@@ -951,14 +1112,24 @@ export function setPrimaryFamilyContact(patientId, contactId) {
 }
 
 export function removeFamilyContact(patientId, contactId) {
-  setState((state) => ({
-    ...state,
-    patients: state.patients.map((p) =>
-      p.id === patientId
-        ? { ...p, familyContacts: p.familyContacts.filter((c) => c.id !== contactId) }
-        : p,
-    ),
-  }))
+  setState((state) => {
+    const owner = getPatient(state, patientId)
+    const contact = owner?.familyContacts.find((c) => c.id === contactId)
+    if (!contact) return state
+    const other = contact.linkedPatientId
+    const next = {
+      ...state,
+      patients: state.patients.map((p) => {
+        if (p.id === patientId) return { ...p, familyContacts: p.familyContacts.filter((c) => c.id !== contactId) }
+        // Unlinking an accepted link removes the relative on the other account too.
+        if (other && p.id === other && contact.status === 'Đã liên kết') return { ...p, familyContacts: p.familyContacts.filter((c) => c.linkedPatientId !== patientId) }
+        return p
+      }),
+      familyRequests: (state.familyRequests || []).map((r) => (r.contactId === contactId && r.status === 'pending' ? { ...r, status: 'declined', respondedAt: now() } : r)),
+    }
+    if (other && contact.status === 'Đã liên kết') notify(next, { role: 'patient', targetId: other, message: `${owner.name} đã hủy liên kết người thân với bạn.`, link: FAMILY_LINK })
+    return next
+  })
 }
 
 // ---------- family QR invites ----------

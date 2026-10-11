@@ -74,7 +74,8 @@ export default function PatientSos({ patientId }) {
     <>
       <button ref={buttonRef} type="button" className="patient-sos" aria-label="Hỗ trợ khẩn cấp (có thể kéo thả)" onClick={handleButtonClick}>
         <span ref={ringRef} className="patient-sos-ring" aria-hidden="true" />
-        <span className="patient-sos-label">SOS</span> Khẩn cấp
+        <span className="patient-sos-label">SOS</span>
+        <span className="patient-sos-word"> Khẩn cấp</span>
       </button>
 
       <Dialog open={open} onClose={close} maxWidth="xs" fullWidth slotProps={{ paper: { className: 'patient-sos-dialog' } }}>

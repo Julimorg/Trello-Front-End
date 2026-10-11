@@ -259,3 +259,10 @@
   overflow-y: auto;
   scrollbar-width: thin;
 }
+
+/* The SOS button shows only "SOS" on phones */
+@media (max-width: 780px) {
+  .patient-sos-word {
+    display: none;
+  }
+}

@@ -43,7 +43,6 @@ export default function PatientInfoCard({ patient, showFamily = true }) {
               children: patient?.allergies && patient.allergies !== 'Không' ? <Tag color="red">{patient.allergies}</Tag> : <Text type="secondary">Không</Text>,
             },
             { key: 'cond', label: 'Bệnh nền', children: patient?.conditions || '—' },
-            { key: 'bhyt', label: 'BHYT', children: <Text code>{patient?.insuranceNumber || '—'}</Text> },
           ]}
         />
       </Card>

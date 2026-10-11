@@ -10,17 +10,20 @@ export const DASHBOARD_HERO = {
 
 export const DASHBOARD_RECENT_LIMIT = 5
 
-export type DashboardMetricKey = 'activeRequests' | 'upcomingSessions' | 'trustedNurses' | 'completedSessions'
+/** "Gần nhất" = requests created today or in the previous N days. */
+export const DASHBOARD_RECENT_DAYS = 4
+/** "Sắp tới" = visits scheduled within the next N days. */
+export const DASHBOARD_UPCOMING_DAYS = 30
+
+export type DashboardMetricKey = 'activeRequests' | 'upcomingSessions'
 
 export const DASHBOARD_METRICS: { key: DashboardMetricKey; label: string; icon: string; tone: '' | 'blue' | 'amber' | 'red'; to: string }[] = [
   { key: 'activeRequests', label: 'Yêu cầu hiện tại', icon: 'file', tone: '', to: '/patient/request' },
-  { key: 'upcomingSessions', label: 'Lịch sắp tới', icon: 'calendar', tone: 'blue', to: '/patient/bookings' },
-  { key: 'trustedNurses', label: 'Điều dưỡng tin cậy', icon: 'shield', tone: 'amber', to: '/patient/nurses' },
-  { key: 'completedSessions', label: 'Buổi đã hoàn thành', icon: 'check', tone: 'red', to: '/patient/bookings' },
+  { key: 'upcomingSessions', label: 'Lịch sắp tới (30 ngày)', icon: 'calendar', tone: 'blue', to: '/patient/bookings' },
 ]
 
 export const DASHBOARD_QUICK_LINKS = [
-  { id: 'ql-bookings', to: '/patient/bookings', icon: 'calendar', title: 'Lịch chăm sóc', subtitle: 'Xem lịch theo ngày và các ca đã đặt' },
-  { id: 'ql-nurses', to: '/patient/nurses', icon: 'user', title: 'Điều dưỡng tin cậy', subtitle: 'Hồ sơ đã được bệnh viện xác minh' },
+  { id: 'ql-bookings', to: '/patient/bookings', icon: 'calendar', title: 'Lịch chăm sóc', subtitle: 'Xem ca chăm sóc theo tuần' },
+  { id: 'ql-nurses', to: '/patient/nurses', icon: 'user', title: 'Điều dưỡng tin cậy', subtitle: 'Điều dưỡng đã từng chăm sóc bạn' },
   { id: 'ql-family', to: '/patient/family', icon: 'users', title: 'Người thân liên kết', subtitle: 'Người nhận cảnh báo SOS' },
 ]

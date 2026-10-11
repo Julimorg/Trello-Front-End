@@ -70,6 +70,10 @@ export const patientTheme = createTheme({
     MuiCard: { styleOverrides: { root: { borderRadius: 16, borderColor: line } } },
     MuiChip: { styleOverrides: { root: { fontWeight: 650 } } },
     MuiCheckbox: { defaultProps: { color: 'primary' } },
+    // No pulsing focus ripple / focus ring on buttons and filter controls after a click.
+    MuiButtonBase: { defaultProps: { disableRipple: false, focusRipple: false } },
+    MuiMenu: { defaultProps: { autoFocus: false, disableAutoFocusItem: true } },
+    MuiMenuItem: { styleOverrides: { root: { '&.Mui-focusVisible': { backgroundColor: 'transparent' }, '&.Mui-selected.Mui-focusVisible': { backgroundColor: 'rgba(11,107,104,.08)' } } } },
     MuiPaginationItem: { styleOverrides: { root: { fontWeight: 650 } } },
     MuiStepLabel: { styleOverrides: { label: { fontSize: '0.74rem' } } },
   },

@@ -61,7 +61,11 @@ export default function NurseRequestActions({ careRequest, patientName }) {
   const minutesLeft = Math.min(windowMinutes, Math.ceil((askedAt.valueOf() + windowMinutes * 60000 - now) / 60000))
 
   const accept = () => {
-    respondToCareRequest(careRequest.id, 'accept')
+    const { conflict } = respondToCareRequest(careRequest.id, 'accept')
+    if (conflict) {
+      message.error(`Bạn đã có ca trùng giờ vào ${dayjs(conflict.session.date).format('DD/MM/YYYY')} (${conflict.session.start}–${conflict.session.end}). Hãy từ chối hoặc đổi lịch ca kia trước.`)
+      return
+    }
     message.success(`Đã nhận ca của ${patientName}. Bệnh nhân đã được thông báo.`)
   }
   const decline = (reason) => {

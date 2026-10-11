@@ -27,7 +27,6 @@ export default function PatientEditModal({ open, patient, onClose }) {
       bloodType: patient.bloodType,
       allergies: patient.allergies,
       conditions: patient.conditions,
-      insuranceNumber: patient.insuranceNumber,
       verified: Boolean(patient.account?.verified),
       verifiedBy: patient.account?.verifiedBy || VERIFY_METHODS[2],
     })
@@ -46,7 +45,6 @@ export default function PatientEditModal({ open, patient, onClose }) {
       bloodType: v.bloodType,
       allergies: v.allergies?.trim() || 'Không',
       conditions: v.conditions?.trim() || '',
-      insuranceNumber: v.insuranceNumber?.trim() || '',
       account: { ...patient.account, verified: v.verified, verifiedBy: v.verified ? v.verifiedBy : null },
     })
     message.success('Đã lưu thông tin bệnh nhân')
@@ -106,12 +104,7 @@ export default function PatientEditModal({ open, patient, onClose }) {
               <Select options={BLOOD_TYPES.map((b) => ({ value: b, label: b }))} />
             </Form.Item>
           </Col>
-          <Col xs={12} md={8}>
-            <Form.Item name="insuranceNumber" label="Số BHYT">
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={10}>
+          <Col xs={24} md={18}>
             <Form.Item name="allergies" label="Dị ứng">
               <Input />
             </Form.Item>

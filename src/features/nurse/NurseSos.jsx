@@ -77,7 +77,8 @@ export default function NurseSos({ nurseId }) {
         }}
       >
         <span ref={ringRef} className="patient-sos-ring" aria-hidden="true" />
-        <span className="patient-sos-label">SOS</span> Khẩn cấp
+        <span className="patient-sos-label">SOS</span>
+        <span className="patient-sos-word"> Khẩn cấp</span>
       </button>
       <Modal open={open} onCancel={() => setOpen(false)} footer={null} centered width={460} title={null}>
         <Flex vertical align="center" gap={4} style={{ textAlign: 'center', marginBottom: 16 }}>

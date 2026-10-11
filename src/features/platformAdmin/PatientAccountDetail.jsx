@@ -94,7 +94,6 @@ export default function PatientAccountDetail() {
                 { key: 'blood', label: 'Nhóm máu', children: patient.bloodType || '—' },
                 { key: 'allergy', label: 'Dị ứng', children: patient.allergies && patient.allergies !== 'Không' ? <Tag color="red">{patient.allergies}</Tag> : 'Không' },
                 { key: 'cond', label: 'Bệnh nền', children: patient.conditions || '—' },
-                { key: 'bhyt', label: 'Số BHYT', children: patient.insuranceNumber || '—' },
               ]}
             />
             <Descriptions
