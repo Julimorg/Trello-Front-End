@@ -66,7 +66,9 @@ export const patientTheme = createTheme({
         paper: { borderRadius: 22, boxShadow: '0 30px 90px rgba(0,20,28,.25)' },
       },
     },
-    MuiBackdrop: { styleOverrides: { root: { backgroundColor: 'rgba(9,29,34,.62)', backdropFilter: 'blur(4px)' } } },
+    // Only real dialogs dim and blur the page. Menus / popovers (select dropdowns, date pickers) use an
+    // invisible backdrop that must stay transparent, otherwise opening a filter blurs the whole screen.
+    MuiBackdrop: { styleOverrides: { root: { '&:not(.MuiBackdrop-invisible)': { backgroundColor: 'rgba(9,29,34,.62)', backdropFilter: 'blur(4px)' } } } },
     MuiCard: { styleOverrides: { root: { borderRadius: 16, borderColor: line } } },
     MuiChip: { styleOverrides: { root: { fontWeight: 650 } } },
     MuiCheckbox: { defaultProps: { color: 'primary' } },
