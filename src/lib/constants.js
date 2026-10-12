@@ -98,12 +98,14 @@ export const BOOKING_STATUS = {
   CONFIRMED: 'confirmed',
   IN_PROGRESS: 'in_progress',
   COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
 }
 
 export const BOOKING_STATUS_LABEL = {
   [BOOKING_STATUS.CONFIRMED]: { label: 'Đã xác nhận', tone: 'success' },
   [BOOKING_STATUS.IN_PROGRESS]: { label: 'Đang thực hiện', tone: 'info' },
   [BOOKING_STATUS.COMPLETED]: { label: 'Hoàn tất', tone: 'neutral' },
+  [BOOKING_STATUS.CANCELLED]: { label: 'Đã hủy', tone: 'danger' },
 }
 
 export const SOS_TYPES = {

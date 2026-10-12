@@ -101,6 +101,7 @@ export function listNurseRequests(state, nurseId) {
 }
 
 export function computeBookingStatus(booking) {
+  if (!booking.sessions.length) return BOOKING_STATUS.CANCELLED
   const today = dayjs().format('YYYY-MM-DD')
   const relevant = booking.sessions.filter((s) => s.status !== SESSION_STATUS.CANNOT_PERFORM)
   const allCompleted = relevant.length > 0 && relevant.every((s) => s.status === SESSION_STATUS.COMPLETED || s.date < today)
@@ -379,6 +380,8 @@ export function findScheduleConflicts(state, owner, request) {
   const conflicts = []
   state.bookings.forEach((b) => {
     if (owner.patientId && b.patientId !== owner.patientId) return
+    // Visits of a request that was cancelled no longer occupy the calendar.
+    if (state.careRequests.find((c) => c.id === b.careRequestId)?.status === CARE_REQUEST_STATUS.CANCELLED) return
     b.sessions.forEach((s) => {
       if (owner.nurseId && s.nurseId !== owner.nurseId) return
       if (s.status === SESSION_STATUS.CANNOT_PERFORM) return
@@ -427,9 +430,15 @@ export function selectNurseForCareRequest(careRequestId, nurseId) {
 export function respondToCareRequest(careRequestId, decision, { reason } = {}) {
   let bookingId = null
   let conflict = null
+  let stale = false
   setState((state) => {
     const careRequest = getCareRequest(state, careRequestId)
     if (!careRequest || !careRequest.selectedNurseId) return state
+    // The patient may have cancelled (or someone else answered) while this screen was open.
+    if (careRequest.status !== CARE_REQUEST_STATUS.NURSE_PENDING) {
+      stale = true
+      return state
+    }
     const nurseId = careRequest.selectedNurseId
     const nurse = getNurse(state, nurseId)
 
@@ -524,7 +533,7 @@ export function respondToCareRequest(careRequestId, decision, { reason } = {}) {
       ),
     }
   })
-  return { bookingId, conflict }
+  return { bookingId, conflict, stale }
 }
 
 // ---------- Session (one visit) ----------
@@ -624,6 +633,43 @@ export function reportCannotPerform({ bookingId, sessionId, reason }) {
     }
   })
 }
+
+// The patient cancels upcoming visits (a day, or all that remain). Cancelled visits leave the calendar
+// for everyone — patient, nurse and hospital — and are kept on the booking as history. When nothing is
+// left the request is cancelled too.
+export function cancelSessions(bookingId, sessionIds, reason = '') {
+  setState((state) => {
+    const booking = getBooking(state, bookingId)
+    if (!booking) return state
+    const today = dayjs().format('YYYY-MM-DD')
+    const targets = booking.sessions.filter((s) => sessionIds.includes(s.id) && !isVisitDone(s, today) && s.date >= today)
+    if (!targets.length) return state
+    const patient = getPatient(state, booking.patientId)
+    const ids = new Set(targets.map((s) => s.id))
+    const sessions = booking.sessions.filter((s) => !ids.has(s.id))
+    const cancelledSessions = [
+      ...(booking.cancelledSessions || []),
+      ...targets.map((s) => ({ id: s.id, date: s.date, start: s.start, end: s.end, nurseId: s.nurseId, cancelledAt: now(), reason })),
+    ]
+    const label = targets.length === 1 ? `buổi chăm sóc ngày ${dayjs(targets[0].date).format('DD/MM')} (${targets[0].start}–${targets[0].end})` : `${targets.length} buổi chăm sóc còn lại`
+    new Set(targets.map((s) => s.nurseId)).forEach((nurseId) => {
+      const nurse = getNurse(state, nurseId)
+      if (!nurse) return
+      const text = `${patient?.name || 'Bệnh nhân'} đã hủy ${label}.${reason ? ` Lý do: ${reason}` : ''}`
+      notify(state, { role: 'nurse', targetId: nurseId, message: text, link: '/hospital/nurse/schedule' })
+      notify(state, { role: 'hospital', targetId: nurse.hospitalId, message: text })
+    })
+    return {
+      ...state,
+      bookings: state.bookings.map((b) => (b.id === bookingId ? { ...b, sessions, cancelledSessions } : b)),
+      careRequests: sessions.length
+        ? state.careRequests
+        : state.careRequests.map((c) => (c.id === booking.careRequestId ? { ...c, status: CARE_REQUEST_STATUS.CANCELLED, cancelledAt: now() } : c)),
+    }
+  })
+}
+
+export const cancelSession = (bookingId, sessionId, reason) => cancelSessions(bookingId, [sessionId], reason)
 
 export function requestReschedule({ bookingId, sessionId, note }) {
   setState((state) => {

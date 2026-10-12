@@ -230,7 +230,7 @@ export const CARE_REQUESTS: CareRequest[] = [
     desiredStartDate: dayOffset(2),
     frequency: 'weekly',
     weekdays: [weekdayAt(2), weekdayAt(4)],
-    timeSlot: { start: '18:30', end: '20:00' },
+    timeSlot: { start: '19:00', end: '20:30' },
     notes: 'Tiếp tục tập vận động sau đợt điều trị trước.',
     status: 'nurse_pending',
     matchedNurseIds: ['nurse-hoa', 'nurse-phuc'],

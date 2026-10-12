@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import PageHead from '../../components/PageHead'
+import BackButton from '../../components/BackButton'
 import EmptyState from '../../components/EmptyState'
 import StatusBadge from '../../components/StatusBadge'
 import { useAuth } from '../../auth/AuthContext'
@@ -56,9 +57,7 @@ export default function PatientNurseDetail() {
         action={
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <TrustNurseButton nurse={nurse} />
-            <Button variant="outlined" startIcon={<span aria-hidden="true">←</span>} onClick={() => navigate(-1)}>
-              Quay lại
-            </Button>
+            <BackButton fallback="/patient/nurses" />
           </div>
         }
       />

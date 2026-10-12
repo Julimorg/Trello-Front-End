@@ -50,17 +50,13 @@ export default function BookingList() {
     setTo(to.add(direction * spanDays, 'day'))
     setPicked(null)
   }
-  const changeFrom = (v) => {
+  // Picking a date jumps to the week (Mon–Sun) that contains it and shows that day.
+  const jumpTo = (v) => {
     if (!v || !v.isValid()) return
-    setFrom(v)
-    if (to.isBefore(v, 'day')) setTo(v.add(6, 'day'))
-    setPicked(null)
-  }
-  const changeTo = (v) => {
-    if (!v || !v.isValid()) return
-    setTo(v)
-    if (from.isAfter(v, 'day')) setFrom(v.subtract(6, 'day'))
-    setPicked(null)
+    const start = mondayOf(v)
+    setFrom(start)
+    setTo(start.add(6, 'day'))
+    setPicked(v.format('YYYY-MM-DD'))
   }
   const thisWeek = () => {
     setFrom(mondayOf(dayjs()))
@@ -75,8 +71,7 @@ export default function BookingList() {
       <PageHead eyebrow="Booking & scheduling" title="Lịch chăm sóc của bạn" description="Chọn khoảng ngày và bấm vào một ngày để xem các ca chăm sóc, cả ca đã qua và ca sắp tới." />
 
       <div className="week-range">
-        <DatePicker label="Từ ngày" value={from} onChange={changeFrom} format="DD/MM/YYYY" slotProps={{ textField: { size: 'small' } }} />
-        <DatePicker label="Đến ngày" value={to} onChange={changeTo} format="DD/MM/YYYY" minDate={from} slotProps={{ textField: { size: 'small' } }} />
+        <DatePicker label="Đến ngày" value={pickedActive ? dayjs(pickedActive) : to} onChange={jumpTo} format="DD/MM/YYYY" slotProps={{ textField: { size: 'small' } }} />
         <Button variant="outlined" size="small" onClick={thisWeek}>
           Tuần này
         </Button>

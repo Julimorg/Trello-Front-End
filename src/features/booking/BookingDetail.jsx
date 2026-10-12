@@ -8,13 +8,14 @@ import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import TextField from '@mui/material/TextField'
 import PageHead from '../../components/PageHead'
+import BackButton from '../../components/BackButton'
 import EmptyState from '../../components/EmptyState'
 import StatusBadge from '../../components/StatusBadge'
 import PatientConfirmDialog from '../../patient/PatientConfirmDialog'
 import CareProgress from './CareProgress'
 import { useToast } from '../../components/ToastProvider'
 import { useDb } from '../../lib/store'
-import { computeBookingStatus, getBooking, getCareRequest, getHospital, getNurse, getPatient, requestReschedule } from '../../lib/db'
+import { cancelSessions, computeBookingStatus, getBooking, getCareRequest, getHospital, getNurse, getPatient } from '../../lib/db'
 import { careTypeLabel, formatDate } from '../../lib/format'
 import { BOOKING_STATUS_LABEL, SESSION_STATUS } from '../../lib/constants'
 import { CARE_PLANS } from '../../Data/patient/care-progress-data'
@@ -53,7 +54,7 @@ function Fact({ icon, label, children }) {
 }
 
 // One visit, expandable: what was done, the nurse's note and measurements.
-function SessionRow({ session, index, total, careType, nurse, today, onReschedule }) {
+function SessionRow({ session, index, total, careType, nurse, today, onCancel }) {
   const [open, setOpen] = useState(false)
   const work = visitWork(session, careType)
   const done = isDone(session, today)
@@ -85,8 +86,8 @@ function SessionRow({ session, index, total, careType, nurse, today, onReschedul
         <div className="day-session-side">
           <StatusBadge label={visitBadge(session, today).label} tone={visitBadge(session, today).tone} />
           {session.date >= today && !done && (
-            <Button size="small" onClick={() => onReschedule(session)}>
-              Đổi lịch
+            <Button size="small" color="error" onClick={() => onCancel(session)}>
+              Hủy buổi
             </Button>
           )}
           {canExpand && (
@@ -141,7 +142,8 @@ export default function BookingDetail() {
   const state = useDb()
   const listRef = useRef(null)
   const booking = getBooking(state, id)
-  const [rescheduleSession, setRescheduleSession] = useState(null)
+  // { ids, label } — which visits the patient is about to cancel
+  const [cancelTarget, setCancelTarget] = useState(null)
   const [note, setNote] = useState('')
   const tab = TABS.some((t) => t.value === params.get('tab')) ? params.get('tab') : 'process'
 
@@ -150,7 +152,7 @@ export default function BookingDetail() {
   if (!booking) {
     return (
       <section className="panel">
-        <EmptyState icon={<Icon.calendar />} title="Không tìm thấy lịch chăm sóc này" />
+        <EmptyState icon={<Icon.calendar />} title="Không tìm thấy lịch chăm sóc này" action={<BackButton fallback="/patient/bookings" />} />
       </section>
     )
   }
@@ -165,6 +167,7 @@ export default function BookingDetail() {
   const careType = careRequest?.careType
   const plan = CARE_PLANS[careType] || CARE_PLANS.other
   const status = computeBookingStatus(booking)
+  const upcomingLeft = sessions.filter((x) => x.date >= today && !isDone(x, today))
   const allTasks = visitWork(sessions[0] || {}, careType).tasks
   const doneSessions = sessions.filter((s) => isDone(s, today))
   const taskTotals = doneSessions.reduce(
@@ -181,7 +184,12 @@ export default function BookingDetail() {
         eyebrow="Booking & scheduling"
         title={`${careType ? careTypeLabel(careType) : 'Lịch chăm sóc'} · ${nurse?.name || ''}`}
         description={`${hospital?.name || ''} · Mã lịch ${booking.id}`}
-        action={<StatusBadge status={status} labelMap={BOOKING_STATUS_LABEL} />}
+        action={
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <StatusBadge status={status} labelMap={BOOKING_STATUS_LABEL} />
+            <BackButton fallback="/patient/bookings" />
+          </div>
+        }
       />
 
       <section className="panel panel-body booking-overview" style={{ marginBottom: 20 }}>
@@ -251,14 +259,42 @@ export default function BookingDetail() {
                 <h2>{sessions.length} buổi chăm sóc</h2>
                 <p>Bấm “Xem chi tiết” để xem công việc đã làm và diễn biến mà điều dưỡng ghi nhận.</p>
               </div>
+              {upcomingLeft.length > 0 && (
+                <Button
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  onClick={() => {
+                    setCancelTarget({ ids: upcomingLeft.map((x) => x.id), label: upcomingLeft.length === 1 ? `buổi chăm sóc ngày ${formatDate(upcomingLeft[0].date)}` : `${upcomingLeft.length} buổi chăm sóc còn lại` })
+                    setNote('')
+                  }}
+                >
+                  Hủy các buổi còn lại
+                </Button>
+              )}
             </div>
             <div className="visit-list" ref={listRef}>
               {sessions.map((s, i) => (
-                <SessionRow key={s.id} session={s} index={i} total={sessions.length} careType={careType} nurse={getNurse(state, s.nurseId)} today={today} onReschedule={(x) => { setRescheduleSession(x); setNote('') }} />
+                <SessionRow key={s.id} session={s} index={i} total={sessions.length} careType={careType} nurse={getNurse(state, s.nurseId)} today={today} onCancel={(x) => { setCancelTarget({ ids: [x.id], label: `buổi chăm sóc ngày ${formatDate(x.date)} (${x.start}–${x.end})` }); setNote('') }} />
               ))}
             </div>
           </section>
 
+          {(booking.cancelledSessions || []).length > 0 && (
+            <section className="panel panel-body" style={{ marginBottom: 20 }}>
+              <h3 className="detail-heading" style={{ marginTop: 0 }}>
+                Buổi đã hủy
+              </h3>
+              <div className="stack-gap-8">
+                {booking.cancelledSessions.map((c) => (
+                  <p key={c.id} className="detail-text">
+                    {formatDate(c.date)} · {c.start}–{c.end} · hủy lúc {dayjs(c.cancelledAt).format('HH:mm DD/MM')}
+                    {c.reason ? ` · ${c.reason}` : ''}
+                  </p>
+                ))}
+              </div>
+            </section>
+          )}
         </>
       )}
 
@@ -417,19 +453,19 @@ export default function BookingDetail() {
       </p>
 
       <PatientConfirmDialog
-        open={!!rescheduleSession}
-        title="Yêu cầu đổi lịch"
-        description={rescheduleSession ? `Gửi yêu cầu đổi lịch cho buổi ${formatDate(rescheduleSession.date)} tới bệnh viện.` : ''}
-        confirmLabel="Gửi yêu cầu"
-        confirmDisabled={!note.trim()}
-        onClose={() => setRescheduleSession(null)}
+        open={!!cancelTarget}
+        title="Hủy lịch chăm sóc?"
+        description={cancelTarget ? `Bạn sẽ hủy ${cancelTarget.label}. Điều dưỡng và bệnh viện sẽ được thông báo, lịch này sẽ được giải phóng.` : ''}
+        confirmLabel="Xác nhận hủy"
+        confirmColor="error"
+        onClose={() => setCancelTarget(null)}
         onConfirm={() => {
-          requestReschedule({ bookingId: booking.id, sessionId: rescheduleSession.id, note })
-          setRescheduleSession(null)
-          toast('Đã gửi yêu cầu đổi lịch', 'Bệnh viện sẽ liên hệ để xác nhận thời gian mới.')
+          cancelSessions(booking.id, cancelTarget.ids, note.trim())
+          setCancelTarget(null)
+          toast('Đã hủy lịch', 'Điều dưỡng và bệnh viện đã được thông báo.')
         }}
       >
-        <TextField autoFocus fullWidth multiline minRows={3} label="Lý do / thời gian mong muốn" value={note} onChange={(e) => setNote(e.target.value)} />
+        <TextField fullWidth multiline minRows={2} label="Lý do (không bắt buộc)" value={note} onChange={(e) => setNote(e.target.value)} />
       </PatientConfirmDialog>
     </>
   )

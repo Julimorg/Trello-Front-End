@@ -32,7 +32,7 @@ function buildHistory(state, careRequest, nurseId, booking) {
   if (booking) {
     items.push({ at: booking.createdAt, color: 'green', text: `Bạn đã nhận ca · lịch ${booking.sessions.length} buổi được tạo` })
     const finished = booking.sessions.filter((s) => s.status === SESSION_STATUS.COMPLETED)
-    if (finished.length === booking.sessions.length) {
+    if (booking.sessions.length > 0 && finished.length === booking.sessions.length) {
       const last = booking.sessions[booking.sessions.length - 1]
       items.push({ at: last.completedAt || `${last.date}T${last.end}:00`, color: 'green', text: 'Hoàn thành toàn bộ liệu trình' })
     }
