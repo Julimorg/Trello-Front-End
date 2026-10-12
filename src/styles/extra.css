@@ -2712,3 +2712,19 @@ button.link-reset {
 .nurse-card-top .verified {
   display: flex;
 }
+
+.conflict-list {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.conflict-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+}

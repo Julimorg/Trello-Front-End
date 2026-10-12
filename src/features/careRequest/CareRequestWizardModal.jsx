@@ -17,7 +17,7 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker'
 import PatientThemeProvider from '../../patient/PatientThemeProvider'
 import { useToast } from '../../components/ToastProvider'
 import { useDb } from '../../lib/store'
-import { createCareRequest, getPatient, getPatientConflicts } from '../../lib/db'
+import { cancelSessions, createCareRequest, getCareRequest, getNurse, getPatient, getPatientConflicts } from '../../lib/db'
 import { CARE_TYPES, DISTRICTS, FREQUENCIES, WEEKDAYS } from '../../lib/constants'
 import { careTypeLabel, weekdayLabel } from '../../lib/format'
 import { CARE_OPTION_META } from '../../Data/patient/care-request-data'
@@ -242,16 +242,38 @@ function WizardContent({ open, onClose, patientId, createdBy, onCreated }) {
             />
             {conflicts.length > 0 && (
               <Alert severity="warning" className="field-full" sx={{ borderRadius: '12px' }}>
-                Bạn đã có lịch chăm sóc trùng giờ:
-                <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
-                  {conflicts.slice(0, 3).map(({ session, booking }) => (
-                    <li key={session.id}>
-                      {dayjs(session.date).format('DD/MM/YYYY')} · {session.start}–{session.end} ({booking.id})
-                    </li>
-                  ))}
+                Khung giờ này đang có lịch chăm sóc đã xác nhận (lịch đã hủy không bị tính):
+                <ul className="conflict-list">
+                  {conflicts.slice(0, 3).map(({ session, booking }) => {
+                    const request = getCareRequest(db, booking.careRequestId)
+                    return (
+                      <li key={session.id}>
+                        <span>
+                          <b>
+                            {dayjs(session.date).format('DD/MM/YYYY')} · {session.start}–{session.end}
+                          </b>
+                          <br />
+                          {request ? careTypeLabel(request.careType) : 'Buổi chăm sóc'} · {getNurse(db, session.nurseId)?.name} · lịch {booking.id}
+                        </span>
+                        {createdBy === 'patient' && (
+                          <Button
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            onClick={() => {
+                              cancelSessions(booking.id, [session.id], 'Hủy để đặt lịch khác')
+                              toast('Đã hủy buổi chăm sóc', `${dayjs(session.date).format('DD/MM/YYYY')} · ${session.start}–${session.end} đã được giải phóng.`)
+                            }}
+                          >
+                            Hủy buổi này
+                          </Button>
+                        )}
+                      </li>
+                    )
+                  })}
                   {conflicts.length > 3 && <li>và {conflicts.length - 3} buổi khác</li>}
                 </ul>
-                Hãy chọn ngày hoặc khung giờ khác.
+                Hủy buổi trùng hoặc chọn ngày / khung giờ khác để tiếp tục.
               </Alert>
             )}
             <FormControlLabel
