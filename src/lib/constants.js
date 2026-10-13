@@ -74,7 +74,7 @@ export const NURSE_AUTH_STATUS = {
 }
 
 export const NURSE_AUTH_STATUS_LABEL = {
-  [NURSE_AUTH_STATUS.DRAFT]: { label: 'Chờ xác minh', tone: 'pending' },
+  [NURSE_AUTH_STATUS.DRAFT]: { label: 'Chờ cấp phép', tone: 'pending' },
   [NURSE_AUTH_STATUS.AUTHORIZED]: { label: 'Đã cấp phép', tone: 'success' },
   [NURSE_AUTH_STATUS.SUSPENDED]: { label: 'Tạm ngưng', tone: 'pending' },
   [NURSE_AUTH_STATUS.REVOKED]: { label: 'Đã thu hồi', tone: 'danger' },

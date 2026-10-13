@@ -48,10 +48,10 @@ export default function HospitalOverview() {
 
   const attention = [
     { key: 'sos', to: '/hospital/admin/sos-log', icon: <AlertOutlined />, color: '#cf3c43', title: `${openSos.length} cảnh báo SOS chưa xử lý xong`, hint: 'Xem ghi chú và cập nhật xử lý', show: openSos.length > 0 },
-    { key: 'reassign', to: '/hospital/admin/requests', icon: <SwapOutlined />, color: '#cf3c43', title: `${needsReassign.length} ca cần người thay thế`, hint: 'Điều dưỡng báo không thể thực hiện', show: needsReassign.length > 0 },
-    { key: 'verify', to: '/hospital/admin/verification', icon: <SafetyCertificateOutlined />, color: '#b96b08', title: `${drafts.length} hồ sơ chờ xác minh`, hint: 'Đối chiếu chứng chỉ trước khi cấp phép', show: drafts.length > 0 },
+    { key: 'reassign', to: '/hospital/admin/dispatch', icon: <SwapOutlined />, color: '#cf3c43', title: `${needsReassign.length} ca cần người thay thế`, hint: 'Điều dưỡng báo không thể thực hiện', show: needsReassign.length > 0 },
+    { key: 'verify', to: '/hospital/admin/roster?status=draft', icon: <SafetyCertificateOutlined />, color: '#b96b08', title: `${drafts.length} hồ sơ chờ cấp phép`, hint: 'Kiểm tra hồ sơ rồi cấp phép nhận ca', show: drafts.length > 0 },
     { key: 'cert', to: '/hospital/admin/roster', icon: <WarningOutlined />, color: '#b96b08', title: `${expiredCerts.length} điều dưỡng có chứng chỉ hết hạn / sắp hết hạn`, hint: 'Cập nhật chứng chỉ trong hồ sơ', show: expiredCerts.length > 0 },
-    { key: 'schedule', to: '/hospital/admin/schedule', icon: <CalendarOutlined />, color: '#0b6b68', title: `${todaySessions.length} ca hôm nay`, hint: 'Xem điều phối lịch', show: true },
+    { key: 'schedule', to: '/hospital/admin/dispatch', icon: <CalendarOutlined />, color: '#0b6b68', title: `${todaySessions.length} ca hôm nay`, hint: 'Xem điều phối lịch', show: true },
   ].filter((a) => a.show)
 
   return (
@@ -74,7 +74,7 @@ export default function HospitalOverview() {
           <Metric to="/hospital/admin/roster" title="Điều dưỡng" value={nurses.length} hint={`${authorized.length} đang được cấp phép`} icon={<TeamOutlined />} color="#0b6b68" />
         </Col>
         <Col xs={12} lg={6}>
-          <Metric to="/hospital/admin/verification" title="Chờ xác minh" value={drafts.length} hint="Hồ sơ cần đối chiếu" icon={<SafetyCertificateOutlined />} color="#b96b08" />
+          <Metric to="/hospital/admin/roster?status=draft" title="Chờ cấp phép" value={drafts.length} hint="Hồ sơ cần đối chiếu" icon={<SafetyCertificateOutlined />} color="#b96b08" />
         </Col>
         <Col xs={12} lg={6}>
           <Metric to="/hospital/admin/schedule" title="Ca hôm nay" value={todaySessions.length} hint={`${sessions.filter((s) => s.date > today).length} ca sắp tới`} icon={<CalendarOutlined />} color="#2b69c9" />

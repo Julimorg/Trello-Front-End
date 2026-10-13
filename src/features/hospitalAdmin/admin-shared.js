@@ -3,11 +3,14 @@ import dayjs from 'dayjs'
 // Shared labels/colours/helpers for the hospital admin portal (Ant Design preset colours).
 
 export const AUTH_META = {
-  draft: { label: 'Chờ xác minh', color: 'gold' },
+  draft: { label: 'Chờ cấp phép', color: 'gold' },
   authorized: { label: 'Đã cấp phép', color: 'green' },
   suspended: { label: 'Tạm ngưng', color: 'orange' },
   revoked: { label: 'Đã thu hồi', color: 'red' },
 }
+
+// A saved-but-unfinished profile ("Lưu nháp") is shown as a draft whatever its licence status.
+export const nurseAuthMeta = (nurse) => (nurse.isDraft ? { label: 'Bản nháp', color: 'default' } : AUTH_META[nurse.authStatus])
 
 export const SOS_STATUS_META = {
   open: { label: 'Chưa xử lý', color: 'red' },

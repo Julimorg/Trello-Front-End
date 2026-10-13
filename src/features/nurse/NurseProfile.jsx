@@ -273,7 +273,7 @@ export default function NurseProfile() {
       size="small"
       rowKey="id"
       pagination={false}
-      locale={{ emptyText: 'Chưa có khung giờ rảnh' }}
+      locale={{ emptyText: 'Chưa có lịch tham gia' }}
       dataSource={[...nurse.availability].sort((a, b) => ((a.weekday + 6) % 7) - ((b.weekday + 6) % 7))}
       columns={[
         { title: 'Ngày', dataIndex: 'weekday', render: weekdayLabel },
@@ -289,7 +289,7 @@ export default function NurseProfile() {
           },
         },
       ]}
-      footer={() => <Text type="secondary">Tối đa {detail.maxSessionsPerWeek} ca/tuần · Lịch rảnh do bệnh viện phê duyệt trước khi đưa vào Nurse Matching.</Text>}
+      footer={() => <Text type="secondary">Tối đa {detail.maxSessionsPerWeek} ca/tuần · Lịch tham gia do bệnh viện phê duyệt trước khi đưa vào Nurse Matching.</Text>}
     />
   )
 
@@ -359,7 +359,7 @@ export default function NurseProfile() {
             { key: 'license', label: 'Giấy phép & chứng chỉ', children: license },
             { key: 'experience', label: 'Học vấn & kinh nghiệm', children: experience },
             { key: 'expertise', label: 'Chuyên môn & kỹ năng', children: expertise },
-            { key: 'availability', label: 'Lịch rảnh', children: availability },
+            { key: 'availability', label: 'Lịch tham gia', children: availability },
           ]}
         />
       </Card>

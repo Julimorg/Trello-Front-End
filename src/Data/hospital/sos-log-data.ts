@@ -42,7 +42,7 @@ export const HOSPITAL_SOS_EVENTS: SosEvent[] = [
     sessionId: 'bk-3102-s5',
     nurseId: 'nurse-hoa',
     triggeredBy: 'nurse',
-    type: 'call_115',
+    type: 'notify_hospital',
     contactIds: [],
     note: 'Bệnh nhân trượt ngã khi tập đi, đau cổ tay phải, nghi gãy xương. Đã cố định tạm và gọi 115.',
     location: { lat: 10.8506, lng: 106.7719 },

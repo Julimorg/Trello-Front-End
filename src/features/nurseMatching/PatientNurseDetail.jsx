@@ -152,7 +152,7 @@ export default function PatientNurseDetail() {
           </section>
           <section className="panel panel-body">
             <h3 className="detail-heading" style={{ marginTop: 0 }}>
-              Lịch rảnh ngoài giờ trực
+              Lịch tham gia chăm sóc
             </h3>
             {nurse.availability.length === 0 && <p className="detail-text">Chưa cập nhật</p>}
             {nurse.availability.map((a) => (

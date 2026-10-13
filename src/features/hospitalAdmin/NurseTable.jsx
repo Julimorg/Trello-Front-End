@@ -1,15 +1,14 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Avatar, Button, Card, Flex, Input, Select, Space, Table, Tag, Tooltip, Typography } from 'antd'
 import { EyeOutlined, PlusOutlined, SearchOutlined, WarningOutlined } from '@ant-design/icons'
 import PageHead from '../../components/PageHead'
-import NurseAddModal from './NurseAddModal'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
 import { listNursesByHospital } from '../../lib/db'
 import { careTypeLabel } from '../../lib/format'
 import { CARE_TYPES, DISTRICTS } from '../../lib/constants'
-import { AUTH_META, certificateStatus, compareByGivenName, initials } from './admin-shared'
+import { AUTH_META, certificateStatus, compareByGivenName, initials, nurseAuthMeta } from './admin-shared'
 
 const { Text } = Typography
 const normalize = (t) =>
@@ -23,9 +22,9 @@ export default function NurseTable() {
   const { session } = useAuth()
   const state = useDb()
   const navigate = useNavigate()
-  const [addOpen, setAddOpen] = useState(false)
+  const [params] = useSearchParams()
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState(null)
+  const [status, setStatus] = useState(AUTH_META[params.get('status')] ? params.get('status') : null)
   const [careType, setCareType] = useState(null)
   const [area, setArea] = useState(null)
 
@@ -79,6 +78,23 @@ export default function NurseTable() {
     },
     { title: 'Khu vực', key: 'areas', width: 170, render: (_, n) => n.serviceAreas.join(', ') },
     {
+      title: 'Lịch tham gia',
+      key: 'schedule',
+      width: 150,
+      sorter: (a, b) => a.availability.length - b.availability.length,
+      render: (_, n) =>
+        n.availability.length === 0 ? (
+          <Tag color="red">Thiếu</Tag>
+        ) : (
+          <Text>
+            {[...n.availability]
+              .sort((a, b) => ((a.weekday + 6) % 7) - ((b.weekday + 6) % 7))
+              .map((a) => (a.weekday === 0 ? 'CN' : `T${a.weekday + 1}`))
+              .join(', ')}
+          </Text>
+        ),
+    },
+    {
       title: 'Chứng chỉ',
       key: 'certs',
       width: 130,
@@ -104,7 +120,10 @@ export default function NurseTable() {
       title: 'Trạng thái',
       key: 'status',
       width: 130,
-      render: (_, n) => <Tag color={AUTH_META[n.authStatus].color}>{AUTH_META[n.authStatus].label}</Tag>,
+      render: (_, n) => {
+        const m = nurseAuthMeta(n)
+        return <Tag color={m.color}>{m.label}</Tag>
+      },
     },
     {
       key: 'actions',
@@ -133,9 +152,9 @@ export default function NurseTable() {
       <PageHead
         eyebrow="Hospital roster"
         title="Danh sách điều dưỡng"
-        description="Quản lý hồ sơ, chứng chỉ, phạm vi hành nghề và trạng thái cấp phép."
+        description="Quản lý hồ sơ, chứng chỉ, lịch tham gia và trạng thái cấp phép."
         action={
-          <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
+          <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => navigate('/hospital/admin/roster/new')}>
             Thêm điều dưỡng
           </Button>
         }
@@ -154,12 +173,11 @@ export default function NurseTable() {
           columns={columns}
           dataSource={rows}
           pagination={{ pageSize: 10, hideOnSinglePage: true }}
-          scroll={{ x: 1060 }}
+          scroll={{ x: 1210 }}
           onRow={(n) => ({ onClick: () => navigate(`/hospital/admin/roster/${n.id}`), style: { cursor: 'pointer' } })}
           locale={{ emptyText: 'Không có điều dưỡng nào khớp bộ lọc' }}
         />
       </Card>
-      <NurseAddModal open={addOpen} onClose={() => setAddOpen(false)} hospitalId={session.id} />
     </>
   )
 }

@@ -250,7 +250,7 @@ export function getAlternativeNurses(state, careRequest, limit = ALTERNATIVE_LIM
             ? { ok: true, label: 'Được cấp phép đúng loại ca' }
             : { ok: false, label: 'Bệnh viện cần xác nhận chuyên môn cho loại ca này' },
           areaOk ? { ok: true, label: `Phục vụ ${careRequest.district}` } : { ok: false, label: `Khu vực gần: ${nurse.serviceAreas.slice(0, 2).join(', ')}` },
-          timeOk ? { ok: true, label: 'Lịch rảnh khớp khung giờ' } : { ok: false, label: 'Cần thỏa thuận lại giờ' },
+          timeOk ? { ok: true, label: 'Lịch tham gia khớp khung giờ' } : { ok: false, label: 'Cần thỏa thuận lại giờ' },
         ],
       }
     })
@@ -735,7 +735,7 @@ export function triggerSOS({ bookingId, sessionId, patientId, nurseId, triggered
       location: location || null,
       createdAt: now(),
     }
-    if (nurse) {
+    if (nurse && triggeredBy === 'nurse') {
       notify(state, {
         role: 'hospital',
         targetId: nurse.hospitalId,
@@ -811,9 +811,10 @@ export function addNurse(hospitalId, data) {
         specialties: data.specialties || [],
         serviceAreas: data.serviceAreas || [],
         authStatus: NURSE_AUTH_STATUS.DRAFT,
+        isDraft: Boolean(data.isDraft),
         authorizedCareTypes: [],
-        certificates: [],
-        availability: [],
+        certificates: (data.certificates || []).map((c) => ({ id: genId('cert'), ...c })),
+        availability: (data.availability || []).map((a) => ({ id: genId('avail'), ...a })),
         completedCases: 0,
         bio: '',
       },
@@ -878,8 +879,10 @@ export function setNurseAuthStatus(nurseId, status, authorizedCareTypes) {
   const state = getState()
   const nurse = getNurse(state, nurseId)
   if (!nurse) return { ok: false, error: 'Không tìm thấy điều dưỡng.' }
-  if (status === NURSE_AUTH_STATUS.AUTHORIZED && nurse.certificates.length === 0) {
-    return { ok: false, error: 'Cần nhập tối thiểu 1 chứng chỉ hành nghề trước khi cấp phép.' }
+  if (status === NURSE_AUTH_STATUS.AUTHORIZED) {
+    if (nurse.isDraft) return { ok: false, error: 'Hồ sơ đang là bản nháp — hãy hoàn tất và bấm “Cập nhật” trước khi cấp phép.' }
+    if (nurse.certificates.length === 0) return { ok: false, error: 'Cần nhập tối thiểu 1 chứng chỉ hành nghề trước khi cấp phép.' }
+    if (nurse.availability.length === 0) return { ok: false, error: 'Cần có lịch tham gia điều dưỡng (ít nhất 1 ngày trong tuần) trước khi cấp phép.' }
   }
   setState((s) => ({
     ...s,

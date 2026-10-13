@@ -2,16 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { App, Badge, Button, Card, Descriptions, Drawer, Flex, Input, Segmented, Space, Table, Tag, Timeline, Typography } from 'antd'
-import { CheckOutlined, EnvironmentOutlined, EyeOutlined, PhoneOutlined, SearchOutlined } from '@ant-design/icons'
+import { CheckOutlined, EnvironmentOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons'
 import PageHead from '../../components/PageHead'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
 import { getBooking, getCareRequest, getPatient, getSosNurse, listSosEventsForHospital, updateSosStatus } from '../../lib/db'
 import { careTypeLabel, formatDate, formatDateTime } from '../../lib/format'
-import { SOS_STATUS_META, SOS_TYPE_META, compareText } from './admin-shared'
+import { SOS_STATUS_META, compareText } from './admin-shared'
 
 const { Text, Paragraph } = Typography
-const tel = (phone) => `tel:${(phone || '').replace(/[^\d+]/g, '')}`
 
 function SosDetailDrawer({ event, open, onClose }) {
   const state = useDb()
@@ -26,7 +25,7 @@ function SosDetailDrawer({ event, open, onClose }) {
   const careRequest = booking ? getCareRequest(state, booking.careRequestId) : null
   const patient = getPatient(state, event.patientId || booking?.patientId)
   const nurse = getSosNurse(state, event)
-  const contacts = (patient?.familyContacts || []).filter((c) => event.contactIds?.includes(c.id))
+  const contacts = patient?.familyContacts || []
 
   const act = (next) => {
     updateSosStatus(event.id, next, note.trim())
@@ -57,7 +56,7 @@ function SosDetailDrawer({ event, open, onClose }) {
     >
       <div className="sos-note-box">
         <Text type="secondary" style={{ fontSize: 12 }}>
-          Ghi chú từ {event.triggeredBy === 'nurse' ? 'điều dưỡng' : 'bệnh nhân / gia đình'}
+          Ghi chú từ điều dưỡng
         </Text>
         <Paragraph style={{ margin: '4px 0 0', fontSize: 15 }}>{event.note || 'Không có ghi chú kèm theo.'}</Paragraph>
       </div>
@@ -69,42 +68,18 @@ function SosDetailDrawer({ event, open, onClose }) {
         style={{ marginTop: 16 }}
         items={[
           { key: 'time', label: 'Thời điểm', children: `${formatDateTime(event.createdAt)} (${dayjs(event.createdAt).fromNow()})` },
-          { key: 'type', label: 'Loại cảnh báo', children: <Tag color={SOS_TYPE_META[event.type]?.color}>{SOS_TYPE_META[event.type]?.label || event.type}</Tag> },
-          { key: 'by', label: 'Người kích hoạt', children: event.triggeredBy === 'nurse' ? `Điều dưỡng ${nurse?.name || ''}` : `Bệnh nhân ${patient?.name || ''}` },
+          { key: 'by', label: 'Người kích hoạt', children: nurse ? <Link to={`/hospital/admin/roster/${nurse.id}`}>Điều dưỡng {nurse.name}</Link> : '—' },
           {
             key: 'patient',
             label: 'Bệnh nhân',
             children: patient ? (
-              <Flex justify="space-between" align="center" gap={8} wrap>
-                <span>
-                  <b>{patient.name}</b>
-                  <br />
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {patient.address} · {patient.phone}
-                  </Text>
-                </span>
-                <a href={tel(patient.phone)}>
-                  <Button size="small" icon={<PhoneOutlined />}>
-                    Gọi
-                  </Button>
-                </a>
-              </Flex>
-            ) : (
-              '—'
-            ),
-          },
-          {
-            key: 'nurse',
-            label: 'Điều dưỡng',
-            children: nurse ? (
-              <Flex justify="space-between" align="center" gap={8} wrap>
-                <Link to={`/hospital/admin/roster/${nurse.id}`}>{nurse.name}</Link>
-                <a href={tel(nurse.phone)}>
-                  <Button size="small" icon={<PhoneOutlined />}>
-                    Gọi
-                  </Button>
-                </a>
-              </Flex>
+              <span>
+                <b>{patient.name}</b>
+                <br />
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  {patient.phone}
+                </Text>
+              </span>
             ) : (
               '—'
             ),
@@ -117,15 +92,38 @@ function SosDetailDrawer({ event, open, onClose }) {
           {
             key: 'loc',
             label: 'Vị trí',
-            children: event.location ? (
-              <a href={`https://www.google.com/maps/search/?api=1&query=${event.location.lat},${event.location.lng}`} target="_blank" rel="noreferrer">
-                <EnvironmentOutlined /> {event.location.lat.toFixed(4)}, {event.location.lng.toFixed(4)} · Mở bản đồ
-              </a>
+            children: patient?.address ? (
+              <span>
+                <EnvironmentOutlined /> {patient.address}
+              </span>
             ) : (
-              <Text type="secondary">Chưa có vị trí GPS</Text>
+              <Text type="secondary">Không có địa chỉ</Text>
             ),
           },
-          { key: 'contacts', label: 'Người thân được báo', children: contacts.length ? contacts.map((c) => <Tag key={c.id}>{`${c.name} · ${c.relation}`}</Tag>) : '—' },
+          {
+            key: 'contacts',
+            label: 'Người thân được báo',
+            children: contacts.length ? (
+              <Flex vertical gap={6}>
+                {contacts.map((c) => (
+                  <span key={c.id}>
+                    <b>{c.name}</b> · {c.relation}
+                    {c.primary && (
+                      <Tag color="gold" style={{ marginLeft: 6 }}>
+                        Ưu tiên
+                      </Tag>
+                    )}
+                    <br />
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {c.phone}
+                    </Text>
+                  </span>
+                ))}
+              </Flex>
+            ) : (
+              <Text type="secondary">Bệnh nhân chưa có người thân liên kết</Text>
+            ),
+          },
         ]}
       />
 
@@ -162,7 +160,7 @@ export default function SosLog() {
   const [search, setSearch] = useState('')
   const openId = params.get('id')
 
-  const events = useMemo(() => listSosEventsForHospital(state, session.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [state, session.id])
+  const events = useMemo(() => listSosEventsForHospital(state, session.id).filter((e) => e.triggeredBy === 'nurse').sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [state, session.id])
   const counts = events.reduce((acc, e) => ({ ...acc, [e.status || 'open']: (acc[e.status || 'open'] || 0) + 1 }), {})
 
   const rows = events
@@ -182,7 +180,6 @@ export default function SosLog() {
     { title: 'Thời điểm', key: 'time', width: 150, sorter: (a, b) => a.event.createdAt.localeCompare(b.event.createdAt), render: (_, r) => <span title={formatDateTime(r.event.createdAt)}>{dayjs(r.event.createdAt).fromNow()}</span> },
     { title: 'Bệnh nhân', key: 'patient', width: 170, sorter: (a, b) => compareText(a.patient?.name, b.patient?.name), render: (_, r) => r.patient?.name || '—' },
     { title: 'Điều dưỡng', key: 'nurse', width: 170, sorter: (a, b) => compareText(a.nurse?.name, b.nurse?.name), render: (_, r) => r.nurse?.name || '—' },
-    { title: 'Loại', key: 'type', width: 190, render: (_, r) => <Tag color={SOS_TYPE_META[r.event.type]?.color}>{SOS_TYPE_META[r.event.type]?.label}</Tag> },
     {
       title: 'Ghi chú',
       key: 'note',
@@ -236,7 +233,7 @@ export default function SosLog() {
 
   return (
     <>
-      <PageHead eyebrow="Emergency" title="Cảnh báo SOS" description="Sự cố khẩn cấp từ các ca chăm sóc của bệnh viện. Bấm “Xem chi tiết” để đọc ghi chú, liên hệ và cập nhật xử lý." />
+      <PageHead eyebrow="Emergency" title="Cảnh báo SOS" description="Sự cố khẩn cấp từ các ca chăm sóc của bệnh viện. Bấm “Xem chi tiết” để đọc ghi chú, thông tin người thân và cập nhật xử lý." />
       <Card className="nurse-toolbar" size="small" style={{ marginBottom: 16 }}>
         <Flex gap={10} wrap justify="space-between">
           <Segmented
@@ -265,7 +262,7 @@ export default function SosLog() {
           columns={columns}
           dataSource={rows}
           pagination={{ pageSize: 10, hideOnSinglePage: true }}
-          scroll={{ x: 1180 }}
+          scroll={{ x: 980 }}
           rowClassName={(r) => ((r.event.status || 'open') === 'open' ? 'sos-row-open' : '')}
           onRow={(r) => ({ onClick: () => setParams({ id: r.event.id }), style: { cursor: 'pointer' } })}
           locale={{ emptyText: 'Không có cảnh báo SOS nào' }}

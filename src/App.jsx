@@ -22,9 +22,9 @@ const HospitalLayout = lazy(() => import('./layouts/HospitalLayout'))
 const HospitalOverview = lazy(() => import('./features/hospitalAdmin/HospitalOverview'))
 const NurseTable = lazy(() => import('./features/hospitalAdmin/NurseTable'))
 const NurseDetail = lazy(() => import('./features/hospitalAdmin/NurseDetail'))
-const HospitalVerification = lazy(() => import('./features/hospitalAdmin/HospitalVerification'))
-const HospitalSchedule = lazy(() => import('./features/hospitalAdmin/HospitalSchedule'))
-const HospitalRequests = lazy(() => import('./features/hospitalAdmin/HospitalRequests'))
+const NurseCreate = lazy(() => import('./features/hospitalAdmin/NurseCreate'))
+const CertificatePage = lazy(() => import('./features/hospitalAdmin/CertificatePage'))
+const HospitalDispatch = lazy(() => import('./features/hospitalAdmin/HospitalDispatch'))
 const NurseOverview = lazy(() => import('./features/nurse/NurseOverview'))
 const NurseRequests = lazy(() => import('./features/nurse/NurseRequests'))
 const NurseSchedule = lazy(() => import('./features/nurse/NurseSchedule'))
@@ -104,6 +104,22 @@ function App() {
             }
           />
           <Route
+            path="admin/roster/new"
+            element={
+              <RoleGate roles={['hospitalAdmin']}>
+                <NurseCreate />
+              </RoleGate>
+            }
+          />
+          <Route
+            path="admin/roster/:id/certificates/:certId"
+            element={
+              <RoleGate roles={['hospitalAdmin']}>
+                <CertificatePage />
+              </RoleGate>
+            }
+          />
+          <Route
             path="admin/roster/:id"
             element={
               <RoleGate roles={['hospitalAdmin']}>
@@ -112,29 +128,16 @@ function App() {
             }
           />
           <Route
-            path="admin/verification"
+            path="admin/dispatch"
             element={
               <RoleGate roles={['hospitalAdmin']}>
-                <HospitalVerification />
+                <HospitalDispatch />
               </RoleGate>
             }
           />
-          <Route
-            path="admin/schedule"
-            element={
-              <RoleGate roles={['hospitalAdmin']}>
-                <HospitalSchedule />
-              </RoleGate>
-            }
-          />
-          <Route
-            path="admin/requests"
-            element={
-              <RoleGate roles={['hospitalAdmin']}>
-                <HospitalRequests />
-              </RoleGate>
-            }
-          />
+          <Route path="admin/schedule" element={<Navigate to="/hospital/admin/dispatch" replace />} />
+          <Route path="admin/requests" element={<Navigate to="/hospital/admin/dispatch" replace />} />
+          <Route path="admin/verification" element={<Navigate to="/hospital/admin/roster?status=draft" replace />} />
           <Route
             path="admin/sos-log"
             element={

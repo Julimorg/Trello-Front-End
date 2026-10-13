@@ -8,9 +8,7 @@ import { getHospital, getNurse, listPendingRequestsForNurse } from '../lib/db'
 const adminNavItems = [
   { to: '/hospital/admin/overview', label: 'Tổng quan', icon: 'home' },
   { to: '/hospital/admin/roster', label: 'Danh sách điều dưỡng', icon: 'users' },
-  { to: '/hospital/admin/verification', label: 'Xác minh hồ sơ', icon: 'shield' },
-  { to: '/hospital/admin/schedule', label: 'Điều phối lịch', icon: 'calendar' },
-  { to: '/hospital/admin/requests', label: 'Yêu cầu chăm sóc', icon: 'file' },
+  { to: '/hospital/admin/dispatch', label: 'Yêu cầu & điều phối lịch', icon: 'calendar' },
   { to: '/hospital/admin/sos-log', label: 'Cảnh báo SOS', icon: 'bell' },
 ]
 

@@ -2728,3 +2728,93 @@ button.link-reset {
   flex-wrap: wrap;
   font-size: 0.8rem;
 }
+
+/* Hospital admin: week dispatch calendar */
+.dispatch-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.25;
+}
+.dispatch-day span {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6c8286;
+}
+.dispatch-day.is-today b,
+.dispatch-day.is-today span {
+  color: #0b6b68;
+}
+.dispatch-chip {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border-left: 3px solid #1b9aaa;
+  background: #e6f6f8;
+  font-size: 12px;
+  line-height: 1.3;
+  cursor: default;
+}
+.dispatch-chip b {
+  font-weight: 700;
+}
+.dispatch-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dispatch-chip.is-completed {
+  border-left-color: #98a8ab;
+  background: #f1f4f4;
+  color: #5d7176;
+}
+.dispatch-chip.is-reassigned {
+  border-left-color: #7d4fd6;
+  background: #f1eafc;
+}
+.dispatch-chip.is-cannot_perform {
+  border-left-color: #cf3c43;
+  background: #fdecec;
+}
+.dispatch-empty {
+  color: #c5d0d2;
+}
+
+/* Hospital admin: weekly participation schedule editor */
+.schedule-editor {
+  display: grid;
+  gap: 8px;
+}
+.schedule-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #e3ebec;
+  border-radius: 10px;
+  background: #fafcfc;
+}
+.schedule-row.is-on {
+  background: #f1faf8;
+  border-color: #bfe3dd;
+}
+.schedule-day {
+  width: 76px;
+  white-space: nowrap;
+}
+.form-actions-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 1px solid #e3ebec;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+}

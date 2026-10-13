@@ -71,7 +71,7 @@ function AlternativeNurses({ careRequest, alternatives }) {
             {declined ? 'Các điều dưỡng đã chọn chưa nhận ca' : 'Chưa có điều dưỡng khớp hoàn toàn'} · {alternatives.length} điều dưỡng thay thế
           </b>
           <small>
-            Gợi ý gần nhất theo chuyên môn, khu vực {careRequest.district} và lịch rảnh. Điểm khác biệt được ghi rõ trên từng hồ sơ.
+            Gợi ý gần nhất theo chuyên môn, khu vực {careRequest.district} và lịch tham gia. Điểm khác biệt được ghi rõ trên từng hồ sơ.
           </small>
         </span>
         <Button size="small" onClick={() => retryMatching(careRequest.id)}>
@@ -121,7 +121,7 @@ export default function CareRequestBody({ careRequest, showCancel = true }) {
           <span className="pulse" />
           <span>
             <b>Đang tìm điều dưỡng phù hợp...</b>
-            <small>Lọc theo chuyên môn, khu vực {careRequest.district} và lịch rảnh.</small>
+            <small>Lọc theo chuyên môn, khu vực {careRequest.district} và lịch tham gia.</small>
           </span>
         </div>
       )}
