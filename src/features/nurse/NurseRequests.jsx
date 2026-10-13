@@ -144,8 +144,14 @@ export default function NurseRequests() {
               placeholder="Tìm bệnh nhân, mã yêu cầu, khu vực, ghi chú…"
               value={filters.search}
               onChange={(e) => update({ search: e.target.value })}
-              style={{ flex: '1 1 260px' }}
+              style={{ flex: '1 1 320px' }}
             />
+            <Select value={filters.sort} onChange={(sort) => update({ sort })} options={NURSE_REQUEST_SORTS.map((s) => ({ ...s }))} style={{ flex: '0 1 200px' }} />
+            <Button icon={<ReloadOutlined />} disabled={!isFiltered} onClick={() => update(DEFAULT_FILTERS)}>
+              Đặt lại
+            </Button>
+          </Flex>
+          <Flex gap={10} wrap>
             <Select
               mode="multiple"
               allowClear
@@ -158,7 +164,7 @@ export default function NurseRequests() {
               value={filters.careTypes}
               onChange={(careTypes) => update({ careTypes })}
               options={careTypeOptions}
-              style={{ flex: '1 1 190px' }}
+              style={{ flex: '1 1 220px' }}
             />
             <Select
               mode="multiple"
@@ -168,19 +174,15 @@ export default function NurseRequests() {
               value={filters.districts}
               onChange={(districts) => update({ districts })}
               options={districtOptions}
-              style={{ flex: '1 1 160px' }}
+              style={{ flex: '1 1 200px' }}
             />
             <DatePicker.RangePicker
               value={filters.range}
               onChange={(range) => update({ range })}
               format="DD/MM/YYYY"
               placeholder={['Bắt đầu từ', 'Đến ngày']}
-              style={{ flex: '1 1 240px' }}
+              style={{ flex: '1 1 280px' }}
             />
-            <Select value={filters.sort} onChange={(sort) => update({ sort })} options={NURSE_REQUEST_SORTS.map((s) => ({ ...s }))} style={{ flex: '0 1 200px' }} />
-            <Button icon={<ReloadOutlined />} disabled={!isFiltered} onClick={() => update(DEFAULT_FILTERS)}>
-              Đặt lại
-            </Button>
           </Flex>
         </Flex>
       </Card>

@@ -25,7 +25,7 @@ export const CLOSED_REASON = {
   [CARE_REQUEST_STATUS.NO_MATCH]: 'Bệnh nhân đang chọn điều dưỡng thay thế',
 }
 
-export const DECLINE_REASONS = ['Trùng lịch trực tại bệnh viện', 'Ngoài phạm vi di chuyển', 'Chưa phù hợp chuyên môn', 'Lý do cá nhân']
+export const DECLINE_REASONS = ['Trùng lịch trực tại bệnh viện', 'Ngoài phạm vi di chuyển', 'Chưa phù hợp chuyên môn']
 
 export function initials(name) {
   return (name || '')
@@ -53,9 +53,11 @@ export function requestStage(state, careRequest, relation) {
   if (relation === 'declined') return { key: 'declined', label: 'Đã từ chối', color: 'red', readOnly: true }
   if (relation === 'accepted') {
     const booking = careRequest.bookingId ? getBooking(state, careRequest.bookingId) : null
-    return booking && computeBookingStatus(booking) === BOOKING_STATUS.COMPLETED
-      ? { key: 'completed', label: 'Đã hoàn thành', color: 'default', readOnly: true }
-      : { key: 'in_progress', label: 'Đang thực hiện', color: 'green', readOnly: false }
+    const status = booking ? computeBookingStatus(booking) : null
+    if (status === BOOKING_STATUS.COMPLETED) return { key: 'completed', label: 'Đã hoàn thành', color: 'default', readOnly: true }
+    // Accepted but the first visit is still ahead: not "đang thực hiện" yet.
+    if (status === BOOKING_STATUS.CONFIRMED) return { key: 'upcoming', label: 'Sắp thực hiện', color: 'cyan', readOnly: false }
+    return { key: 'in_progress', label: 'Đang thực hiện', color: 'green', readOnly: false }
   }
   if (careRequest.status === CARE_REQUEST_STATUS.CANCELLED) return { key: 'cancelled', label: 'Đã hủy', color: 'default', readOnly: true }
   return { key: 'closed', label: 'Đã đóng', color: 'default', readOnly: true }

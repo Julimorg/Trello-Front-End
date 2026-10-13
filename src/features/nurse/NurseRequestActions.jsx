@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import dayjs from 'dayjs'
-import { App, Button, Flex, Input, Modal, Popconfirm, Radio, Space, Tag, Typography } from 'antd'
+import { App, Button, Flex, Input, Modal, Radio, Space, Tag, Typography } from 'antd'
 import { CheckOutlined, ClockCircleOutlined, CloseOutlined } from '@ant-design/icons'
 import { respondToCareRequest } from '../../lib/db'
 import { useDb } from '../../lib/store'
@@ -87,11 +87,9 @@ export default function NurseRequestActions({ careRequest, patientName }) {
         <Button icon={<CloseOutlined />} onClick={() => setDeclineOpen(true)}>
           Từ chối
         </Button>
-        <Popconfirm title="Nhận ca này?" description="Lịch chăm sóc sẽ được tạo và gửi cho bệnh nhân ngay." okText="Nhận ca" cancelText="Chưa" onConfirm={accept}>
-          <Button type="primary" icon={<CheckOutlined />}>
-            Nhận ca
-          </Button>
-        </Popconfirm>
+        <Button type="primary" icon={<CheckOutlined />} onClick={accept}>
+          Nhận ca
+        </Button>
       </Space>
       <DeclineModal open={declineOpen} patientName={patientName} onCancel={() => setDeclineOpen(false)} onConfirm={decline} />
     </Flex>

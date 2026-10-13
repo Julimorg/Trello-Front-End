@@ -292,6 +292,6 @@
     padding-inline: 14px !important;
   }
   .nurse-toolbar .ant-btn {
-    flex: 1 1 100%;
+    flex: 1 1 calc(50% - 10px);
   }
 }

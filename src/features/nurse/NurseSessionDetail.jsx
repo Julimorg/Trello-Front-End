@@ -11,7 +11,6 @@ import {
   Descriptions,
   Flex,
   Input,
-  Modal,
   Popconfirm,
   Progress,
   Result,
@@ -34,7 +33,7 @@ import PatientInfoCard from './PatientInfoCard'
 import ObservationCard from './ObservationCard'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { completeSession, findSession, getCareRequest, getNurse, getPatient, reportCannotPerform, updateSessionWork } from '../../lib/db'
+import { completeSession, findSession, getCareRequest, getNurse, getPatient, updateSessionWork } from '../../lib/db'
 import { careTypeLabel, formatDate } from '../../lib/format'
 import { CARE_REQUEST_STATUS, SESSION_STATUS } from '../../lib/constants'
 import { SESSION_STATUS_META, frequencyText, sessionWork } from './nurse-shared'
@@ -55,8 +54,6 @@ export default function NurseSessionDetail() {
   const state = useDb()
   const { message } = App.useApp()
   const [noteDraft, setNoteDraft] = useState(null)
-  const [reportOpen, setReportOpen] = useState(false)
-  const [reason, setReason] = useState('')
 
   const found = findSession(state, sessionId)
   if (!found || found.session.nurseId !== auth.id) {
@@ -89,7 +86,9 @@ export default function NurseSessionDetail() {
   const isActive = !isCompleted && !isOff && !isCancelled
   const { tasks, done, percent: progress } = sessionWork(session, careRequest?.careType)
   const canComplete = isActive && session.date <= today
-  const canReport = isActive && session.status === SESSION_STATUS.CONFIRMED && session.date >= today
+  // The visit can only be worked on once its day has come; before that everything is read-only.
+  const notYet = isActive && session.date > today
+  const canWork = isActive && !notYet
 
   const toggleTask = (id, checked) => {
     updateSessionWork(booking.id, session.id, { checklist: checked ? [...done, id] : done.filter((x) => x !== id) })
@@ -103,12 +102,6 @@ export default function NurseSessionDetail() {
     completeSession(booking.id, session.id)
     message.success(`Đã hoàn thành buổi chăm sóc. ${patient?.name} đã được thông báo.`)
   }
-  const submitReport = () => {
-    reportCannotPerform({ bookingId: booking.id, sessionId: session.id, reason })
-    setReportOpen(false)
-    message.info('Đã báo không thể thực hiện. Bệnh viện và bệnh nhân đã được thông báo.')
-  }
-
   const sessionIndex = booking.sessions.findIndex((s) => s.id === session.id)
   const frequency = careRequest ? frequencyText(careRequest) : null
 
@@ -160,17 +153,6 @@ export default function NurseSessionDetail() {
             <a href={`tel:${(patient?.phone || '').replace(/[^\d+]/g, '')}`}>
               <Button icon={<PhoneOutlined />}>Gọi bệnh nhân</Button>
             </a>
-            {canReport && (
-              <Button
-                danger
-                onClick={() => {
-                  setReason('')
-                  setReportOpen(true)
-                }}
-              >
-                Báo không thể thực hiện
-              </Button>
-            )}
             {canComplete && (
               <Popconfirm
                 title="Hoàn thành buổi chăm sóc?"
@@ -186,6 +168,15 @@ export default function NurseSessionDetail() {
             )}
           </Space>
         </Flex>
+        {notYet && (
+          <Alert
+            style={{ marginTop: 14 }}
+            type="info"
+            showIcon
+            title={`Ca diễn ra vào ${WEEKDAY_LONG[date.day()]}, ${date.format('DD/MM/YYYY')}`}
+            description="Danh sách công việc, chỉ số và ghi chú chỉ chỉnh sửa được từ ngày thực hiện. Hiện tại bạn chỉ xem được."
+          />
+        )}
         {isOff && (
           <Alert
             style={{ marginTop: 14 }}
@@ -228,8 +219,8 @@ export default function NurseSessionDetail() {
             <Progress percent={progress} strokeColor="#0b6b68" style={{ marginBottom: 12 }} />
             <div className="task-list">
               {tasks.map((t) => (
-                <label key={t.id} className={`task-item${done.includes(t.id) ? ' is-done' : ''}${isActive ? '' : ' is-readonly'}`}>
-                  <Checkbox checked={done.includes(t.id)} disabled={!isActive} onChange={(e) => toggleTask(t.id, e.target.checked)} />
+                <label key={t.id} className={`task-item${done.includes(t.id) ? ' is-done' : ''}${canWork ? '' : ' is-readonly'}`}>
+                  <Checkbox checked={done.includes(t.id)} disabled={!canWork} onChange={(e) => toggleTask(t.id, e.target.checked)} />
                   <span className="task-text">
                     <b>{t.label}</b>
                     {t.hint && <small>{t.hint}</small>}
@@ -240,7 +231,7 @@ export default function NurseSessionDetail() {
             </div>
           </Card>
 
-          <ObservationCard key={session.id} booking={booking} session={session} editable={isActive} />
+          <ObservationCard key={session.id} booking={booking} session={session} editable={canWork} />
 
           <Card title="Ghi chú" style={{ marginTop: 16 }}>
             <Text type="secondary" style={{ fontSize: 12 }}>
@@ -255,7 +246,7 @@ export default function NurseSessionDetail() {
                 <Paragraph style={{ margin: 0 }} type={session.nurseNote ? undefined : 'secondary'}>
                   {session.nurseNote || 'Chưa có ghi chú.'}
                 </Paragraph>
-                {isActive && (
+                {canWork && (
                   <Button size="small" onClick={() => setNoteDraft(session.nurseNote || '')}>
                     {session.nurseNote ? 'Sửa' : 'Thêm ghi chú'}
                   </Button>
@@ -338,19 +329,6 @@ export default function NurseSessionDetail() {
         </Col>
       </Row>
 
-      <Modal
-        open={reportOpen}
-        title="Báo không thể thực hiện ca"
-        okText="Gửi báo cáo"
-        okButtonProps={{ danger: true, disabled: !reason.trim() }}
-        cancelText="Hủy"
-        onCancel={() => setReportOpen(false)}
-        onOk={submitReport}
-        destroyOnHidden
-      >
-        <Text type="secondary">Hệ thống sẽ tự tìm điều dưỡng thay thế nếu có và thông báo cho bệnh nhân.</Text>
-        <Input.TextArea rows={3} autoFocus style={{ marginTop: 12 }} placeholder="Lý do (ốm, việc đột xuất…)" value={reason} onChange={(e) => setReason(e.target.value)} />
-      </Modal>
 
     </>
   )

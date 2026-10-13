@@ -1,14 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import dayjs from 'dayjs'
-import { App, Badge, Button, Calendar, Card, Col, Empty, Flex, Input, Modal, Row, Segmented, Select, Space, Statistic, Tag, Typography } from 'antd'
+import { Badge, Button, Calendar, Card, Col, Empty, Flex, Modal, Row, Segmented, Select, Space, Statistic, Tag, Typography } from 'antd'
 import { CalendarOutlined, ClockCircleOutlined, EnvironmentOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons'
 import PageHead from '../../components/PageHead'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { getCareRequest, getPatient, listBookingsByNurse, reportCannotPerform } from '../../lib/db'
+import { getCareRequest, getPatient, listBookingsByNurse } from '../../lib/db'
 import { careTypeLabel } from '../../lib/format'
-import { SESSION_STATUS } from '../../lib/constants'
 import { MAX_SHIFTS_PER_DAY_CELL } from '../../Data/nurse/schedule-data'
 import { SESSION_STATUS_META, shortName } from './nurse-shared'
 
@@ -25,13 +24,12 @@ const minutesBetween = (start, end) => {
 }
 const dayTitle = (d) => `${WEEKDAY_LONG[d.day()]}, ${d.format('DD/MM/YYYY')}`
 
-function ShiftList({ shifts, today, onReport }) {
+function ShiftList({ shifts }) {
   if (!shifts.length) return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có ca nào trong ngày này" />
   return (
     <div className="shift-list">
       {shifts.map((s) => {
         const meta = SESSION_STATUS_META[s.status] || SESSION_STATUS_META.confirmed
-        const canReport = s.status === SESSION_STATUS.CONFIRMED && s.date >= today
         return (
           <div className={`shift-row is-${s.status}`} key={s.id}>
             <div className="shift-row-time">
@@ -61,11 +59,6 @@ function ShiftList({ shifts, today, onReport }) {
                     Xem chi tiết ca →
                   </Button>
                 </Link>
-                {canReport && (
-                  <Button size="small" type="link" danger style={{ padding: 0 }} onClick={() => onReport(s)}>
-                    Báo không thể thực hiện
-                  </Button>
-                )}
               </Space>
             </div>
           </div>
@@ -120,14 +113,11 @@ function ScheduleHeader({ value, mode, onChange, onModeChange }) {
 export default function NurseSchedule() {
   const { session } = useAuth()
   const state = useDb()
-  const { message } = App.useApp()
   const [params] = useSearchParams()
   const initialDate = params.get('date')
   const [value, setValue] = useState(() => (initialDate && dayjs(initialDate).isValid() ? dayjs(initialDate) : dayjs()))
   const [mode, setMode] = useState('month')
   const [dayModal, setDayModal] = useState(null)
-  const [report, setReport] = useState(null)
-  const [reason, setReason] = useState('')
   const today = dayjs().format(ISO)
 
   const shifts = useMemo(
@@ -191,12 +181,6 @@ export default function NurseSchedule() {
         )}
       </div>
     )
-  }
-
-  const submitReport = () => {
-    reportCannotPerform({ bookingId: report.booking.id, sessionId: report.id, reason })
-    message.info('Đã báo không thể thực hiện. Bệnh viện và bệnh nhân đã được thông báo.')
-    setReport(null)
   }
 
   return (
@@ -291,11 +275,6 @@ export default function NurseSchedule() {
       >
         <ShiftList
           shifts={dayShifts}
-          today={today}
-          onReport={(s) => {
-            setReason('')
-            setReport(s)
-          }}
         />
       </Card>
 
@@ -315,41 +294,10 @@ export default function NurseSchedule() {
         {dayModal && (
           <ShiftList
             shifts={byDate.get(dayModal) || []}
-            today={today}
-            onReport={(s) => {
-              setDayModal(null)
-              setReason('')
-              setReport(s)
-            }}
           />
         )}
       </Modal>
 
-      <Modal
-        open={Boolean(report)}
-        title="Báo không thể thực hiện ca"
-        okText="Gửi báo cáo"
-        okButtonProps={{ danger: true, disabled: !reason.trim() }}
-        cancelText="Hủy"
-        onCancel={() => setReport(null)}
-        onOk={submitReport}
-        destroyOnHidden
-      >
-        {report && (
-          <Text type="secondary">
-            Ca {report.start}–{report.end} ngày {dayjs(report.date).format('DD/MM/YYYY')} với {report.patient?.name}. Hệ thống sẽ tự tìm điều dưỡng thay thế nếu
-            có.
-          </Text>
-        )}
-        <Input.TextArea
-          rows={3}
-          autoFocus
-          style={{ marginTop: 12 }}
-          placeholder="Lý do (ốm, việc đột xuất…)"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-        />
-      </Modal>
 
     </>
   )
