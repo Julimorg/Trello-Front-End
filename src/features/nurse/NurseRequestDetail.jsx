@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { Alert, Button, Card, Col, Descriptions, Flex, Progress, Result, Row, Space, Statistic, Tag, Timeline, Typography } from 'antd'
 import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EnvironmentOutlined, StopOutlined } from '@ant-design/icons'
@@ -46,6 +46,7 @@ function buildHistory(state, careRequest, nurseId, booking) {
 
 export default function NurseRequestDetail() {
   const { id } = useParams()
+  const location = useLocation()
   const { session: auth } = useAuth()
   const state = useDb()
   const careRequest = getCareRequest(state, id)
@@ -67,6 +68,10 @@ export default function NurseRequestDetail() {
   }
 
   const { relation } = entry
+  // Back to the list exactly as it was left (filters, page), with this request highlighted.
+  const backParams = new URLSearchParams(location.state?.listSearch || '')
+  backParams.set('id', careRequest.id)
+  const backHref = `/hospital/nurse/requests?${backParams}`
   const stage = requestStage(state, careRequest, relation)
   const patient = getPatient(state, careRequest.patientId)
   const booking = relation === 'accepted' && careRequest.bookingId ? getBooking(state, careRequest.bookingId) : null
@@ -82,7 +87,7 @@ export default function NurseRequestDetail() {
 
   return (
     <>
-      <Link to={`/hospital/nurse/requests?id=${careRequest.id}`} className="back-link">
+      <Link to={backHref} className="back-link">
         <ArrowLeftOutlined /> Ca chăm sóc mới
       </Link>
 

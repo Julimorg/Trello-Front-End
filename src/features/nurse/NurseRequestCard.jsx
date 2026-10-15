@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { Avatar, Button, Card, Descriptions, Flex, Space, Tag, Typography } from 'antd'
 import { EnvironmentOutlined, EyeOutlined } from '@ant-design/icons'
@@ -12,16 +12,19 @@ const { Text, Paragraph } = Typography
 
 export default function NurseRequestCard({ careRequest, relation, nurseId, highlighted, isNew, cardRef, compact = false }) {
   const state = useDb()
+  const location = useLocation()
   const patient = getPatient(state, careRequest.patientId)
   const stage = requestStage(state, careRequest, relation)
   const detailHref = `/hospital/nurse/requests/${careRequest.id}`
+  // Remember the list's filters so the detail page's back link can restore them.
+  const linkState = location.pathname === '/hospital/nurse/requests' ? { listSearch: location.search } : undefined
 
   const booking = careRequest.bookingId ? getBooking(state, careRequest.bookingId) : null
   const nextSession = booking?.sessions.find((s) => s.date >= dayjs().format('YYYY-MM-DD') && s.nurseId === nurseId)
   const declineReason = careRequest.declineReasons?.find((d) => d.nurseId === nurseId)?.reason
   const position = careRequest.matchedNurseIds.indexOf(nurseId) + 1
   const detailButton = (
-    <Link to={detailHref}>
+    <Link to={detailHref} state={linkState}>
       <Button icon={<EyeOutlined />}>Xem chi tiết</Button>
     </Link>
   )
@@ -48,7 +51,7 @@ export default function NurseRequestCard({ careRequest, relation, nurseId, highl
           <div style={{ flex: 1, minWidth: 0 }}>
             <Flex justify="space-between" align="flex-start" gap={8} wrap>
               <div>
-                <Link to={detailHref} className="nurse-request-title">
+                <Link to={detailHref} state={linkState} className="nurse-request-title">
                   {careTypeLabel(careRequest.careType)} · {patient?.name}
                 </Link>
                 <div>

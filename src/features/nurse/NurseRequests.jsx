@@ -24,18 +24,61 @@ const normalize = (text) =>
     .toLowerCase()
 
 const DEFAULT_FILTERS = { tab: 'all', search: '', careTypes: [], districts: [], range: null, sort: 'newest' }
+const FILTER_PARAMS = ['tab', 'q', 'types', 'districts', 'from', 'to', 'sort', 'page']
+const DATE_FMT = 'YYYY-MM-DD'
+const list = (value) => (value ? value.split('|') : [])
+
+// The filters live in the URL so that coming back from a request's detail page restores them.
+function readFilters(params) {
+  const from = params.get('from')
+  const to = params.get('to')
+  return {
+    tab: params.get('tab') || DEFAULT_FILTERS.tab,
+    search: params.get('q') || '',
+    careTypes: list(params.get('types')),
+    districts: list(params.get('districts')),
+    range: from || to ? [from ? dayjs(from) : null, to ? dayjs(to) : null] : null,
+    sort: params.get('sort') || DEFAULT_FILTERS.sort,
+  }
+}
 
 export default function NurseRequests() {
   const { session } = useAuth()
   const state = useDb()
   const [params, setParams] = useSearchParams()
   const focusId = params.get('id')
-  const [filters, setFilters] = useState(DEFAULT_FILTERS)
-  const [page, setPage] = useState(1)
-  const update = (patch) => {
-    setFilters((f) => ({ ...f, ...patch }))
-    setPage(1)
-  }
+  const filters = useMemo(() => readFilters(params), [params])
+  const page = Math.max(1, Number(params.get('page')) || 1)
+
+  const writeParams = (mutate) =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        mutate(next)
+        return next
+      },
+      { replace: true },
+    )
+  const setPage = (n) => writeParams((q) => (n > 1 ? q.set('page', String(n)) : q.delete('page')))
+  const update = (patch) =>
+    writeParams((q) => {
+      const f = { ...readFilters(q), ...patch }
+      const put = (key, value, empty) => (value && value !== empty && value.length !== 0 ? q.set(key, Array.isArray(value) ? value.join('|') : value) : q.delete(key))
+      put('tab', f.tab, DEFAULT_FILTERS.tab)
+      put('q', f.search)
+      put('types', f.careTypes)
+      put('districts', f.districts)
+      put('from', f.range?.[0]?.format(DATE_FMT))
+      put('to', f.range?.[1]?.format(DATE_FMT))
+      put('sort', f.sort, DEFAULT_FILTERS.sort)
+      q.delete('page')
+      q.delete('id')
+    })
+  const resetFilters = () =>
+    writeParams((q) => {
+      FILTER_PARAMS.forEach((key) => q.delete(key))
+      q.delete('id')
+    })
 
   const items = useMemo(() => listNurseRequests(state, session.id), [state, session.id])
 
@@ -71,7 +114,7 @@ export default function NurseRequests() {
 
   const filtered = useMemo(() => {
     const q = normalize(filters.search.trim())
-    const list = items.filter(({ careRequest: c, relation }) => {
+    const result = items.filter(({ careRequest: c, relation }) => {
       if (filters.tab !== 'all' && relation !== filters.tab) return false
       if (filters.careTypes.length && !filters.careTypes.includes(c.careType)) return false
       if (filters.districts.length && !filters.districts.includes(c.district)) return false
@@ -91,22 +134,33 @@ export default function NurseRequests() {
       'start-soon': (a, b) => a.careRequest.desiredStartDate.localeCompare(b.careRequest.desiredStartDate),
       'start-late': (a, b) => b.careRequest.desiredStartDate.localeCompare(a.careRequest.desiredStartDate),
     }
-    return list.sort(sorters[filters.sort])
+    return result.sort(sorters[filters.sort] || sorters.newest)
   }, [items, filters, state])
 
   // Deep link from a notification (?id=cr-…): show it on the right page and highlight it.
   const focusRef = useRef(null)
+  const focusedIdRef = useRef(null)
   useEffect(() => {
-    if (!focusId) return
+    if (!focusId) {
+      focusedIdRef.current = null
+      return
+    }
+    // Jump to the request once; afterwards the nurse can page / filter freely.
+    if (focusedIdRef.current === focusId) return
     const index = filtered.findIndex((i) => i.careRequest.id === focusId)
     if (index === -1) {
-      if (filters !== DEFAULT_FILTERS && items.some((i) => i.careRequest.id === focusId)) setFilters(DEFAULT_FILTERS)
+      if (items.some((i) => i.careRequest.id === focusId) && FILTER_PARAMS.some((key) => params.has(key))) resetFilters()
       return
     }
     const targetPage = Math.floor(index / NURSE_REQUEST_PAGE_SIZE) + 1
-    if (targetPage !== page) setPage(targetPage)
-    else focusRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [focusId, filtered, page, filters, items])
+    if (targetPage !== page) {
+      setPage(targetPage)
+      return
+    }
+    focusedIdRef.current = focusId
+    focusRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId, filtered, page, items])
 
   const pageItems = filtered.slice((page - 1) * NURSE_REQUEST_PAGE_SIZE, page * NURSE_REQUEST_PAGE_SIZE)
   const isFiltered =
@@ -147,7 +201,7 @@ export default function NurseRequests() {
               style={{ flex: '1 1 320px' }}
             />
             <Select value={filters.sort} onChange={(sort) => update({ sort })} options={NURSE_REQUEST_SORTS.map((s) => ({ ...s }))} style={{ flex: '0 1 200px' }} />
-            <Button icon={<ReloadOutlined />} disabled={!isFiltered} onClick={() => update(DEFAULT_FILTERS)}>
+            <Button icon={<ReloadOutlined />} disabled={!isFiltered} onClick={resetFilters}>
               Đặt lại
             </Button>
           </Flex>
@@ -226,7 +280,7 @@ export default function NurseRequests() {
 
       {focusId && (
         <Flex justify="center" style={{ marginTop: 12 }}>
-          <Button type="link" onClick={() => setParams({})}>
+          <Button type="link" onClick={() => writeParams((q) => q.delete('id'))}>
             Bỏ đánh dấu yêu cầu #{focusId}
           </Button>
         </Flex>
