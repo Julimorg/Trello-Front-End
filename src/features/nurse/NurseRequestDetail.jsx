@@ -1,4 +1,5 @@
 import { Link, useLocation, useParams } from 'react-router-dom'
+import { usePageCrumbs } from '../../components/crumbs'
 import dayjs from 'dayjs'
 import { Alert, Button, Card, Col, Descriptions, Flex, Progress, Result, Row, Space, Statistic, Tag, Timeline, Typography } from 'antd'
 import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, EnvironmentOutlined, StopOutlined } from '@ant-design/icons'
@@ -51,6 +52,7 @@ export default function NurseRequestDetail() {
   const state = useDb()
   const careRequest = getCareRequest(state, id)
   const entry = careRequest ? listNurseRequests(state, auth.id).find((r) => r.careRequest.id === id) : null
+  usePageCrumbs(careRequest && entry ? [{ label: `Yêu cầu #${careRequest.id}` }] : [])
 
   if (!careRequest || !entry) {
     return (

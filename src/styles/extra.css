@@ -2818,3 +2818,37 @@ button.link-reset {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.96);
 }
+
+/* Header breadcrumbs: every step but the last one is a link */
+.crumb {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.crumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  white-space: nowrap;
+}
+.crumb-item a {
+  color: var(--muted);
+  text-decoration: none;
+  border-radius: 6px;
+}
+.crumb-item a:hover {
+  color: var(--teal);
+  text-decoration: underline;
+}
+.crumb-item.is-current {
+  min-width: 0;
+}
+.crumb-item.is-current strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 780px) {
+  .crumb-item:not(.is-current) {
+    display: none;
+  }
+}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { App, Button, Card, Form, Result, Tag } from 'antd'
 import { ArrowLeftOutlined, DeleteOutlined } from '@ant-design/icons'
+import { usePageCrumbs } from '../../components/crumbs'
 import PageHead from '../../components/PageHead'
 import { CertificateFields } from './nurse-form-parts'
 import { certToForm, formToCert, validateForm } from './nurse-form-utils'
@@ -21,6 +22,7 @@ export default function CertificatePage() {
   const isNew = certId === 'new'
   const cert = isNew ? null : nurse?.certificates.find((c) => c.id === certId)
   const back = `/hospital/admin/roster/${id}`
+  usePageCrumbs(nurse && (isNew || cert) ? [{ label: nurse.name, to: back }, { label: isNew ? 'Thêm chứng chỉ' : cert.name }] : [])
 
   useEffect(() => {
     if (loaded || !nurse || (!isNew && !cert)) return

@@ -24,6 +24,8 @@ function initials(name) {
     .toUpperCase()
 }
 
+import { usePageCrumbs } from '../../components/crumbs'
+
 export default function PatientNurseDetail() {
   const { id } = useParams()
   const { session } = useAuth()
@@ -31,6 +33,7 @@ export default function PatientNurseDetail() {
   const state = useDb()
   const pageRef = useRef(null)
   const nurse = getNurse(state, id)
+  usePageCrumbs(nurse ? [{ label: nurse.name }] : [])
 
   useStaggerIn(pageRef, '.panel', [id])
 

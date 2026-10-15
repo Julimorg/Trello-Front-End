@@ -135,6 +135,8 @@ function SessionRow({ session, index, total, careType, nurse, today, onCancel })
   )
 }
 
+import { usePageCrumbs } from '../../components/crumbs'
+
 export default function BookingDetail() {
   const { id } = useParams()
   const [params, setParams] = useSearchParams()
@@ -142,6 +144,7 @@ export default function BookingDetail() {
   const state = useDb()
   const listRef = useRef(null)
   const booking = getBooking(state, id)
+  usePageCrumbs(booking ? [{ label: `Lịch chăm sóc #${booking.id}` }] : [])
   // { ids, label } — which visits the patient is about to cancel
   const [cancelTarget, setCancelTarget] = useState(null)
   const [note, setNote] = useState('')

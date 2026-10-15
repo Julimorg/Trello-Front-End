@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Alert, App, Avatar, Button, Card, Checkbox, Col, Empty, Flex, Form, Result, Row, Space, Tag, Tooltip, Typography } from 'antd'
 import { ArrowLeftOutlined, DeleteOutlined, EditOutlined, FileImageOutlined, FilePdfOutlined, PlusOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
+import { usePageCrumbs } from '../../components/crumbs'
 import { BasicFields, ScheduleEditor } from './nurse-form-parts'
 import { scheduleRules, scheduleToSlots, slotsToSchedule, validateForm } from './nurse-form-utils'
 import { useDb } from '../../lib/store'
@@ -133,6 +134,7 @@ export default function NurseDetail() {
   const [dirty, setDirty] = useState(false)
   const [formError, setFormError] = useState('')
   const nurse = getNurse(state, id)
+  usePageCrumbs(nurse ? [{ label: nurse.name }] : [])
 
   const reset = () => {
     if (!nurse) return

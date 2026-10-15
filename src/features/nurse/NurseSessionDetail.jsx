@@ -47,6 +47,8 @@ const minutesBetween = (start, end) => {
   return eh * 60 + em - (sh * 60 + sm)
 }
 
+import { usePageCrumbs } from '../../components/crumbs'
+
 // One visit as the nurse sees it: who, when, where, and the work to do.
 export default function NurseSessionDetail() {
   const { sessionId } = useParams()
@@ -56,6 +58,7 @@ export default function NurseSessionDetail() {
   const [noteDraft, setNoteDraft] = useState(null)
 
   const found = findSession(state, sessionId)
+  usePageCrumbs(found ? [{ label: `Buổi ${formatDate(found.session.date)} · ${found.session.start}` }] : [])
   if (!found || found.session.nurseId !== auth.id) {
     return (
       <Result

@@ -6,10 +6,13 @@ import { useDb } from '../../lib/store'
 import { getCareRequest } from '../../lib/db'
 import { careTypeLabel } from '../../lib/format'
 
+import { usePageCrumbs } from '../../components/crumbs'
+
 export default function CareRequestDetail() {
   const { id } = useParams()
   const state = useDb()
   const careRequest = getCareRequest(state, id)
+  usePageCrumbs(careRequest ? [{ label: `Yêu cầu #${careRequest.id}` }] : [])
 
   if (!careRequest) {
     return (

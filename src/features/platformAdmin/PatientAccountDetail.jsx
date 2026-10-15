@@ -30,10 +30,13 @@ const nurseLabel = (state, id) => {
 }
 
 // Admin view of one patient account (/admin/accounts/:id).
+import { usePageCrumbs } from '../../components/crumbs'
+
 export default function PatientAccountDetail() {
   const { id } = useParams()
   const state = useDb()
   const patient = getPatient(state, id)
+  usePageCrumbs(patient ? [{ label: patient.name }] : [])
   const [editOpen, setEditOpen] = useState(false)
 
   if (!patient) {

@@ -6,6 +6,7 @@ import { onRemotePatch, useDb } from '../lib/store'
 import { useToast } from './ToastProvider'
 import { listNotificationsFor, markNotificationsRead } from '../lib/db'
 import { formatDateTime } from '../lib/format'
+import { CrumbContext } from './crumbs'
 
 function NotificationBell({ role, targetId }) {
   const state = useDb()
@@ -140,7 +141,17 @@ export default function Shell({
     })
 
   // `also` lets a menu item own extra paths (e.g. session details belong to the schedule).
-  const currentTitle = navItems.find((n) => [n.to, ...(n.also || [])].some((p) => location.pathname.startsWith(p)))?.label
+  const owns = (item) => [item.to, ...(item.also || [])].some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`))
+  const currentItem = navItems.find(owns)
+  // Pages deeper than a menu item (details, forms) register extra crumbs.
+  const [trail, setTrail] = useState([])
+  // Coming from a filtered list, the crumb leads back to that list as it was left.
+  const sectionTo = currentItem ? currentItem.to + (typeof location.state?.listSearch === 'string' ? location.state.listSearch : '') : null
+  const crumbs = [
+    { label: appLabel, to: navItems[0]?.to },
+    ...(currentItem ? [{ label: currentItem.label, to: sectionTo }] : []),
+    ...trail,
+  ].map((c, i, all) => (i === all.length - 1 ? { label: c.label } : c))
 
   const profileContent = (
     <>
@@ -191,7 +202,7 @@ export default function Shell({
           {navItems.map((item) => {
             const NavIcon = Icon[item.icon]
             return (
-              <NavLink key={item.to} to={item.to} title={item.label} onClick={() => setNavOpen(false)}>
+              <NavLink key={item.to} to={item.to} title={item.label} className={({ isActive }) => (isActive || owns(item) ? 'active' : '')} onClick={() => setNavOpen(false)}>
                 {NavIcon && <NavIcon />}
                 <span>{item.label}</span>
                 {item.badge ? <span className="nav-badge">{item.badge}</span> : null}
@@ -217,11 +228,20 @@ export default function Shell({
           <button className="mobile-menu" aria-label="Mở menu" onClick={() => setNavOpen(true)}>
             <Icon.menu />
           </button>
-          <div className="crumb">
-            <span>{appLabel}</span>
-            <Icon.chevron />
-            <strong>{currentTitle}</strong>
-          </div>
+          <nav className="crumb" aria-label="Vị trí hiện tại">
+            {crumbs.map((c, i) => (
+              <span key={`${i}-${c.label}`} className={`crumb-item${i === crumbs.length - 1 ? ' is-current' : ''}`}>
+                {i > 0 && <Icon.chevron aria-hidden="true" />}
+                {c.to ? (
+                  <Link to={c.to} onClick={() => setNavOpen(false)}>
+                    {c.label}
+                  </Link>
+                ) : (
+                  <strong aria-current="page">{c.label}</strong>
+                )}
+              </span>
+            ))}
+          </nav>
           <div className="top-actions">
             <NotificationBell role={notificationRole} targetId={notificationTargetId} />
             {profileTo ? (
@@ -246,7 +266,9 @@ export default function Shell({
 
         <section className="app-content" aria-live="polite">
           <Suspense fallback={<div className="route-loading" aria-busy="true" />}>
-            <Outlet />
+            <CrumbContext.Provider value={setTrail}>
+              <Outlet />
+            </CrumbContext.Provider>
           </Suspense>
         </section>
       </main>

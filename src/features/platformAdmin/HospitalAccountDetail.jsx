@@ -281,10 +281,13 @@ function ContractTab({ hospital, warningDays }) {
   )
 }
 
+import { usePageCrumbs } from '../../components/crumbs'
+
 export default function HospitalAccountDetail() {
   const { id } = useParams()
   const state = useDb()
   const hospital = getHospital(state, id)
+  usePageCrumbs(hospital ? [{ label: hospital.name }] : [])
   const [editOpen, setEditOpen] = useState(false)
   const warningDays = state.settings?.contractWarningDays ?? 60
 

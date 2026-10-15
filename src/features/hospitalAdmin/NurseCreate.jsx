@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { App, Alert, Button, Card, Form, Typography } from 'antd'
 import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import PageHead from '../../components/PageHead'
+import { usePageCrumbs } from '../../components/crumbs'
 import { BasicFields, CertificateFields, ScheduleEditor } from './nurse-form-parts'
 import { formToCert, scheduleRules, scheduleToSlots, validateForm } from './nurse-form-utils'
 import { useAuth } from '../../auth/AuthContext'
@@ -15,6 +16,7 @@ export default function NurseCreate() {
   const { message } = App.useApp()
   const navigate = useNavigate()
   const [form] = Form.useForm()
+  usePageCrumbs([{ label: 'Thêm điều dưỡng' }])
 
   const collect = () => {
     const v = form.getFieldsValue(true)
