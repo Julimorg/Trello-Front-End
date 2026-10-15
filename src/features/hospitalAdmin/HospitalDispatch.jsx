@@ -1,21 +1,21 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import dayjs from 'dayjs'
-import { App, Alert, Avatar, Button, Card, DatePicker, Flex, Input, Select, Space, Table, Tag, Tooltip, Typography } from 'antd'
-import { LeftOutlined, PlusOutlined, RightOutlined, SearchOutlined, SwapOutlined } from '@ant-design/icons'
+import { Badge, Button, Card, DatePicker, Descriptions, Flex, Input, Segmented, Select, Statistic, Table, Tag, Tooltip, Typography } from 'antd'
+import { LeftOutlined, PlusOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons'
 import PageHead from '../../components/PageHead'
 import CareRequestWizardModal from '../careRequest/CareRequestWizardModal'
 import HospitalPatientPickerModal from './HospitalPatientPickerModal'
+import { LoadCalendar, ReassignPanel, ShiftDrawer } from './dispatch-parts'
+import { ISO, LOAD_LEGEND, SESSION_META, hoursText, minutesOf } from './dispatch-utils'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
-import { getCareRequest, getNurse, getPatient, listNursesByHospital, manualReassignSession } from '../../lib/db'
-import { careTypeLabel, formatDate, formatDateTime } from '../../lib/format'
+import { getCareRequest, getNurse, getPatient, listNursesByHospital } from '../../lib/db'
+import { careTypeLabel, formatDate } from '../../lib/format'
 import { CARE_REQUEST_STATUS_LABEL, NURSE_AUTH_STATUS } from '../../lib/constants'
-import { compareByGivenName, initials } from './admin-shared'
+import { frequencyText } from '../nurse/nurse-shared'
+import { compareByGivenName } from './admin-shared'
 
-const { Text, Title } = Typography
-const ISO = 'YYYY-MM-DD'
-const WEEKDAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+const { Text } = Typography
 
 const REQUEST_STATUS_COLOR = {
   created: 'default',
@@ -27,12 +27,14 @@ const REQUEST_STATUS_COLOR = {
   completed: 'green',
 }
 
-const SESSION_META = {
-  confirmed: { label: 'Đã xác nhận', color: 'cyan' },
-  completed: { label: 'Hoàn thành', color: 'default' },
-  reassigned: { label: 'Đã đổi điều dưỡng', color: 'purple' },
-  cannot_perform: { label: 'Cần người thay', color: 'red' },
-}
+// Request tabs: what still needs the coordinator vs. what is settled.
+const OPEN_STATUSES = ['created', 'matching', 'matched', 'nurse_pending', 'no_match']
+const REQUEST_TABS = [
+  { key: 'open', label: 'Đang xử lý', match: (r) => OPEN_STATUSES.includes(r.status) },
+  { key: 'done', label: 'Đã chấp nhận', match: (r) => r.status === 'completed' },
+  { key: 'cancelled', label: 'Đã hủy', match: (r) => r.status === 'cancelled' },
+  { key: 'all', label: 'Tất cả', match: () => true },
+]
 
 const monday = (d) => d.subtract((d.day() + 6) % 7, 'day').startOf('day')
 
@@ -47,135 +49,33 @@ function replacementNurses(state, booking) {
   return [...ids].map((id) => getNurse(state, id)).filter(Boolean)
 }
 
-function ReassignCard({ booking, sessionItem, candidates }) {
-  const state = useDb()
-  const { message } = App.useApp()
-  const [pick, setPick] = useState(null)
-  const careRequest = getCareRequest(state, booking.careRequestId)
-  const patient = getPatient(state, booking.patientId)
-  const last = sessionItem.history?.[sessionItem.history.length - 1]
-  const original = getNurse(state, last?.nurseId)
+function RequestDetail({ request, state }) {
+  const { booking } = request
+  const sessions = booking ? [...booking.sessions].sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start)) : []
+  const matched = request.matchedNurseIds.map((id) => getNurse(state, id)?.name).filter(Boolean)
   return (
-    <Card size="small">
-      <Flex justify="space-between" gap={12} wrap>
-        <div style={{ flex: '1 1 320px' }}>
-          <Text strong>
-            {patient?.name} · {careTypeLabel(careRequest?.careType)}
-          </Text>
-          <div>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              Buổi {formatDate(sessionItem.date)} · {sessionItem.start}–{sessionItem.end} · Điều dưỡng cũ: {original?.name || '—'}
-            </Text>
-          </div>
-          {last?.reason && <Alert type="warning" showIcon title={`Lý do: ${last.reason}`} style={{ marginTop: 8 }} />}
-        </div>
-        <Space wrap align="start">
-          <Select
-            placeholder="Chọn điều dưỡng mới"
-            value={pick}
-            onChange={setPick}
-            options={candidates.map((n) => ({ value: n.id, label: n.name }))}
-            style={{ width: 230 }}
-            notFoundContent="Không có điều dưỡng phù hợp"
-          />
-          <Button
-            type="primary"
-            icon={<SwapOutlined />}
-            disabled={!pick}
-            onClick={() => {
-              manualReassignSession({ bookingId: booking.id, sessionId: sessionItem.id, nurseId: pick })
-              message.success(`Đã giao buổi chăm sóc cho ${getNurse(state, pick)?.name}`)
-            }}
-          >
-            Xác nhận đổi
-          </Button>
-        </Space>
-      </Flex>
-    </Card>
-  )
-}
-
-// Week calendar: one row per nurse, one column per day.
-function WeekCalendar({ nurses, shifts, weekStart }) {
-  const days = Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day'))
-  const today = dayjs().format(ISO)
-  const byCell = useMemo(() => {
-    const map = new Map()
-    shifts.forEach((s) => {
-      const key = `${s.nurseId}|${s.date}`
-      map.set(key, [...(map.get(key) || []), s])
-    })
-    return map
-  }, [shifts])
-
-  const columns = [
-    {
-      title: 'Điều dưỡng',
-      key: 'nurse',
-      width: 170,
-      fixed: 'left',
-      render: (_, n) => (
-        <Flex gap={8} align="center">
-          <Avatar size={30} style={{ background: '#e7f5f2', color: '#0b6b68', fontWeight: 800, flex: '0 0 auto' }}>
-            {initials(n.name)}
-          </Avatar>
-          <Link to={`/hospital/admin/roster/${n.id}`}>
-            <Text strong>{n.name}</Text>
-          </Link>
-        </Flex>
-      ),
-    },
-    ...days.map((d) => {
-      const iso = d.format(ISO)
-      return {
-        title: (
-          <div className={`dispatch-day${iso === today ? ' is-today' : ''}`}>
-            <b>{WEEKDAY[d.day()]}</b>
-            <span>{d.format('DD/MM')}</span>
-          </div>
-        ),
-        key: iso,
-        width: 100,
-        render: (_, n) => {
-          const list = (byCell.get(`${n.id}|${iso}`) || []).sort((a, b) => a.start.localeCompare(b.start))
-          return list.length ? (
-            <Flex vertical gap={4}>
-              {list.map((s) => (
-                <Tooltip
-                  key={s.id}
-                  title={`${s.patient?.name} · ${careTypeLabel(s.careRequest?.careType)} · ${s.careRequest?.district || ''} · ${SESSION_META[s.status]?.label}`}
-                >
-                  <div className={`dispatch-chip is-${s.status}`}>
-                    <b>
-                      {s.start}–{s.end}
-                    </b>
-                    <span>{s.patient?.name}</span>
-                  </div>
-                </Tooltip>
-              ))}
-            </Flex>
-          ) : (
-            <span className="dispatch-empty">—</span>
-          )
-        },
-      }
-    }),
-  ]
-
-  return (
-    <Table
-      rowKey="id"
+    <Descriptions
       size="small"
-      columns={columns}
-      dataSource={nurses}
-      pagination={false}
-      scroll={{ x: 170 + 100 * 7 }}
-      locale={{ emptyText: 'Không có điều dưỡng nào khớp bộ lọc' }}
+      column={{ xs: 1, md: 2, xl: 3 }}
+      items={[
+        { key: 'freq', label: 'Tần suất', children: frequencyText(request) },
+        { key: 'time', label: 'Khung giờ', children: request.timeSlot ? `${request.timeSlot.start}–${request.timeSlot.end}` : '—' },
+        { key: 'area', label: 'Khu vực', children: request.district },
+        { key: 'addr', label: 'Địa chỉ', children: request.patient?.address || '—' },
+        { key: 'matched', label: 'Điều dưỡng được gợi ý', children: matched.length ? matched.join(', ') : '—' },
+        {
+          key: 'sessions',
+          label: 'Lịch đã đặt',
+          children: sessions.length ? `${sessions.length} buổi · ${formatDate(sessions[0].date)} → ${formatDate(sessions[sessions.length - 1].date)}` : 'Chưa có lịch',
+        },
+        ...(request.notes ? [{ key: 'notes', label: 'Ghi chú', span: 'filled', children: request.notes }] : []),
+      ]}
     />
   )
 }
 
-// "Yêu cầu chăm sóc" + "Điều phối lịch" in one page: a single week calendar, then the requests behind it.
+// "Yêu cầu chăm sóc" + "Điều phối lịch" in one page. The calendar is a workload overview (count + hours per
+// nurse and day) — shifts open in a drawer — and requests sit in a tabbed, paginated table below it.
 export default function HospitalDispatch() {
   const { session } = useAuth()
   const state = useDb()
@@ -184,8 +84,9 @@ export default function HospitalDispatch() {
   const [weekStart, setWeekStart] = useState(monday(dayjs()))
   const [nurseIds, setNurseIds] = useState([])
   const [sessionStatus, setSessionStatus] = useState(null)
-  const [requestStatus, setRequestStatus] = useState(null)
+  const [requestTab, setRequestTab] = useState('open')
   const [search, setSearch] = useState('')
+  const [drawer, setDrawer] = useState(null)
 
   const nurses = useMemo(() => [...listNursesByHospital(state, session.id)].sort((a, b) => compareByGivenName(a.name, b.name)), [state, session.id])
   const nurseById = useMemo(() => new Map(nurses.map((n) => [n.id, n])), [nurses])
@@ -208,44 +109,56 @@ export default function HospitalDispatch() {
     [state, nurseById, weekFrom, weekTo, sessionStatus, q],
   )
 
-  const calendarNurses = nurses.filter((n) => (!nurseIds.length || nurseIds.includes(n.id)) && (!(sessionStatus || q) || shifts.some((s) => s.nurseId === n.id)))
+  const calendarNurses = useMemo(() => {
+    const withShifts = new Set(shifts.map((s) => s.nurseId))
+    return nurses.filter((n) => (!nurseIds.length || nurseIds.includes(n.id)) && (!(sessionStatus || q) || withShifts.has(n.id)))
+  }, [nurses, nurseIds, sessionStatus, q, shifts])
 
-  const requests = useMemo(() => {
-    const hospitalIds = new Set(nurses.map((n) => n.id))
+  const allRequests = useMemo(() => {
     return state.careRequests
-      .filter((r) => r.matchedNurseIds.some((id) => hospitalIds.has(id)) || (r.selectedNurseId && hospitalIds.has(r.selectedNurseId)) || r.createdBy === 'hospital')
+      .filter((r) => r.matchedNurseIds.some((id) => nurseById.has(id)) || (r.selectedNurseId && nurseById.has(r.selectedNurseId)) || r.createdBy === 'hospital')
       .map((r) => {
         const booking = state.bookings.find((b) => b.careRequestId === r.id || b.id === r.bookingId)
         return { ...r, booking, patient: getPatient(state, r.patientId), nurse: r.selectedNurseId ? getNurse(state, r.selectedNurseId) : null, newNurses: replacementNurses(state, booking) }
       })
-      .filter((r) => (!requestStatus || r.status === requestStatus) && (!q || `${r.id} ${r.patient?.name} ${r.nurse?.name} ${r.newNurses.map((n) => n.name).join(' ')} ${careTypeLabel(r.careType)}`.toLowerCase().includes(q)))
-  }, [state, nurses, requestStatus, q])
+  }, [state, nurseById])
+
+  const tabCounts = useMemo(() => Object.fromEntries(REQUEST_TABS.map((t) => [t.key, allRequests.filter(t.match).length])), [allRequests])
+  const requests = useMemo(() => {
+    const tab = REQUEST_TABS.find((t) => t.key === requestTab)
+    return allRequests.filter((r) => tab.match(r) && (!q || `${r.id} ${r.patient?.name} ${r.nurse?.name} ${r.newNurses.map((n) => n.name).join(' ')} ${careTypeLabel(r.careType)}`.toLowerCase().includes(q)))
+  }, [allRequests, requestTab, q])
+
+  const waiting = allRequests.filter((r) => r.status === 'nurse_pending' || r.status === 'no_match').length
+  const activeNurses = new Set(shifts.map((s) => s.nurseId)).size
+  const totalMinutes = shifts.reduce((sum, s) => sum + minutesOf(s), 0)
 
   const columns = [
-    { title: 'Mã', dataIndex: 'id', render: (id) => <Text strong>#{id}</Text> },
-    { title: 'Bệnh nhân', key: 'patient', sorter: (a, b) => compareByGivenName(a.patient?.name, b.patient?.name), render: (_, r) => r.patient?.name },
-    { title: 'Nhu cầu', key: 'care', render: (_, r) => careTypeLabel(r.careType) },
-    { title: 'Bắt đầu', key: 'start', sorter: (a, b) => a.desiredStartDate.localeCompare(b.desiredStartDate), render: (_, r) => `${formatDate(r.desiredStartDate)} · ${r.timeSlot?.start}` },
-    { title: 'Điều dưỡng', key: 'nurse', render: (_, r) => r.nurse?.name || <Text type="secondary">—</Text> },
+    { title: 'Mã', dataIndex: 'id', width: 100, render: (id) => <Text strong>#{id}</Text> },
+    { title: 'Bệnh nhân', key: 'patient', width: 150, sorter: (a, b) => compareByGivenName(a.patient?.name, b.patient?.name), render: (_, r) => r.patient?.name },
+    { title: 'Nhu cầu', key: 'care', width: 150, render: (_, r) => careTypeLabel(r.careType) },
+    { title: 'Bắt đầu', key: 'start', width: 140, sorter: (a, b) => a.desiredStartDate.localeCompare(b.desiredStartDate), render: (_, r) => `${formatDate(r.desiredStartDate)} · ${r.timeSlot?.start}` },
     {
-      title: 'Điều dưỡng mới',
-      key: 'newNurse',
-      render: (_, r) =>
-        r.newNurses.length ? (
-          <Flex gap={4} wrap>
-            {r.newNurses.map((n) => (
-              <Link key={n.id} to={`/hospital/admin/roster/${n.id}`}>
-                <Tag color="purple">{n.name}</Tag>
-              </Link>
-            ))}
-          </Flex>
-        ) : (
-          <Text type="secondary">—</Text>
-        ),
+      title: 'Điều dưỡng',
+      key: 'nurse',
+      width: 170,
+      render: (_, r) => (
+        <div>
+          {r.nurse ? <Text>{r.nurse.name}</Text> : <Text type="secondary">—</Text>}
+          {r.newNurses.length > 0 && (
+            <div>
+              <Tooltip title="Điều dưỡng được giao thay">
+                <Tag color="purple" style={{ marginInlineEnd: 0 }}>
+                  Mới: {r.newNurses.map((n) => n.name).join(', ')}
+                </Tag>
+              </Tooltip>
+            </div>
+          )}
+        </div>
+      ),
     },
-    { title: 'Tạo bởi', key: 'by', render: (_, r) => (r.createdBy === 'hospital' ? <Tag color="purple">Bệnh viện</Tag> : <Tag>Bệnh nhân</Tag>) },
-    { title: 'Tạo lúc', key: 'created', sorter: (a, b) => a.createdAt.localeCompare(b.createdAt), defaultSortOrder: 'descend', render: (_, r) => formatDateTime(r.createdAt) },
-    { title: 'Trạng thái', key: 'status', render: (_, r) => <Tag color={REQUEST_STATUS_COLOR[r.status]}>{CARE_REQUEST_STATUS_LABEL[r.status]?.label || r.status}</Tag> },
+    { title: 'Tạo lúc', key: 'created', width: 120, sorter: (a, b) => a.createdAt.localeCompare(b.createdAt), defaultSortOrder: 'descend', render: (_, r) => <span title={r.createdBy === 'hospital' ? 'Bệnh viện tạo thay' : 'Bệnh nhân tạo'}>{dayjs(r.createdAt).format('DD/MM HH:mm')}</span> },
+    { title: 'Trạng thái', key: 'status', width: 210, render: (_, r) => <Tag color={REQUEST_STATUS_COLOR[r.status]}>{CARE_REQUEST_STATUS_LABEL[r.status]?.label || r.status}</Tag> },
   ]
 
   const weekLabel = `${weekStart.format('DD/MM')} – ${weekStart.add(6, 'day').format('DD/MM/YYYY')}`
@@ -256,7 +169,7 @@ export default function HospitalDispatch() {
       <PageHead
         eyebrow="Care requests & scheduling"
         title="Yêu cầu & điều phối lịch"
-        description="Một lịch tuần cho toàn bộ điều dưỡng của bệnh viện, kèm các yêu cầu chăm sóc liên quan và điều dưỡng được giao thay."
+        description="Nắm tải làm việc của điều dưỡng theo tuần, xử lý ca cần đổi người và theo dõi các yêu cầu chăm sóc."
         action={
           <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => setPickerOpen(true)}>
             Tạo thay bệnh nhân
@@ -264,70 +177,84 @@ export default function HospitalDispatch() {
         }
       />
 
-      {cannotPerform.length > 0 && (
-        <>
-          <Title level={5}>Ca cần hỗ trợ đổi điều dưỡng ({cannotPerform.length})</Title>
-          <Flex vertical gap={10} style={{ marginBottom: 20 }}>
-            {cannotPerform.map(({ booking, sessionItem }) => (
-              <ReassignCard key={sessionItem.id} booking={booking} sessionItem={sessionItem} candidates={candidatesFor(getCareRequest(state, booking.careRequestId)?.careType)} />
+      <div className="dispatch-kpis">
+        <Card size="small">
+          <Statistic title="Ca trong tuần" value={shifts.length} suffix={<small>{hoursText(totalMinutes)}</small>} />
+        </Card>
+        <Card size="small">
+          <Statistic title="Điều dưỡng có ca" value={activeNurses} suffix={`/ ${nurses.length}`} />
+        </Card>
+        <Card size="small" className={cannotPerform.length ? 'is-alert' : undefined} hoverable={cannotPerform.length > 0} onClick={() => cannotPerform.length && document.getElementById('reassign-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+          <Statistic title="Ca cần đổi điều dưỡng" value={cannotPerform.length} styles={{ content: cannotPerform.length ? { color: '#cf3c43' } : undefined }} />
+        </Card>
+        <Card size="small" className={waiting ? 'is-warn' : undefined} hoverable onClick={() => setRequestTab('open')}>
+          <Statistic title="Yêu cầu chờ điều dưỡng" value={waiting} styles={{ content: waiting ? { color: '#b96b08' } : undefined }} />
+        </Card>
+      </div>
+
+      <ReassignPanel items={cannotPerform} candidatesFor={candidatesFor} />
+
+      <Card
+        title="Tải làm việc theo tuần"
+        styles={{ body: { padding: 0 } }}
+        style={{ marginBottom: 20 }}
+        extra={
+          <Flex gap={6} align="center" className="load-legend" wrap>
+            {LOAD_LEGEND.map((l) => (
+              <span key={l.level}>
+                <i className={`load-swatch level-${l.level}`} /> {l.label}
+              </span>
             ))}
           </Flex>
-        </>
-      )}
-
-      <Card className="nurse-toolbar" size="small" style={{ marginBottom: 16 }}>
-        <Flex vertical gap={12}>
+        }
+      >
+        <div className="dispatch-toolbar">
           <Flex gap={8} wrap align="center">
-            <Button icon={<LeftOutlined />} onClick={() => setWeekStart((w) => w.subtract(7, 'day'))}>
-              Tuần trước
-            </Button>
-            <DatePicker
-              picker="week"
-              allowClear={false}
-              value={weekStart}
-              onChange={(d) => d && setWeekStart(monday(d))}
-              format={() => weekLabel}
-              style={{ flex: '0 1 230px' }}
-            />
-            <Button iconPlacement="end" icon={<RightOutlined />} onClick={() => setWeekStart((w) => w.add(7, 'day'))}>
-              Tuần sau
-            </Button>
+            <Button icon={<LeftOutlined />} onClick={() => setWeekStart((w) => w.subtract(7, 'day'))} aria-label="Tuần trước" />
+            <DatePicker picker="week" allowClear={false} value={weekStart} onChange={(d) => d && setWeekStart(monday(d))} format={() => weekLabel} style={{ width: 210 }} />
+            <Button icon={<RightOutlined />} onClick={() => setWeekStart((w) => w.add(7, 'day'))} aria-label="Tuần sau" />
             <Button disabled={isThisWeek} onClick={() => setWeekStart(monday(dayjs()))}>
               Tuần này
             </Button>
-            <Text type="secondary" style={{ marginLeft: 'auto' }}>
-              {shifts.length} ca trong tuần
-            </Text>
           </Flex>
-          <Flex gap={10} wrap>
-            <Input allowClear prefix={<SearchOutlined />} placeholder="Tìm bệnh nhân, điều dưỡng, mã yêu cầu" value={search} onChange={(e) => setSearch(e.target.value)} style={{ flex: '1 1 240px' }} />
-            <Select
-              mode="multiple"
-              allowClear
-              maxTagCount="responsive"
-              placeholder="Lọc theo điều dưỡng"
-              value={nurseIds}
-              onChange={setNurseIds}
-              optionFilterProp="label"
-              options={nurses.map((n) => ({ value: n.id, label: n.name }))}
-              style={{ flex: '1 1 220px' }}
-            />
-            <Select allowClear placeholder="Trạng thái ca" value={sessionStatus} onChange={setSessionStatus} options={Object.entries(SESSION_META).map(([value, m]) => ({ value, label: m.label }))} style={{ flex: '0 1 170px' }} />
+          <Flex gap={8} wrap className="dispatch-filters">
+            <Input allowClear prefix={<SearchOutlined />} placeholder="Tìm bệnh nhân, điều dưỡng, mã yêu cầu" value={search} onChange={(e) => setSearch(e.target.value)} style={{ flex: '1 1 220px' }} />
+            <Select mode="multiple" allowClear maxTagCount="responsive" placeholder="Lọc điều dưỡng" value={nurseIds} onChange={setNurseIds} optionFilterProp="label" options={nurses.map((n) => ({ value: n.id, label: n.name }))} style={{ flex: '1 1 200px' }} />
+            <Select allowClear placeholder="Trạng thái ca" value={sessionStatus} onChange={setSessionStatus} options={Object.entries(SESSION_META).map(([value, m]) => ({ value, label: m.label }))} style={{ flex: '0 1 160px' }} />
           </Flex>
-        </Flex>
+        </div>
+        <LoadCalendar nurses={calendarNurses} shifts={shifts} weekStart={weekStart} onOpenCell={(nurseId, date) => setDrawer({ nurseId, date })} onOpenDay={(date) => setDrawer({ date })} />
       </Card>
 
-      <Card styles={{ body: { padding: 0 } }} title="Lịch điều phối" style={{ marginBottom: 20 }}>
-        <WeekCalendar nurses={calendarNurses} shifts={shifts} weekStart={weekStart} />
+      <Card styles={{ body: { padding: 0 } }} title="Yêu cầu chăm sóc" extra={<Text type="secondary">{requests.length} yêu cầu</Text>}>
+        <div className="dispatch-toolbar">
+          <Segmented
+            value={requestTab}
+            onChange={setRequestTab}
+            options={REQUEST_TABS.map((t) => ({
+              value: t.key,
+              label: (
+                <span className="segmented-label">
+                  {t.label}
+                  <Badge count={tabCounts[t.key]} showZero color={t.key === 'open' ? '#b96b08' : '#94a4a7'} size="small" />
+                </span>
+              ),
+            }))}
+          />
+        </div>
+        <Table
+          rowKey="id"
+          size="middle"
+          columns={columns}
+          dataSource={requests}
+          pagination={{ pageSize: 10, hideOnSinglePage: true, showSizeChanger: false }}
+          scroll={{ x: 1080 }} className="dispatch-requests"
+          expandable={{ expandedRowRender: (r) => <RequestDetail request={r} state={state} />, expandRowByClick: true }}
+          locale={{ emptyText: 'Không có yêu cầu nào' }}
+        />
       </Card>
 
-      <Card
-        title={`Yêu cầu chăm sóc (${requests.length})`}
-        styles={{ body: { padding: 0 } }}
-        extra={<Select allowClear placeholder="Trạng thái yêu cầu" value={requestStatus} onChange={setRequestStatus} options={Object.entries(CARE_REQUEST_STATUS_LABEL).map(([value, m]) => ({ value, label: m.label }))} style={{ width: 230 }} />}
-      >
-        <Table rowKey="id" columns={columns} dataSource={requests} pagination={{ pageSize: 10, hideOnSinglePage: true }} scroll={{ x: 1400 }} locale={{ emptyText: 'Chưa có yêu cầu liên quan' }} />
-      </Card>
+      <ShiftDrawer target={drawer} shifts={shifts} nurseById={nurseById} onClose={() => setDrawer(null)} />
 
       <HospitalPatientPickerModal
         open={pickerOpen}

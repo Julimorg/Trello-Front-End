@@ -2729,56 +2729,192 @@ button.link-reset {
   font-size: 0.8rem;
 }
 
-/* Hospital admin: week dispatch calendar */
+/* Hospital admin: dispatch workload calendar */
+.dispatch-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.dispatch-kpis .ant-card {
+  border-radius: 14px;
+}
+.dispatch-kpis .ant-statistic-content-suffix small {
+  font-size: 13px;
+  color: #6c8286;
+  margin-left: 6px;
+}
+.dispatch-kpis .is-alert {
+  border-color: #f2b8bb;
+  background: #fff7f7;
+}
+.dispatch-kpis .is-warn {
+  border-color: #f0d6a6;
+  background: #fffaf0;
+}
+.dispatch-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #edf2f2;
+}
+.dispatch-filters {
+  flex: 1 1 420px;
+  justify-content: flex-end;
+}
+.load-legend {
+  font-size: 12px;
+  font-weight: 400;
+  color: #6c8286;
+}
+.load-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  vertical-align: -2px;
+}
+.level-1 { background: #e3f4f1; }
+.level-2 { background: #bfe6df; }
+.level-3 { background: #86d0c5; }
+.level-4 { background: #3fb3a5; color: #fff; }
 .dispatch-day {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
   line-height: 1.25;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.dispatch-day:hover {
+  background: #eef6f5;
 }
 .dispatch-day span {
   font-size: 12px;
   font-weight: 500;
   color: #6c8286;
 }
+.dispatch-day em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 600;
+  color: #0b6b68;
+}
 .dispatch-day.is-today b,
 .dispatch-day.is-today span {
   color: #0b6b68;
 }
-.dispatch-chip {
-  display: flex;
+.dispatch-today-col {
+  background: #f6fbfa;
+}
+.load-cell {
+  position: relative;
+  display: inline-flex;
   flex-direction: column;
-  padding: 4px 8px;
-  border-radius: 8px;
-  border-left: 3px solid #1b9aaa;
-  background: #e6f6f8;
-  font-size: 12px;
-  line-height: 1.3;
-  cursor: default;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  min-height: 44px;
+  padding: 3px 4px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
 }
-.dispatch-chip b {
-  font-weight: 700;
+.load-cell:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 64, 68, 0.16);
 }
-.dispatch-chip span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.load-cell b {
+  font-size: 13px;
 }
-.dispatch-chip.is-completed {
-  border-left-color: #98a8ab;
-  background: #f1f4f4;
-  color: #5d7176;
+.load-cell span {
+  font-size: 11px;
+  opacity: 0.8;
 }
-.dispatch-chip.is-reassigned {
-  border-left-color: #7d4fd6;
-  background: #f1eafc;
+.load-cell.has-issue {
+  border-color: #cf3c43;
 }
-.dispatch-chip.is-cannot_perform {
-  border-left-color: #cf3c43;
-  background: #fdecec;
+.load-flag {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cf3c43;
+  border: 2px solid #fff;
 }
 .dispatch-empty {
   color: #c5d0d2;
+}
+.dispatch-total {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.dispatch-total span {
+  font-size: 12px;
+  color: #6c8286;
+}
+.shift-row {
+  display: flex;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e3ebec;
+  border-left: 3px solid #1b9aaa;
+  border-radius: 10px;
+  background: #fff;
+}
+.shift-row.is-completed {
+  border-left-color: #98a8ab;
+  background: #f8fafa;
+}
+.shift-row.is-reassigned {
+  border-left-color: #7d4fd6;
+}
+.shift-row.is-cannot_perform {
+  border-left-color: #cf3c43;
+  background: #fff7f7;
+}
+.shift-row-time {
+  display: flex;
+  flex-direction: column;
+  min-width: 44px;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+.shift-row-time span {
+  color: #6c8286;
+  font-size: 12px;
+}
+.shift-row-main {
+  flex: 1;
+  min-width: 0;
+}
+.reassign-panel {
+  border-color: #f2b8bb;
+}
+.reassign-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 10px 0;
+  border-top: 1px solid #f1e3e4;
+}
+@media (max-width: 1024px) {
+  .dispatch-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* Hospital admin: weekly participation schedule editor */
@@ -2850,5 +2986,28 @@ button.link-reset {
 @media (max-width: 780px) {
   .crumb-item:not(.is-current) {
     display: none;
+  }
+}
+
+.dispatch-requests td,
+.dispatch-requests th {
+  white-space: nowrap;
+}
+.dispatch-requests td:nth-child(4) {
+  white-space: normal;
+}
+
+@media (max-width: 780px) {
+  .load-legend {
+    display: none !important;
+  }
+  .dispatch-calendar .ant-avatar {
+    display: none;
+  }
+  .dispatch-calendar .ant-table-cell-fix-left {
+    max-width: 118px;
+  }
+  .dispatch-calendar .ant-table-cell-fix-left .ant-typography {
+    font-size: 12px;
   }
 }
