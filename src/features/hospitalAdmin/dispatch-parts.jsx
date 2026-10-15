@@ -7,7 +7,7 @@ import { useDb } from '../../lib/store'
 import { getCareRequest, getNurse, getPatient, manualReassignSession } from '../../lib/db'
 import { careTypeLabel, formatDate } from '../../lib/format'
 import { initials } from './admin-shared'
-import { ISO, SESSION_META, WEEKDAY, WEEKDAY_LONG, hoursText, loadLevel, minutesOf } from './dispatch-utils'
+import { ISO, REQUEST_PATH, SHIFT_PATH, SESSION_META, WEEKDAY, WEEKDAY_LONG, hoursText, loadLevel, minutesOf } from './dispatch-utils'
 
 const { Text } = Typography
 // ---------- Load calendar ----------
@@ -61,7 +61,12 @@ export function LoadCalendar({ nurses, shifts, weekStart, onOpenCell, onOpenDay 
       const iso = d.format(ISO)
       return {
         title: (
-          <button type="button" className={`dispatch-day${iso === today ? ' is-today' : ''}`} onClick={() => onOpenDay(iso)} title={`Xem tất cả ca ${WEEKDAY_LONG[d.day()]} ${d.format('DD/MM')}`}>
+          <button
+            type="button"
+            className={`dispatch-day${iso === today ? ' is-today' : ''}`}
+            onClick={() => onOpenDay(iso)}
+            title={`Xem tất cả ca ${WEEKDAY_LONG[d.day()]} ${d.format('DD/MM')}`}
+          >
             <b>{WEEKDAY[d.day()]}</b>
             <span>{d.format('DD/MM')}</span>
             <em>{dayTotals.get(iso) || 0} ca</em>
@@ -75,7 +80,12 @@ export function LoadCalendar({ nurses, shifts, weekStart, onOpenCell, onOpenDay 
           const cell = cells.get(`${n.id}|${iso}`)
           if (!cell) return <span className="dispatch-empty">·</span>
           return (
-            <button type="button" className={`load-cell level-${loadLevel(cell.minutes)}${cell.issue ? ' has-issue' : ''}`} onClick={() => onOpenCell(n.id, iso)} aria-label={`${n.name}, ${WEEKDAY_LONG[d.day()]} ${d.format('DD/MM')}: ${cell.count} ca`}>
+            <button
+              type="button"
+              className={`load-cell level-${loadLevel(cell.minutes)}${cell.issue ? ' has-issue' : ''}`}
+              onClick={() => onOpenCell(n.id, iso)}
+              aria-label={`${n.name}, ${WEEKDAY_LONG[d.day()]} ${d.format('DD/MM')}: ${cell.count} ca`}
+            >
               <b>{cell.count} ca</b>
               <span>{hoursText(cell.minutes)}</span>
               {cell.issue > 0 && <i className="load-flag" title="Có ca cần người thay" />}
@@ -198,6 +208,20 @@ export function ShiftDrawer({ target, shifts, nurseById, onClose }) {
                       <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
                         {s.patient?.address || s.careRequest?.district}
                       </Text>
+                      <Space size={8} style={{ marginTop: 6 }}>
+                        <Link to={SHIFT_PATH(s.id)}>
+                          <Button size="small" type="primary" ghost>
+                            Xem chi tiết ca
+                          </Button>
+                        </Link>
+                        {s.careRequest && (
+                          <Link to={REQUEST_PATH(s.careRequest.id)}>
+                            <Button size="small" type="link">
+                              Yêu cầu #{s.careRequest.id}
+                            </Button>
+                          </Link>
+                        )}
+                      </Space>
                     </div>
                   </div>
                 ))}
@@ -238,7 +262,14 @@ function ReassignRow({ booking, sessionItem, candidates }) {
         )}
       </div>
       <Space wrap align="start">
-        <Select placeholder="Chọn điều dưỡng mới" value={pick} onChange={setPick} options={candidates.map((n) => ({ value: n.id, label: n.name }))} style={{ width: 210 }} notFoundContent="Không có điều dưỡng phù hợp" />
+        <Select
+          placeholder="Chọn điều dưỡng mới"
+          value={pick}
+          onChange={setPick}
+          options={candidates.map((n) => ({ value: n.id, label: n.name }))}
+          style={{ width: 210 }}
+          notFoundContent="Không có điều dưỡng phù hợp"
+        />
         <Button
           type="primary"
           icon={<SwapOutlined />}

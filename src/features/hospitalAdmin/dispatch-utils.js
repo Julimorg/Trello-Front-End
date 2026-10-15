@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 export const ISO = 'YYYY-MM-DD'
 export const WEEKDAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
 export const WEEKDAY_LONG = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
@@ -26,3 +27,12 @@ export const LOAD_LEGEND = [
   { level: 4, label: '> 8 h' },
 ]
 
+
+export const SHIFT_PATH = (sessionId) => `/hospital/admin/dispatch/shifts/${sessionId}`
+export const REQUEST_PATH = (requestId) => `/hospital/admin/dispatch/requests/${requestId}`
+
+// "Hôm nay" / "Sắp tới" / "Đã qua" for a visit date.
+export function dayPhase(date, today = dayjs().format(ISO)) {
+  if (date === today) return { label: 'Hôm nay', color: 'magenta' }
+  return date > today ? { label: 'Sắp tới', color: 'blue' } : { label: 'Đã qua', color: 'default' }
+}

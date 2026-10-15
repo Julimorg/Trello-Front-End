@@ -3011,3 +3011,35 @@ button.link-reset {
     font-size: 12px;
   }
 }
+
+.shift-session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.shift-session-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e3ebec;
+  border-radius: 10px;
+  color: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.shift-session-item:hover {
+  background: #f3f9f8;
+}
+.shift-session-item.is-current {
+  border-color: #0b6b68;
+  background: #e7f5f2;
+}
+.nowrap-table td,
+.nowrap-table th {
+  white-space: nowrap;
+}

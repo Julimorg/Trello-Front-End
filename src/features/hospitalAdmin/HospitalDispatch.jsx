@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import dayjs from 'dayjs'
+import { Link } from 'react-router-dom'
 import { Badge, Button, Card, DatePicker, Descriptions, Flex, Input, Segmented, Select, Statistic, Table, Tag, Tooltip, Typography } from 'antd'
-import { LeftOutlined, PlusOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons'
+import { ArrowRightOutlined, LeftOutlined, PlusOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons'
 import PageHead from '../../components/PageHead'
 import CareRequestWizardModal from '../careRequest/CareRequestWizardModal'
 import HospitalPatientPickerModal from './HospitalPatientPickerModal'
 import { LoadCalendar, ReassignPanel, ShiftDrawer } from './dispatch-parts'
-import { ISO, LOAD_LEGEND, SESSION_META, hoursText, minutesOf } from './dispatch-utils'
+import { ISO, LOAD_LEGEND, REQUEST_PATH, SESSION_META, hoursText, minutesOf } from './dispatch-utils'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
 import { getCareRequest, getNurse, getPatient, listNursesByHospital } from '../../lib/db'
@@ -30,8 +31,16 @@ const REQUEST_STATUS_COLOR = {
 // Request tabs: what still needs the coordinator vs. what is settled.
 const OPEN_STATUSES = ['created', 'matching', 'matched', 'nurse_pending', 'no_match']
 const REQUEST_TABS = [
-  { key: 'open', label: 'Đang xử lý', match: (r) => OPEN_STATUSES.includes(r.status) },
-  { key: 'done', label: 'Đã chấp nhận', match: (r) => r.status === 'completed' },
+  {
+    key: 'open',
+    label: 'Đang xử lý',
+    match: (r) => OPEN_STATUSES.includes(r.status),
+  },
+  {
+    key: 'done',
+    label: 'Đã chấp nhận',
+    match: (r) => r.status === 'completed',
+  },
   { key: 'cancelled', label: 'Đã hủy', match: (r) => r.status === 'cancelled' },
   { key: 'all', label: 'Tất cả', match: () => true },
 ]
@@ -54,23 +63,53 @@ function RequestDetail({ request, state }) {
   const sessions = booking ? [...booking.sessions].sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start)) : []
   const matched = request.matchedNurseIds.map((id) => getNurse(state, id)?.name).filter(Boolean)
   return (
-    <Descriptions
-      size="small"
-      column={{ xs: 1, md: 2, xl: 3 }}
-      items={[
-        { key: 'freq', label: 'Tần suất', children: frequencyText(request) },
-        { key: 'time', label: 'Khung giờ', children: request.timeSlot ? `${request.timeSlot.start}–${request.timeSlot.end}` : '—' },
-        { key: 'area', label: 'Khu vực', children: request.district },
-        { key: 'addr', label: 'Địa chỉ', children: request.patient?.address || '—' },
-        { key: 'matched', label: 'Điều dưỡng được gợi ý', children: matched.length ? matched.join(', ') : '—' },
-        {
-          key: 'sessions',
-          label: 'Lịch đã đặt',
-          children: sessions.length ? `${sessions.length} buổi · ${formatDate(sessions[0].date)} → ${formatDate(sessions[sessions.length - 1].date)}` : 'Chưa có lịch',
-        },
-        ...(request.notes ? [{ key: 'notes', label: 'Ghi chú', span: 'filled', children: request.notes }] : []),
-      ]}
-    />
+    <>
+      <Descriptions
+        size="small"
+        column={{ xs: 1, md: 2, xl: 3 }}
+        items={[
+          { key: 'freq', label: 'Tần suất', children: frequencyText(request) },
+          {
+            key: 'time',
+            label: 'Khung giờ',
+            children: request.timeSlot ? `${request.timeSlot.start}–${request.timeSlot.end}` : '—',
+          },
+          { key: 'area', label: 'Khu vực', children: request.district },
+          {
+            key: 'addr',
+            label: 'Địa chỉ',
+            children: request.patient?.address || '—',
+          },
+          {
+            key: 'matched',
+            label: 'Điều dưỡng được gợi ý',
+            children: matched.length ? matched.join(', ') : '—',
+          },
+          {
+            key: 'sessions',
+            label: 'Lịch đã đặt',
+            children: sessions.length ? `${sessions.length} buổi · ${formatDate(sessions[0].date)} → ${formatDate(sessions[sessions.length - 1].date)}` : 'Chưa có lịch',
+          },
+          ...(request.notes
+            ? [
+                {
+                  key: 'notes',
+                  label: 'Ghi chú',
+                  span: 'filled',
+                  children: request.notes,
+                },
+              ]
+            : []),
+        ]}
+      />
+      <Flex justify="flex-end" style={{ marginTop: 8 }}>
+        <Link to={REQUEST_PATH(request.id)}>
+          <Button type="primary" icon={<ArrowRightOutlined />} iconPlacement="end">
+            Xem chi tiết
+          </Button>
+        </Link>
+      </Flex>
+    </>
   )
 }
 
@@ -103,9 +142,16 @@ export default function HospitalDispatch() {
         .flatMap((b) =>
           b.sessions
             .filter((s) => nurseById.has(s.nurseId) && s.date >= weekFrom && s.date <= weekTo)
-            .map((s) => ({ ...s, booking: b, patient: getPatient(state, b.patientId), careRequest: getCareRequest(state, b.careRequestId) })),
+            .map((s) => ({
+              ...s,
+              booking: b,
+              patient: getPatient(state, b.patientId),
+              careRequest: getCareRequest(state, b.careRequestId),
+            })),
         )
-        .filter((s) => (!sessionStatus || s.status === sessionStatus) && (!q || `${s.patient?.name} ${s.patient?.address} ${nurseById.get(s.nurseId)?.name}`.toLowerCase().includes(q))),
+        .filter(
+          (s) => (!sessionStatus || s.status === sessionStatus) && (!q || `${s.patient?.name} ${s.patient?.address} ${nurseById.get(s.nurseId)?.name}`.toLowerCase().includes(q)),
+        ),
     [state, nurseById, weekFrom, weekTo, sessionStatus, q],
   )
 
@@ -119,14 +165,23 @@ export default function HospitalDispatch() {
       .filter((r) => r.matchedNurseIds.some((id) => nurseById.has(id)) || (r.selectedNurseId && nurseById.has(r.selectedNurseId)) || r.createdBy === 'hospital')
       .map((r) => {
         const booking = state.bookings.find((b) => b.careRequestId === r.id || b.id === r.bookingId)
-        return { ...r, booking, patient: getPatient(state, r.patientId), nurse: r.selectedNurseId ? getNurse(state, r.selectedNurseId) : null, newNurses: replacementNurses(state, booking) }
+        return {
+          ...r,
+          booking,
+          patient: getPatient(state, r.patientId),
+          nurse: r.selectedNurseId ? getNurse(state, r.selectedNurseId) : null,
+          newNurses: replacementNurses(state, booking),
+        }
       })
   }, [state, nurseById])
 
   const tabCounts = useMemo(() => Object.fromEntries(REQUEST_TABS.map((t) => [t.key, allRequests.filter(t.match).length])), [allRequests])
   const requests = useMemo(() => {
     const tab = REQUEST_TABS.find((t) => t.key === requestTab)
-    return allRequests.filter((r) => tab.match(r) && (!q || `${r.id} ${r.patient?.name} ${r.nurse?.name} ${r.newNurses.map((n) => n.name).join(' ')} ${careTypeLabel(r.careType)}`.toLowerCase().includes(q)))
+    return allRequests.filter(
+      (r) =>
+        tab.match(r) && (!q || `${r.id} ${r.patient?.name} ${r.nurse?.name} ${r.newNurses.map((n) => n.name).join(' ')} ${careTypeLabel(r.careType)}`.toLowerCase().includes(q)),
+    )
   }, [allRequests, requestTab, q])
 
   const waiting = allRequests.filter((r) => r.status === 'nurse_pending' || r.status === 'no_match').length
@@ -134,10 +189,32 @@ export default function HospitalDispatch() {
   const totalMinutes = shifts.reduce((sum, s) => sum + minutesOf(s), 0)
 
   const columns = [
-    { title: 'Mã', dataIndex: 'id', width: 100, render: (id) => <Text strong>#{id}</Text> },
-    { title: 'Bệnh nhân', key: 'patient', width: 150, sorter: (a, b) => compareByGivenName(a.patient?.name, b.patient?.name), render: (_, r) => r.patient?.name },
-    { title: 'Nhu cầu', key: 'care', width: 150, render: (_, r) => careTypeLabel(r.careType) },
-    { title: 'Bắt đầu', key: 'start', width: 140, sorter: (a, b) => a.desiredStartDate.localeCompare(b.desiredStartDate), render: (_, r) => `${formatDate(r.desiredStartDate)} · ${r.timeSlot?.start}` },
+    {
+      title: 'Mã',
+      dataIndex: 'id',
+      width: 100,
+      render: (id) => <Text strong>#{id}</Text>,
+    },
+    {
+      title: 'Bệnh nhân',
+      key: 'patient',
+      width: 150,
+      sorter: (a, b) => compareByGivenName(a.patient?.name, b.patient?.name),
+      render: (_, r) => r.patient?.name,
+    },
+    {
+      title: 'Nhu cầu',
+      key: 'care',
+      width: 150,
+      render: (_, r) => careTypeLabel(r.careType),
+    },
+    {
+      title: 'Bắt đầu',
+      key: 'start',
+      width: 140,
+      sorter: (a, b) => a.desiredStartDate.localeCompare(b.desiredStartDate),
+      render: (_, r) => `${formatDate(r.desiredStartDate)} · ${r.timeSlot?.start}`,
+    },
     {
       title: 'Điều dưỡng',
       key: 'nurse',
@@ -157,8 +234,20 @@ export default function HospitalDispatch() {
         </div>
       ),
     },
-    { title: 'Tạo lúc', key: 'created', width: 120, sorter: (a, b) => a.createdAt.localeCompare(b.createdAt), defaultSortOrder: 'descend', render: (_, r) => <span title={r.createdBy === 'hospital' ? 'Bệnh viện tạo thay' : 'Bệnh nhân tạo'}>{dayjs(r.createdAt).format('DD/MM HH:mm')}</span> },
-    { title: 'Trạng thái', key: 'status', width: 210, render: (_, r) => <Tag color={REQUEST_STATUS_COLOR[r.status]}>{CARE_REQUEST_STATUS_LABEL[r.status]?.label || r.status}</Tag> },
+    {
+      title: 'Tạo lúc',
+      key: 'created',
+      width: 120,
+      sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
+      defaultSortOrder: 'descend',
+      render: (_, r) => <span title={r.createdBy === 'hospital' ? 'Bệnh viện tạo thay' : 'Bệnh nhân tạo'}>{dayjs(r.createdAt).format('DD/MM HH:mm')}</span>,
+    },
+    {
+      title: 'Trạng thái',
+      key: 'status',
+      width: 210,
+      render: (_, r) => <Tag color={REQUEST_STATUS_COLOR[r.status]}>{CARE_REQUEST_STATUS_LABEL[r.status]?.label || r.status}</Tag>,
+    },
   ]
 
   const weekLabel = `${weekStart.format('DD/MM')} – ${weekStart.add(6, 'day').format('DD/MM/YYYY')}`
@@ -184,8 +273,19 @@ export default function HospitalDispatch() {
         <Card size="small">
           <Statistic title="Điều dưỡng có ca" value={activeNurses} suffix={`/ ${nurses.length}`} />
         </Card>
-        <Card size="small" className={cannotPerform.length ? 'is-alert' : undefined} hoverable={cannotPerform.length > 0} onClick={() => cannotPerform.length && document.getElementById('reassign-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-          <Statistic title="Ca cần đổi điều dưỡng" value={cannotPerform.length} styles={{ content: cannotPerform.length ? { color: '#cf3c43' } : undefined }} />
+        <Card
+          size="small"
+          className={cannotPerform.length ? 'is-alert' : undefined}
+          hoverable={cannotPerform.length > 0}
+          onClick={() => cannotPerform.length && document.getElementById('reassign-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        >
+          <Statistic
+            title="Ca cần đổi điều dưỡng"
+            value={cannotPerform.length}
+            styles={{
+              content: cannotPerform.length ? { color: '#cf3c43' } : undefined,
+            }}
+          />
         </Card>
         <Card size="small" className={waiting ? 'is-warn' : undefined} hoverable onClick={() => setRequestTab('open')}>
           <Statistic title="Yêu cầu chờ điều dưỡng" value={waiting} styles={{ content: waiting ? { color: '#b96b08' } : undefined }} />
@@ -218,12 +318,45 @@ export default function HospitalDispatch() {
             </Button>
           </Flex>
           <Flex gap={8} wrap className="dispatch-filters">
-            <Input allowClear prefix={<SearchOutlined />} placeholder="Tìm bệnh nhân, điều dưỡng, mã yêu cầu" value={search} onChange={(e) => setSearch(e.target.value)} style={{ flex: '1 1 220px' }} />
-            <Select mode="multiple" allowClear maxTagCount="responsive" placeholder="Lọc điều dưỡng" value={nurseIds} onChange={setNurseIds} optionFilterProp="label" options={nurses.map((n) => ({ value: n.id, label: n.name }))} style={{ flex: '1 1 200px' }} />
-            <Select allowClear placeholder="Trạng thái ca" value={sessionStatus} onChange={setSessionStatus} options={Object.entries(SESSION_META).map(([value, m]) => ({ value, label: m.label }))} style={{ flex: '0 1 160px' }} />
+            <Input
+              allowClear
+              prefix={<SearchOutlined />}
+              placeholder="Tìm bệnh nhân, điều dưỡng, mã yêu cầu"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ flex: '1 1 220px' }}
+            />
+            <Select
+              mode="multiple"
+              allowClear
+              maxTagCount="responsive"
+              placeholder="Lọc điều dưỡng"
+              value={nurseIds}
+              onChange={setNurseIds}
+              optionFilterProp="label"
+              options={nurses.map((n) => ({ value: n.id, label: n.name }))}
+              style={{ flex: '1 1 200px' }}
+            />
+            <Select
+              allowClear
+              placeholder="Trạng thái ca"
+              value={sessionStatus}
+              onChange={setSessionStatus}
+              options={Object.entries(SESSION_META).map(([value, m]) => ({
+                value,
+                label: m.label,
+              }))}
+              style={{ flex: '0 1 160px' }}
+            />
           </Flex>
         </div>
-        <LoadCalendar nurses={calendarNurses} shifts={shifts} weekStart={weekStart} onOpenCell={(nurseId, date) => setDrawer({ nurseId, date })} onOpenDay={(date) => setDrawer({ date })} />
+        <LoadCalendar
+          nurses={calendarNurses}
+          shifts={shifts}
+          weekStart={weekStart}
+          onOpenCell={(nurseId, date) => setDrawer({ nurseId, date })}
+          onOpenDay={(date) => setDrawer({ date })}
+        />
       </Card>
 
       <Card styles={{ body: { padding: 0 } }} title="Yêu cầu chăm sóc" extra={<Text type="secondary">{requests.length} yêu cầu</Text>}>
@@ -247,9 +380,18 @@ export default function HospitalDispatch() {
           size="middle"
           columns={columns}
           dataSource={requests}
-          pagination={{ pageSize: 10, hideOnSinglePage: true, showSizeChanger: false }}
-          scroll={{ x: 1080 }} className="dispatch-requests"
-          expandable={{ expandedRowRender: (r) => <RequestDetail request={r} state={state} />, expandRowByClick: true }}
+          pagination={{
+            pageSize: 10,
+            hideOnSinglePage: true,
+            showSizeChanger: false,
+          }}
+          scroll={{ x: 1080 }}
+          className="dispatch-requests"
+          expandable={{
+            expandedRowRender: (r) => <RequestDetail request={r} state={state} />,
+            expandRowByClick: true,
+            columnWidth: 48,
+          }}
           locale={{ emptyText: 'Không có yêu cầu nào' }}
         />
       </Card>
@@ -264,7 +406,13 @@ export default function HospitalDispatch() {
           setWizardPatientId(patientId)
         }}
       />
-      <CareRequestWizardModal open={Boolean(wizardPatientId)} onClose={() => setWizardPatientId(null)} patientId={wizardPatientId} createdBy="hospital" onCreated={() => setWizardPatientId(null)} />
+      <CareRequestWizardModal
+        open={Boolean(wizardPatientId)}
+        onClose={() => setWizardPatientId(null)}
+        patientId={wizardPatientId}
+        createdBy="hospital"
+        onCreated={() => setWizardPatientId(null)}
+      />
     </>
   )
 }

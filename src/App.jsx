@@ -25,6 +25,8 @@ const NurseDetail = lazy(() => import('./features/hospitalAdmin/NurseDetail'))
 const NurseCreate = lazy(() => import('./features/hospitalAdmin/NurseCreate'))
 const CertificatePage = lazy(() => import('./features/hospitalAdmin/CertificatePage'))
 const HospitalDispatch = lazy(() => import('./features/hospitalAdmin/HospitalDispatch'))
+const HospitalRequestDetail = lazy(() => import('./features/hospitalAdmin/HospitalRequestDetail'))
+const HospitalShiftDetail = lazy(() => import('./features/hospitalAdmin/HospitalShiftDetail'))
 const NurseOverview = lazy(() => import('./features/nurse/NurseOverview'))
 const NurseRequests = lazy(() => import('./features/nurse/NurseRequests'))
 const NurseSchedule = lazy(() => import('./features/nurse/NurseSchedule'))
@@ -132,6 +134,22 @@ function App() {
             element={
               <RoleGate roles={['hospitalAdmin']}>
                 <HospitalDispatch />
+              </RoleGate>
+            }
+          />
+          <Route
+            path="admin/dispatch/requests/:id"
+            element={
+              <RoleGate roles={['hospitalAdmin']}>
+                <HospitalRequestDetail />
+              </RoleGate>
+            }
+          />
+          <Route
+            path="admin/dispatch/shifts/:sessionId"
+            element={
+              <RoleGate roles={['hospitalAdmin']}>
+                <HospitalShiftDetail />
               </RoleGate>
             }
           />
