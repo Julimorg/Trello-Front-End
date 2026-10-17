@@ -68,6 +68,8 @@ export interface Nurse {
   availability: AvailabilitySlot[]
   completedCases: number
   bio: string
+  /** Saved with "Lưu nháp" — the profile is still incomplete. */
+  isDraft?: boolean
 }
 
 export interface TimeSlot {

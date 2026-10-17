@@ -63,19 +63,11 @@ export const CARE_PLANS: Record<CareTypeId, CarePlan> = {
 const obs = (summary: string, rest: Omit<SessionObservation, 'summary'> = {}): SessionObservation => ({ summary, ...rest })
 
 export const SESSION_OBSERVATIONS: Record<string, SessionObservation> = {
-  // bk-2014 — vitals check after a medication change
-  'bk-2014-s1': obs('Huyết áp còn cao nhẹ, đường huyết ổn. Đã dặn uống thuốc sau ăn và đo lại sau 3 ngày.', {
-    vitals: { bp: '142/90', pulse: 82, temp: 36.7, spo2: 97, glucose: 7.4 },
-  }),
-
   // bk-2001 — post-surgery, 4 visits: pain and temperature falling
   'bk-2001-s1': obs('Vết mổ hơi sưng, khô, không dịch. Bệnh nhân còn đau khi đứng dậy.', { vitals: { bp: '135/85', pulse: 88, temp: 37.4, spo2: 97 }, pain: 6 }),
   'bk-2001-s2': obs('vết mổ khô, giảm sưng. Đã thay băng và hướng dẫn đi lại nhẹ.', { vitals: { bp: '132/84', pulse: 84, temp: 37.1, spo2: 98 }, pain: 4 }),
   'bk-2001-s3': obs('Vết mổ liền tốt, không còn sưng. Bệnh nhân tự đi lại trong nhà được.', { vitals: { bp: '130/82', pulse: 80, temp: 36.8, spo2: 98 }, pain: 3 }),
   'bk-2001-s4': obs('Vết mổ liền, da khô sạch. Kết thúc liệu trình, hẹn tái khám theo lịch bác sĩ.', { vitals: { bp: '128/80', pulse: 76, temp: 36.7, spo2: 98 }, pain: 1 }),
-
-  // bk-2013 — single wound dressing
-  'bk-2013-s1': obs('Vết thương sạch, dịch ít. Đã thay băng, bệnh nhân không đau nhiều.', { vitals: { bp: '130/80', pulse: 78, temp: 36.6, spo2: 98 }, pain: 3, extras: [{ label: 'Kích thước vết thương', value: '3 × 2 cm' }] }),
 
   // bk-2002 — daily wound dressing for 4 days
   'bk-2002-s1': obs('Vết thương còn rỉ dịch vàng ít, viền hơi đỏ. Đã làm sạch và thay băng.', { vitals: { bp: '134/84', pulse: 84, temp: 37.0, spo2: 97 }, pain: 5, extras: [{ label: 'Kích thước vết thương', value: '4 × 3 cm' }] }),
@@ -93,12 +85,27 @@ export const SESSION_OBSERVATIONS: Record<string, SessionObservation> = {
   'bk-2006-s1': obs('Tập khởi động khớp và đi với khung tập 5 phút. Đầu gối còn cứng, đau khi gập.', { vitals: { bp: '128/80', pulse: 82, temp: 36.6, spo2: 98 }, pain: 5, extras: [{ label: 'Quãng đường đi', value: '10 m' }, { label: 'Gập gối', value: '70°' }] }),
   'bk-2006-s2': obs('Đi được xa hơn, ít phải dừng nghỉ. Hướng dẫn thêm bài nâng chân tại nhà.', { vitals: { bp: '126/78', pulse: 78, temp: 36.6, spo2: 98 }, pain: 4, extras: [{ label: 'Quãng đường đi', value: '25 m' }, { label: 'Gập gối', value: '85°' }] }),
 
-  // bk-2007 — single wound dressing
-  'bk-2007-s1': obs('Vết thương sạch, đã thay băng. Dặn giữ khô và quan sát dấu hiệu sưng đỏ.', { vitals: { bp: '130/82', pulse: 80, temp: 36.7, spo2: 98 }, pain: 2, extras: [{ label: 'Kích thước vết thương', value: '2 × 2 cm' }] }),
-
   // bk-2101 — vitals monitoring (patient-thu)
   'bk-2101-s1': obs('Đường huyết đầu buổi hơi cao. Đã nhắc chế độ ăn, uống thuốc sau bữa.', { vitals: { bp: '140/88', pulse: 84, temp: 36.7, spo2: 97, glucose: 9.1 } }),
   'bk-2101-s2': obs('Đường huyết giảm nhẹ so với hôm qua, huyết áp ổn định.', { vitals: { bp: '136/86', pulse: 80, temp: 36.6, spo2: 97, glucose: 8.2 } }),
   'bk-2101-s3': obs('Chỉ số tiếp tục cải thiện. Bệnh nhân tuân thủ ăn uống tốt.', { vitals: { bp: '132/84', pulse: 78, temp: 36.6, spo2: 98, glucose: 7.6 } }),
   'bk-2101-s4': obs('Huyết áp và đường huyết trong ngưỡng chấp nhận. Hẹn tái khám theo lịch bác sĩ.', { vitals: { bp: '130/82', pulse: 76, temp: 36.6, spo2: 98, glucose: 6.9 } }),
+
+  // bk-2008 — active post-surgery course (patient-an, nurse-mai): the last two visits
+  'bk-2008-s1': obs('Vết mổ khô, hơi đỏ nhẹ ở mép. Đã thay băng, dặn không để ướt vết mổ khi tắm.', { vitals: { bp: '138/88', pulse: 84, temp: 37.2, spo2: 97 }, pain: 4 }),
+  'bk-2008-s2': obs('Vết mổ đỡ đỏ, không dịch. Đi lại trong nhà tốt hơn, ăn uống bình thường.', { vitals: { bp: '134/84', pulse: 80, temp: 36.9, spo2: 98 }, pain: 3 }),
+
+  // bk-3101 — elderly care (patient-lien, nurse-hoa)
+  'bk-3101-s1': obs('Hỗ trợ vệ sinh và bữa sáng. Bà ăn hết khẩu phần, hơi mệt vì mất ngủ.', { vitals: { bp: '146/88', pulse: 80, temp: 36.6, spo2: 97 }, extras: [{ label: 'Lượng nước uống', value: '1,0 L' }] }),
+  'bk-3101-s2': obs('Tinh thần tốt, tự đi vệ sinh có người đỡ. Nhắc uống thuốc khớp đúng giờ.', { vitals: { bp: '142/86', pulse: 78, temp: 36.6, spo2: 97 }, extras: [{ label: 'Lượng nước uống', value: '1,3 L' }] }),
+  'bk-3101-s3': obs('Da lưng không đỏ. Bà hay quên đã uống thuốc chưa — đã nhờ người nhà đánh dấu hộp thuốc.', { vitals: { bp: '140/86', pulse: 76, temp: 36.7, spo2: 98 }, extras: [{ label: 'Lượng nước uống', value: '1,5 L' }] }),
+  'bk-3101-s4': obs('Ăn uống tốt, huyết áp ổn định hơn các buổi trước.', { vitals: { bp: '136/84', pulse: 76, temp: 36.6, spo2: 98 }, extras: [{ label: 'Lượng nước uống', value: '1,5 L' }] }),
+
+  // bk-3102 — mobility after stroke (patient-hanh, nurse-hoa)
+  'bk-3102-s1': obs('Tập đứng – ngồi 10 lần, đi với khung 8 m. Chân trái còn yếu, cần đỡ khi xoay người.', { vitals: { bp: '132/84', pulse: 78, temp: 36.6, spo2: 98 }, pain: 2, extras: [{ label: 'Quãng đường đi', value: '8 m' }] }),
+  'bk-3102-s2': obs('Đi được 15 m với khung, thăng bằng khá hơn. Đã hướng dẫn bài nâng chân tại nhà.', { vitals: { bp: '130/82', pulse: 76, temp: 36.6, spo2: 98 }, pain: 2, extras: [{ label: 'Quãng đường đi', value: '15 m' }] }),
+
+  // bk-3103 — elderly care (patient-dung, nurse-hoa)
+  'bk-3103-s1': obs('Chuẩn bị bữa tối nhẹ, huyết áp hơi cao. Nhắc giảm muối.', { vitals: { bp: '150/92', pulse: 82, temp: 36.7, spo2: 97 } }),
+  'bk-3103-s2': obs('Bà từ chối uống thuốc huyết áp buổi tối, người nhà không nghe máy. Đã báo bệnh viện (xem cảnh báo SOS).', { vitals: { bp: '148/90', pulse: 84, temp: 36.7, spo2: 97 } }),
 }

@@ -3,13 +3,17 @@ import { seedState } from './seed'
 import { applyPatch, computePatch, isEmptyPatch } from './sync-patch'
 
 // Bump when the seed shape changes so existing browsers pick up the new data.
-const STORAGE_KEY = 'careshift_db_v11'
+const STORAGE_KEY = 'careshift_db_v12'
 const REALTIME_PATH = '/__careshift_rt'
 const listeners = new Set()
 const remoteListeners = new Set()
 
 function loadInitialState() {
   try {
+    // Drop the data of older seed versions so they do not pile up in the browser.
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith('careshift_db_v') && key !== STORAGE_KEY)
+      .forEach((key) => localStorage.removeItem(key))
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch {

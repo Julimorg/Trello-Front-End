@@ -1,3 +1,4 @@
+import { dayOffset } from './date-utils'
 import type { AvailabilitySlot, Certificate, Nurse } from './types'
 
 // Data for "Điều dưỡng tin cậy" (/patient/nurses) and the nurse detail page
@@ -5,7 +6,7 @@ import type { AvailabilitySlot, Certificate, Nurse } from './types'
 
 // Licence dates follow the year in the number (DD-<year>-…), valid 10 years; the scan is
 // referenced by file name only (no content in the demo data).
-const cchn = (id: string, number: string, issuedBy = 'Sở Y tế TP.HCM'): Certificate => {
+const cchn = (id: string, number: string, issuedBy = 'Sở Y tế TP.HCM', expiresAt?: string): Certificate => {
   const year = Number(number.split('-')[1])
   return {
     id,
@@ -13,7 +14,7 @@ const cchn = (id: string, number: string, issuedBy = 'Sở Y tế TP.HCM'): Cert
     number,
     issuedBy,
     issuedAt: `${year}-03-15`,
-    expiresAt: `${year + 10}-03-15`,
+    expiresAt: expiresAt ?? `${year + 10}-03-15`,
     file: { name: `CCHN-${number}.pdf`, type: 'application/pdf', size: 248_000 + year },
   }
 }
@@ -32,7 +33,8 @@ export const NURSES: Nurse[] = [
     serviceAreas: ['Bình Thạnh', 'Phú Nhuận', 'Quận 1'],
     authStatus: 'authorized',
     authorizedCareTypes: ['wound-dressing', 'post-surgery', 'vitals-monitoring'],
-    certificates: [cchn('cert-mai-1', 'DD-2019-00231')],
+    // Licence renewal due soon — shows up in the certificate-expiry radar of both admin portals.
+    certificates: [cchn('cert-mai-1', 'DD-2019-00231', 'Sở Y tế TP.HCM', dayOffset(28))],
     availability: [
       slot('av-mai-1', 1, '17:00', '21:00'),
       slot('av-mai-2', 3, '17:00', '21:00'),
@@ -75,11 +77,29 @@ export const NURSES: Nurse[] = [
     specialties: ['vitals-monitoring', 'medication'],
     serviceAreas: ['Bình Thạnh'],
     authStatus: 'draft',
+    isDraft: true,
     authorizedCareTypes: [],
     certificates: [],
     availability: [],
     completedCases: 0,
-    bio: 'Hồ sơ đang chờ bệnh viện xác minh văn bằng.',
+    bio: 'Hồ sơ nháp — chưa có chứng chỉ và lịch tham gia.',
+  },
+  {
+    id: 'nurse-nhi',
+    hospitalId: 'hosp-115',
+    name: 'Đoàn Ngọc Nhi',
+    rank: 'Điều dưỡng chính thức',
+    phone: '090-321-6540',
+    experienceYears: 4,
+    specialties: ['elderly-care', 'vitals-monitoring', 'medication'],
+    serviceAreas: ['Bình Thạnh', 'Phú Nhuận'],
+    // Complete profile, waiting for the hospital coordinator to press "Cấp phép".
+    authStatus: 'draft',
+    authorizedCareTypes: [],
+    certificates: [cchn('cert-nhi-1', 'DD-2021-00940')],
+    availability: [slot('av-nhi-1', 1, '17:00', '21:00'), slot('av-nhi-2', 3, '17:00', '21:00'), slot('av-nhi-3', 5, '17:00', '21:00'), slot('av-nhi-4', 0, '08:00', '17:00')],
+    completedCases: 0,
+    bio: 'Hồ sơ đầy đủ, đang chờ bệnh viện cấp phép nhận ca.',
   },
   {
     id: 'nurse-lan',
@@ -220,7 +240,7 @@ export const NURSES: Nurse[] = [
     serviceAreas: ['Quận 5', 'Quận 1', 'Quận 3'],
     authStatus: 'authorized',
     authorizedCareTypes: ['medication', 'vitals-monitoring', 'post-surgery'],
-    certificates: [cchn('cert-khoa-1', 'DD-2015-00088')],
+    certificates: [cchn('cert-khoa-1', 'DD-2015-00088', 'Sở Y tế TP.HCM', dayOffset(-12))],
     availability: [slot('av-khoa-1', 1, '18:00', '22:00'), slot('av-khoa-2', 4, '18:00', '22:00')],
     completedCases: 388,
     bio: 'Điều dưỡng hồi sức, quản lý truyền dịch – tiêm thuốc theo chỉ định tại nhà.',

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { resetState, useDb } from '../../lib/store'
 import { NURSE_AUTH_STATUS_LABEL } from '../../lib/constants'
+import { DEMO_HINTS } from '../../Data/demo-hints'
 
 const TABS = [
   { value: 'patient', label: 'Bệnh nhân / Gia đình' },
@@ -113,6 +114,7 @@ export default function LoginPage() {
                 <span className="persona-meta">
                   <b>{o.primary}</b>
                   <small>{o.secondary}</small>
+                  {DEMO_HINTS[o.id] && <small className="persona-hint">{DEMO_HINTS[o.id]}</small>}
                 </span>
                 {o.badge && <span className={`status ${o.badge.tone}`}>{o.badge.label}</span>}
               </button>

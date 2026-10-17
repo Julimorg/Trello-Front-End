@@ -3043,3 +3043,12 @@ button.link-reset {
 .nowrap-table th {
   white-space: nowrap;
 }
+
+.persona-hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--teal);
+  font-weight: 600;
+  white-space: normal !important;
+  line-height: 1.35;
+}

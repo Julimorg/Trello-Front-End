@@ -22,15 +22,6 @@ const session = (
 
 export const BOOKINGS: Booking[] = [
   {
-    id: 'bk-2014',
-    careRequestId: 'cr-1014',
-    patientId: 'patient-an',
-    nurseId: 'nurse-huong',
-    status: 'completed',
-    createdAt: timestampAt(-60, '10:00'),
-    sessions: [session('bk-2014', 1, -59, '18:00', '19:00', 'nurse-huong')],
-  },
-  {
     id: 'bk-2001',
     careRequestId: 'cr-1001',
     patientId: 'patient-an',
@@ -46,15 +37,6 @@ export const BOOKINGS: Booking[] = [
       session('bk-2001', 3, -49, '17:00', '19:00', 'nurse-mai'),
       session('bk-2001', 4, -47, '17:00', '19:00', 'nurse-mai'),
     ],
-  },
-  {
-    id: 'bk-2013',
-    careRequestId: 'cr-1013',
-    patientId: 'patient-an',
-    nurseId: 'nurse-thao',
-    status: 'completed',
-    createdAt: timestampAt(-45, '08:00'),
-    sessions: [session('bk-2013', 1, -44, '17:30', '18:30', 'nurse-thao')],
   },
   {
     id: 'bk-2002',
@@ -101,22 +83,13 @@ export const BOOKINGS: Booking[] = [
     ],
   },
   {
-    id: 'bk-2007',
-    careRequestId: 'cr-1007',
-    patientId: 'patient-an',
-    nurseId: 'nurse-lan',
-    status: 'completed',
-    createdAt: timestampAt(-9, '16:00'),
-    sessions: [session('bk-2007', 1, -8, '17:30', '18:30', 'nurse-lan')],
-  },
-  {
     id: 'bk-2008',
     careRequestId: 'cr-1008',
     patientId: 'patient-an',
     nurseId: 'nurse-mai',
     status: 'in_progress',
-    createdAt: timestampAt(-5, '09:15'),
-    sessions: [0, 1, 2, 3].map((offset, i) => session('bk-2008', i + 1, offset, '18:00', '19:00', 'nurse-mai')),
+    createdAt: timestampAt(-3, '09:15'),
+    sessions: [-2, -1, 0, 1, 2, 3].map((offset, i) => session('bk-2008', i + 1, offset, '18:00', '19:00', 'nurse-mai')),
   },
   {
     id: 'bk-2010',

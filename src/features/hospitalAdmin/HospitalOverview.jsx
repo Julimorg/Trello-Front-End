@@ -48,7 +48,7 @@ export default function HospitalOverview() {
 
   const attention = [
     { key: 'sos', to: '/hospital/admin/sos-log', icon: <AlertOutlined />, color: '#cf3c43', title: `${openSos.length} cảnh báo SOS chưa xử lý xong`, hint: 'Xem ghi chú và cập nhật xử lý', show: openSos.length > 0 },
-    { key: 'reassign', to: '/hospital/admin/dispatch', icon: <SwapOutlined />, color: '#cf3c43', title: `${needsReassign.length} ca cần người thay thế`, hint: 'Điều dưỡng báo không thể thực hiện', show: needsReassign.length > 0 },
+    { key: 'reassign', to: '/hospital/admin/dispatch', icon: <SwapOutlined />, color: '#cf3c43', title: `${needsReassign.length} ca cần người thay thế`, hint: 'Chọn điều dưỡng thay thế để bệnh nhân không bị bỏ ca', show: needsReassign.length > 0 },
     { key: 'verify', to: '/hospital/admin/roster?status=draft', icon: <SafetyCertificateOutlined />, color: '#b96b08', title: `${drafts.length} hồ sơ chờ cấp phép`, hint: 'Kiểm tra hồ sơ rồi cấp phép nhận ca', show: drafts.length > 0 },
     { key: 'cert', to: '/hospital/admin/roster', icon: <WarningOutlined />, color: '#b96b08', title: `${expiredCerts.length} điều dưỡng có chứng chỉ hết hạn / sắp hết hạn`, hint: 'Cập nhật chứng chỉ trong hồ sơ', show: expiredCerts.length > 0 },
     { key: 'schedule', to: '/hospital/admin/dispatch', icon: <CalendarOutlined />, color: '#0b6b68', title: `${todaySessions.length} ca hôm nay`, hint: 'Xem điều phối lịch', show: true },
