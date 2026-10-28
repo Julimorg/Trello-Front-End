@@ -5,7 +5,7 @@ import StatusBadge from '../../components/StatusBadge'
 import PatientConfirmDialog from '../../patient/PatientConfirmDialog'
 import NurseProfileCard from '../nurseMatching/NurseProfileCard'
 import { useDb } from '../../lib/store'
-import { cancelCareRequest, getAlternativeNurses, getNurse, retryMatching, selectNurseForCareRequest } from '../../lib/db'
+import { cancelCareRequest, getAlternativeNurses, getNurse, selectNurseForCareRequest } from '../../lib/db'
 import { careTypeLabel, formatDate } from '../../lib/format'
 import { CARE_REQUEST_STATUS, CARE_REQUEST_STATUS_LABEL } from '../../lib/constants'
 import { Icon } from '../../lib/icons'
@@ -71,22 +71,18 @@ function AlternativeNurses({ careRequest, alternatives }) {
             {declined ? 'Các điều dưỡng đã chọn chưa nhận ca' : 'Chưa có điều dưỡng khớp hoàn toàn'} · {alternatives.length} điều dưỡng thay thế
           </b>
           <small>
-            Gợi ý gần nhất theo chuyên môn, khu vực {careRequest.district} và lịch tham gia. Điểm khác biệt được ghi rõ trên từng hồ sơ.
+            Gợi ý gần nhất theo chuyên môn, khu vực và lịch tham gia. Điểm khác biệt được ghi rõ trên từng hồ sơ.
           </small>
         </span>
-        <Button size="small" onClick={() => retryMatching(careRequest.id)}>
-          Tìm lại
-        </Button>
       </div>
       {alternatives.length === 0 && (
         <p className="detail-text">Tất cả điều dưỡng đang hoạt động đều đã được đề xuất. Bệnh viện điều phối sẽ liên hệ để hỗ trợ bạn.</p>
       )}
       <div className="match-grid">
-        {alternatives.map(({ nurse, score, reasons }) => (
+        {alternatives.map(({ nurse, reasons }) => (
           <NurseProfileCard
             key={nurse.id}
             nurse={nurse}
-            matchScore={`${score}%`}
             reasons={reasons}
             profileHref={`/patient/nurses/${nurse.id}`}
             selectLabel="Chọn thay thế"
@@ -143,7 +139,6 @@ export default function CareRequestBody({ careRequest, showCancel = true }) {
                 <NurseProfileCard
                   key={id}
                   nurse={nurse}
-                  matchScore="96%"
                   selectLabel="Chọn"
                   onSelect={(n) => selectNurseForCareRequest(careRequest.id, n.id)}
                 />

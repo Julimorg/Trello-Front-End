@@ -18,7 +18,7 @@ function initials(name) {
     .toUpperCase()
 }
 
-export default function NurseProfileCard({ nurse, matchScore, onSelect, selectLabel = 'Chọn', profileHref, reasons, note, children }) {
+export default function NurseProfileCard({ nurse, onSelect, selectLabel = 'Chọn', profileHref, reasons, note, children }) {
   const state = useDb()
   const { session } = useAuth()
   const trusted = session?.role === 'patient' && isTrustedNurse(state, session.id, nurse.id)
@@ -29,7 +29,6 @@ export default function NurseProfileCard({ nurse, matchScore, onSelect, selectLa
     <>
       <article className="nurse-card">
         <div className="nurse-card-top">
-          {matchScore && <span className="match-score">Phù hợp {matchScore}</span>}
           <div className="nurse-avatar">{initials(nurse.name)}</div>
           <h3>
             {nurse.name}
