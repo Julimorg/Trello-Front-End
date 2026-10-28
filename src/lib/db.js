@@ -1053,14 +1053,11 @@ const withContact = (contacts, contact) => [
 
 const digitsOf = (value) => String(value || '').replace(/\D/g, '')
 
-// The other CareShift account an email / phone belongs to, if any.
+// The other CareShift account a phone number belongs to, if any.
 export function findPatientByContact(state, value, excludeId) {
-  const v = String(value || '').trim().toLowerCase()
-  if (!v) return null
-  const d = digitsOf(v)
-  return (
-    state.patients.find((p) => p.id !== excludeId && ((p.email || '').toLowerCase() === v || (d.length >= 8 && digitsOf(p.phone) === d))) || null
-  )
+  const d = digitsOf(value)
+  if (d.length < 8) return null
+  return state.patients.find((p) => p.id !== excludeId && digitsOf(p.phone) === d) || null
 }
 
 // What the recipient is to the sender is the opposite of what the sender is to them.
@@ -1069,7 +1066,7 @@ const inverseRelation = (relation) => INVERSE_RELATION[relation] || relation
 
 const FAMILY_LINK = '/patient/family'
 
-// Adds a relative. When the email / phone belongs to another CareShift account the invite is delivered to
+// Adds a relative. When the phone number belongs to another CareShift account the invite is delivered to
 // that account (notification + "Lời mời liên kết" on their family page) and the contact stays pending.
 export function addFamilyContact(patientId, contact) {
   const id = genId('fc')

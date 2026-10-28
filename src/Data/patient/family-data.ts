@@ -37,7 +37,7 @@ export const FAMILY_CONTACTS: Record<string, FamilyContact[]> = {
     {
       id: 'fc-an-4',
       name: 'Nguyễn Hoàng Minh',
-      phone: 'minh.nguyen@example.com',
+      phone: '098-765-4321',
       relation: 'Anh / Chị / Em',
       status: 'Chờ xác nhận',
       primary: false,
@@ -57,7 +57,7 @@ export const FAMILY_CONTACTS: Record<string, FamilyContact[]> = {
     {
       id: 'fc-thu-3',
       name: 'Nguyễn Văn An',
-      phone: 'an.nguyen@example.com',
+      phone: '091-234-5678',
       relation: 'Anh / Chị / Em',
       status: 'Chờ xác nhận',
       primary: false,

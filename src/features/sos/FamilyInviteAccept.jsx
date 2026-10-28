@@ -12,7 +12,7 @@ import { Icon } from '../../lib/icons'
 // Public page opened by scanning a patient's QR invite (or typing its code).
 // The relative fills in who they are and their account is linked immediately.
 
-const PHONE_OR_EMAIL = /^(\+?\d[\d\s.-]{7,}|[^\s@]+@[^\s@]+\.[^\s@]+)$/
+const PHONE = /^\+?\d[\d\s.-]{7,}$/
 
 const STATUS_COPY = {
   not_found: { title: 'Mã liên kết không hợp lệ', text: 'Kiểm tra lại mã hoặc nhờ người thân tạo mã QR mới.' },
@@ -91,7 +91,7 @@ function InviteContent({ code }) {
     )
   }
 
-  const phoneValid = PHONE_OR_EMAIL.test(form.phone.trim())
+  const phoneValid = PHONE.test(form.phone.trim())
   const canSubmit = form.name.trim() && phoneValid
   const update = (patch) => setForm((f) => ({ ...f, ...patch }))
 
@@ -115,12 +115,12 @@ function InviteContent({ code }) {
       </div>
       <TextField label="Họ và tên của bạn" required value={form.name} onChange={(e) => update({ name: e.target.value })} fullWidth />
       <TextField
-        label="Số điện thoại hoặc email"
+        label="Số điện thoại"
         required
         value={form.phone}
         onChange={(e) => update({ phone: e.target.value })}
         error={Boolean(form.phone) && !phoneValid}
-        helperText={form.phone && !phoneValid ? 'Nhập số điện thoại hoặc email hợp lệ' : undefined}
+        helperText={form.phone && !phoneValid ? 'Nhập số điện thoại hợp lệ' : undefined}
         fullWidth
       />
       <TextField select label={`Bạn là gì của ${patient?.name}?`} value={form.relation} onChange={(e) => update({ relation: e.target.value })} fullWidth>

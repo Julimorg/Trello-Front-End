@@ -18,12 +18,13 @@ export default function FamilyLinkModal({ open, onClose, patientId, currentPrima
   const toast = useToast()
   const state = useDb()
   const [form, setForm] = useState(initialForm)
-  // Does the email / phone belong to another CareShift account? Then the invite goes straight to that account.
+  // Does the phone number belong to another CareShift account? Then the invite goes straight to that account.
   const account = findPatientByContact(state, form.contact, patientId)
   const alreadyLinked = account && (getPatient(state, patientId)?.familyContacts || []).some((c) => c.linkedPatientId === account.id)
 
   const update = (patch) => setForm((f) => ({ ...f, ...patch }))
-  const canSubmit = (form.name.trim() || account) && form.contact.trim() && !alreadyLinked
+  const phoneValid = /^\+?\d[\d\s.-]{7,}$/.test(form.contact.trim())
+  const canSubmit = (form.name.trim() || account) && phoneValid && !alreadyLinked
 
   const togglePermission = (id) =>
     update({ permissions: form.permissions.includes(id) ? form.permissions.filter((p) => p !== id) : [...form.permissions, id] })
@@ -68,19 +69,21 @@ export default function FamilyLinkModal({ open, onClose, patientId, currentPrima
           </TextField>
           <TextField
             className="field-full"
-            label="Số điện thoại hoặc email tài khoản CareShift"
+            label="Số điện thoại người thân"
             required
             value={form.contact}
             onChange={(e) => update({ contact: e.target.value })}
-            placeholder="090 123 4567 hoặc email@example.com"
+            placeholder="090 123 4567"
             helperText={
-              alreadyLinked
+              form.contact.trim() && !phoneValid
+                ? 'Nhập số điện thoại hợp lệ'
+                : alreadyLinked
                 ? `Bạn đã liên kết hoặc đã mời ${account.name}.`
                 : account
                   ? `Tìm thấy tài khoản CareShift của ${account.name}. Lời mời sẽ gửi trực tiếp tới tài khoản này.`
-                  : 'Nếu email / số điện thoại thuộc một tài khoản CareShift, lời mời sẽ gửi thẳng tới tài khoản đó.'
+                  : 'Nếu số điện thoại thuộc một tài khoản CareShift, lời mời sẽ gửi thẳng tới tài khoản đó.'
             }
-            error={Boolean(alreadyLinked)}
+            error={Boolean(alreadyLinked) || (Boolean(form.contact.trim()) && !phoneValid)}
           />
         </div>
         <fieldset className="permission-box">
