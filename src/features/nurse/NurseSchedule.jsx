@@ -9,7 +9,8 @@ import { useDb } from '../../lib/store'
 import { getCareRequest, getPatient, listBookingsByNurse } from '../../lib/db'
 import { careTypeLabel } from '../../lib/format'
 import { MAX_SHIFTS_PER_DAY_CELL } from '../../Data/nurse/schedule-data'
-import { SESSION_STATUS_META, shortName } from './nurse-shared'
+import CancelVisitModal from './CancelVisitModal'
+import { SESSION_STATUS_META, canCancelVisit, shortName } from './nurse-shared'
 
 const { Text, Title } = Typography
 const ISO = 'YYYY-MM-DD'
@@ -25,9 +26,12 @@ const minutesBetween = (start, end) => {
 const dayTitle = (d) => `${WEEKDAY_LONG[d.day()]}, ${d.format('DD/MM/YYYY')}`
 
 function ShiftList({ shifts }) {
+  const [cancelTarget, setCancelTarget] = useState(null)
+  const today = dayjs().format(ISO)
   if (!shifts.length) return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có ca nào trong ngày này" />
   return (
     <div className="shift-list">
+      <CancelVisitModal open={Boolean(cancelTarget)} booking={cancelTarget?.booking} session={cancelTarget} patientName={cancelTarget?.patient?.name} onCancel={() => setCancelTarget(null)} onDone={() => setCancelTarget(null)} />
       {shifts.map((s) => {
         const meta = SESSION_STATUS_META[s.status] || SESSION_STATUS_META.confirmed
         return (
@@ -59,6 +63,11 @@ function ShiftList({ shifts }) {
                     Xem chi tiết ca →
                   </Button>
                 </Link>
+                {canCancelVisit(s, s.careRequest, today) && (
+                  <Button size="small" type="link" danger style={{ padding: 0 }} onClick={() => setCancelTarget(s)}>
+                    Hủy buổi
+                  </Button>
+                )}
               </Space>
             </div>
           </div>

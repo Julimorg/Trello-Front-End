@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import dayjs from 'dayjs'
 import {
   Alert,
@@ -31,12 +31,13 @@ import {
 } from '@ant-design/icons'
 import PatientInfoCard from './PatientInfoCard'
 import ObservationCard from './ObservationCard'
+import CancelVisitModal from './CancelVisitModal'
 import { useAuth } from '../../auth/AuthContext'
 import { useDb } from '../../lib/store'
 import { completeSession, findSession, getCareRequest, getNurse, getPatient, updateSessionWork } from '../../lib/db'
 import { careTypeLabel, formatDate } from '../../lib/format'
 import { CARE_REQUEST_STATUS, SESSION_STATUS } from '../../lib/constants'
-import { SESSION_STATUS_META, frequencyText, sessionWork } from './nurse-shared'
+import { SESSION_STATUS_META, canCancelVisit, frequencyText, sessionWork } from './nurse-shared'
 
 const { Text, Title, Paragraph } = Typography
 const WEEKDAY_LONG = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
@@ -55,7 +56,9 @@ export default function NurseSessionDetail() {
   const { session: auth } = useAuth()
   const state = useDb()
   const { message } = App.useApp()
+  const navigate = useNavigate()
   const [noteDraft, setNoteDraft] = useState(null)
+  const [cancelOpen, setCancelOpen] = useState(false)
 
   const found = findSession(state, sessionId)
   usePageCrumbs(found ? [{ label: `Buổi ${formatDate(found.session.date)} · ${found.session.start}` }] : [])
@@ -89,6 +92,7 @@ export default function NurseSessionDetail() {
   const isActive = !isCompleted && !isOff && !isCancelled
   const { tasks, done, percent: progress } = sessionWork(session, careRequest?.careType)
   const canComplete = isActive && session.date <= today
+  const canCancel = canCancelVisit(session, careRequest, today)
   // The visit can only be worked on once its day has come; before that everything is read-only.
   const notYet = isActive && session.date > today
   const canWork = isActive && !notYet
@@ -156,6 +160,11 @@ export default function NurseSessionDetail() {
             <a href={`tel:${(patient?.phone || '').replace(/[^\d+]/g, '')}`}>
               <Button icon={<PhoneOutlined />}>Gọi bệnh nhân</Button>
             </a>
+            {canCancel && (
+              <Button danger onClick={() => setCancelOpen(true)}>
+                Hủy buổi
+              </Button>
+            )}
             {canComplete && (
               <Popconfirm
                 title="Hoàn thành buổi chăm sóc?"
@@ -185,7 +194,7 @@ export default function NurseSessionDetail() {
             style={{ marginTop: 14 }}
             type="error"
             showIcon
-            title="Bạn đã báo không thể thực hiện ca này"
+            title="Bạn đã hủy buổi này — bệnh viện đang tìm người thay"
             description={session.history?.slice(-1)[0]?.reason ? `Lý do: ${session.history.slice(-1)[0].reason}` : undefined}
           />
         )}
@@ -333,6 +342,7 @@ export default function NurseSessionDetail() {
       </Row>
 
 
+      <CancelVisitModal open={cancelOpen} booking={booking} session={session} patientName={patient?.name} onCancel={() => setCancelOpen(false)} onDone={() => navigate('/hospital/nurse/schedule')} />
     </>
   )
 }

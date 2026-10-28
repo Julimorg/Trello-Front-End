@@ -15,7 +15,7 @@ export const SESSION_STATUS_META = {
   confirmed: { label: 'Đã xác nhận', color: 'cyan' },
   completed: { label: 'Hoàn thành', color: 'default' },
   reassigned: { label: 'Đã đổi điều dưỡng', color: 'purple' },
-  cannot_perform: { label: 'Không thể thực hiện', color: 'red' },
+  cannot_perform: { label: 'Đã hủy · chờ người thay', color: 'red' },
 }
 
 export const CLOSED_REASON = {
@@ -70,3 +70,7 @@ export function sessionWork(session, careType) {
   const done = session.status === SESSION_STATUS.COMPLETED && !session.checklist ? tasks.map((t) => t.id) : (session.checklist || []).filter((id) => tasks.some((t) => t.id === id))
   return { tasks, done, percent: Math.round((done.length / tasks.length) * 100) }
 }
+
+// A nurse can cancel a visit that is still ahead (today or later) while it is theirs and the request is alive.
+export const canCancelVisit = (session, careRequest, today) =>
+  session.status === 'confirmed' && session.date >= today && careRequest?.status !== 'cancelled'
