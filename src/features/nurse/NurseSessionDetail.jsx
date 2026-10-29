@@ -18,6 +18,7 @@ import {
   Space,
   Tag,
   Timeline,
+  Tooltip,
   Typography,
 } from 'antd'
 import {
@@ -37,7 +38,7 @@ import { useDb } from '../../lib/store'
 import { completeSession, findSession, getCareRequest, getNurse, getPatient, updateSessionWork } from '../../lib/db'
 import { careTypeLabel, formatDate } from '../../lib/format'
 import { CARE_REQUEST_STATUS, SESSION_STATUS } from '../../lib/constants'
-import { SESSION_STATUS_META, canCancelVisit, frequencyText, sessionWork } from './nurse-shared'
+import { CANCEL_NOTICE_TEXT, SESSION_STATUS_META, canCancelVisit, frequencyText, isCancellableStatus, sessionWork } from './nurse-shared'
 
 const { Text, Title, Paragraph } = Typography
 const WEEKDAY_LONG = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
@@ -92,6 +93,7 @@ export default function NurseSessionDetail() {
   const isActive = !isCompleted && !isOff && !isCancelled
   const { tasks, done, percent: progress } = sessionWork(session, careRequest?.careType)
   const canComplete = isActive && session.date <= today
+  const showCancel = isCancellableStatus(session, careRequest, today)
   const canCancel = canCancelVisit(session, careRequest, today)
   // The visit can only be worked on once its day has come; before that everything is read-only.
   const notYet = isActive && session.date > today
@@ -160,10 +162,14 @@ export default function NurseSessionDetail() {
             <a href={`tel:${(patient?.phone || '').replace(/[^\d+]/g, '')}`}>
               <Button icon={<PhoneOutlined />}>Gọi bệnh nhân</Button>
             </a>
-            {canCancel && (
-              <Button danger onClick={() => setCancelOpen(true)}>
-                Hủy buổi
-              </Button>
+            {showCancel && (
+              <Tooltip title={canCancel ? undefined : CANCEL_NOTICE_TEXT}>
+                <span>
+                  <Button danger disabled={!canCancel} onClick={() => setCancelOpen(true)}>
+                    Hủy buổi
+                  </Button>
+                </span>
+              </Tooltip>
             )}
             {canComplete && (
               <Popconfirm

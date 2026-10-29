@@ -1,4 +1,5 @@
-import { BOOKING_STATUS, CARE_REQUEST_STATUS, FREQUENCIES, SESSION_STATUS, WEEKDAYS } from '../../lib/constants'
+import dayjs from 'dayjs'
+import { BOOKING_STATUS, CARE_REQUEST_STATUS, FREQUENCIES, NURSE_CANCEL_NOTICE_DAYS, SESSION_STATUS, WEEKDAYS } from '../../lib/constants'
 import { computeBookingStatus, getBooking } from '../../lib/db'
 import { tasksFor } from '../../Data/nurse/session-data'
 
@@ -71,6 +72,11 @@ export function sessionWork(session, careType) {
   return { tasks, done, percent: Math.round((done.length / tasks.length) * 100) }
 }
 
-// A nurse can cancel a visit that is still ahead (today or later) while it is theirs and the request is alive.
-export const canCancelVisit = (session, careRequest, today) =>
-  session.status === 'confirmed' && session.date >= today && careRequest?.status !== 'cancelled'
+// A visit can be cancelled by its nurse while it is theirs, the request is alive and it is far enough away.
+export const isCancellableStatus = (session, careRequest, today) => session.status === 'confirmed' && session.date >= today && careRequest?.status !== 'cancelled'
+
+export const cancelDeadline = (today) => dayjs(today).add(NURSE_CANCEL_NOTICE_DAYS, 'day').format('YYYY-MM-DD')
+
+export const canCancelVisit = (session, careRequest, today) => isCancellableStatus(session, careRequest, today) && session.date >= cancelDeadline(today)
+
+export const CANCEL_NOTICE_TEXT = `Chỉ được hủy buổi trước ngày thực hiện tối thiểu ${NURSE_CANCEL_NOTICE_DAYS} ngày`

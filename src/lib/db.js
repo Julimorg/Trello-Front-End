@@ -4,6 +4,7 @@ import { getState, setState } from './store'
 import {
   CARE_REQUEST_STATUS,
   NURSE_AUTH_STATUS,
+  NURSE_CANCEL_NOTICE_DAYS,
   SESSION_STATUS,
   BOOKING_STATUS,
   RECURRING_SESSION_COUNT,
@@ -581,6 +582,8 @@ export function reportCannotPerform({ bookingId, sessionId, reason }) {
     if (!booking) return state
     const session = booking.sessions.find((s) => s.id === sessionId)
     if (!session) return state
+    // Visits that are too close can no longer be cancelled by the nurse.
+    if (session.date < dayjs().add(NURSE_CANCEL_NOTICE_DAYS, 'day').format('YYYY-MM-DD')) return state
     const careRequest = getCareRequest(state, booking.careRequestId)
     const originalNurseId = session.nurseId
 

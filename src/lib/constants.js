@@ -138,3 +138,6 @@ export const PLATFORM_STATUS_META = {
 }
 
 export const MATCH_RETRY_WINDOW_MS = 60 * 60 * 1000 // 1 hour
+
+// A nurse may only cancel a visit at least this many days before it takes place.
+export const NURSE_CANCEL_NOTICE_DAYS = 3

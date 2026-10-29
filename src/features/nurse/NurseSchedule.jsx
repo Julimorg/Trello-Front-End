@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import dayjs from 'dayjs'
-import { Badge, Button, Calendar, Card, Col, Empty, Flex, Modal, Row, Segmented, Select, Space, Statistic, Tag, Typography } from 'antd'
+import { Badge, Button, Calendar, Card, Col, Empty, Flex, Modal, Row, Segmented, Select, Space, Statistic, Tag, Tooltip, Typography } from 'antd'
 import { CalendarOutlined, ClockCircleOutlined, EnvironmentOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons'
 import PageHead from '../../components/PageHead'
 import { useAuth } from '../../auth/AuthContext'
@@ -10,7 +10,7 @@ import { getCareRequest, getPatient, listBookingsByNurse } from '../../lib/db'
 import { careTypeLabel } from '../../lib/format'
 import { MAX_SHIFTS_PER_DAY_CELL } from '../../Data/nurse/schedule-data'
 import CancelVisitModal from './CancelVisitModal'
-import { SESSION_STATUS_META, canCancelVisit, shortName } from './nurse-shared'
+import { CANCEL_NOTICE_TEXT, SESSION_STATUS_META, canCancelVisit, isCancellableStatus, shortName } from './nurse-shared'
 
 const { Text, Title } = Typography
 const ISO = 'YYYY-MM-DD'
@@ -63,10 +63,14 @@ function ShiftList({ shifts }) {
                     Xem chi tiết ca →
                   </Button>
                 </Link>
-                {canCancelVisit(s, s.careRequest, today) && (
-                  <Button size="small" type="link" danger style={{ padding: 0 }} onClick={() => setCancelTarget(s)}>
-                    Hủy buổi
-                  </Button>
+                {isCancellableStatus(s, s.careRequest, today) && (
+                  <Tooltip title={canCancelVisit(s, s.careRequest, today) ? undefined : CANCEL_NOTICE_TEXT}>
+                    <span>
+                      <Button size="small" type="link" danger disabled={!canCancelVisit(s, s.careRequest, today)} style={{ padding: 0 }} onClick={() => setCancelTarget(s)}>
+                        Hủy buổi
+                      </Button>
+                    </span>
+                  </Tooltip>
                 )}
               </Space>
             </div>
