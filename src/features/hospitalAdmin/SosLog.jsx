@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { App, Badge, Button, Card, Descriptions, Drawer, Flex, Input, Segmented, Space, Table, Tag, Timeline, Typography } from 'antd'
 import { CheckOutlined, EnvironmentOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons'
@@ -68,7 +68,7 @@ function SosDetailDrawer({ event, open, onClose }) {
         style={{ marginTop: 16 }}
         items={[
           { key: 'time', label: 'Thời điểm', children: `${formatDateTime(event.createdAt)} (${dayjs(event.createdAt).fromNow()})` },
-          { key: 'by', label: 'Người kích hoạt', children: nurse ? <Link to={`/hospital/admin/roster/${nurse.id}`}>Điều dưỡng {nurse.name}</Link> : '—' },
+          { key: 'by', label: 'Người kích hoạt', children: nurse ? `Điều dưỡng ${nurse.name}` : '—' },
           {
             key: 'patient',
             label: 'Bệnh nhân',
@@ -93,9 +93,9 @@ function SosDetailDrawer({ event, open, onClose }) {
             key: 'loc',
             label: 'Vị trí',
             children: patient?.address ? (
-              <span>
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(patient.address)}`} target="_blank" rel="noreferrer">
                 <EnvironmentOutlined /> {patient.address}
-              </span>
+              </a>
             ) : (
               <Text type="secondary">Không có địa chỉ</Text>
             ),

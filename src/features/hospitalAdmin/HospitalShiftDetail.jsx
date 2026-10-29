@@ -117,6 +117,9 @@ export default function HospitalShiftDetail() {
             <EnvironmentOutlined /> {patient?.address}
           </Text>
           <Space wrap>
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(patient?.address || '')}`} target="_blank" rel="noreferrer">
+              <Button icon={<EnvironmentOutlined />}>Mở bản đồ</Button>
+            </a>
             <Link to={prev ? SHIFT_PATH(prev.id) : '#'} aria-disabled={!prev}>
               <Button icon={<LeftOutlined />} disabled={!prev}>
                 Buổi trước
